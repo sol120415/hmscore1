@@ -435,6 +435,10 @@ $stats = $conn->query("
     FROM reservations r
     $statsWhere
 ")->fetch(PDO::FETCH_ASSOC);
+
+// Get today's check-ins and check-outs
+$todayCheckIns = $conn->query("SELECT COUNT(*) as checkins_today FROM reservations WHERE DATE(check_in_date) = CURDATE() AND reservation_status = 'Checked In'")->fetch(PDO::FETCH_ASSOC);
+$todayCheckOuts = $conn->query("SELECT COUNT(*) as checkouts_today FROM reservations WHERE DATE(check_out_date) = CURDATE() AND reservation_status = 'Checked Out'")->fetch(PDO::FETCH_ASSOC);
 ?>
 
 <!DOCTYPE html>
@@ -488,43 +492,49 @@ $stats = $conn->query("
             transform: translateY(-2px);
             box-shadow: 0 4px 8px rgba(0,0,0,0.1);
         }
-        .reservation-card:hover .reservation-content {
-            display: none;
-        }
-        .reservation-card:hover .reservation-actions {
-            display: flex !important;
+        .reservation-actions {
+            display: flex;
         }
         .reservation-actions {
             min-height: 32px;
+            opacity: 0;
+            transform: translateY(10px);
+            transition: all 0.3s ease;
         }
     </style>
 </head>
 <body>
     <div class="container-fluid p-4">
-        <!-- Header with Stats -->
-        <div class="mb-4">
-            <div class="d-flex justify-content-between gap-3 text-center">
-                <div class="text-center flex-grow-1">
-                <?php include 'reservationstitle.html'; ?>
-                </div>
-                <div>
-                    <small class="text-muted d-block">Total</small>
-                    <span class="fw-bold text-primary"><?php echo $stats['total_reservations']; ?></span>
-                </div>
-                <div>
-                    <small class="text-muted d-block">Checked In</small>
-                    <span class="fw-bold text-success"><?php echo $stats['checked_in']; ?></span>
-                </div>
-                <div>
-                    <small class="text-muted d-block">Pending</small>
-                    <span class="fw-bold text-warning"><?php echo $stats['pending']; ?></span>
-                </div>
-                <div>
-                    <small class="text-muted d-block">Room Res.</small>
-                    <span class="fw-bold text-info"><?php echo $stats['room_reservations']; ?></span>
+        <!-- Statistics Card -->
+        <div class="card border-primary text-primary mb-4">
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-2">
+                        <h6 class="mb-1 text-primary">Total</h6>
+                        <h4 class="mb-0 text-primary"><?php echo $stats['total_reservations']; ?></h4>
+                    </div>
+                    <div class="col-2">
+                        <h6 class="mb-1 text-success">Checked In</h6>
+                        <h4 class="mb-0 text-success"><?php echo $stats['checked_in']; ?></h4>
+                    </div>
+                    <div class="col-2">
+                        <h6 class="mb-1 text-warning">Pending</h6>
+                        <h4 class="mb-0 text-warning"><?php echo $stats['pending']; ?></h4>
+                    </div>
+                    <div class="col-2">
+                        <h6 class="mb-1 text-info">Room Res.</h6>
+                        <h4 class="mb-0 text-info"><?php echo $stats['room_reservations']; ?></h4>
+                    </div>
+                    <div class="col-2">
+                        <h6 class="mb-1 text-success">Today In</h6>
+                        <h4 class="mb-0 text-success"><?php echo $todayCheckIns['checkins_today']; ?></h4>
+                    </div>
+                    <div class="col-2">
+                        <h6 class="mb-1 text-danger">Today Out</h6>
+                        <h4 class="mb-0 text-danger"><?php echo $todayCheckOuts['checkouts_today']; ?></h4>
+                    </div>
                 </div>
             </div>
-            
         </div>
 
         <!-- Reservations -->
@@ -532,9 +542,9 @@ $stats = $conn->query("
             <div class="card-header d-flex justify-content-between align-items-center">
                 <h5 class="mb-0">Reservations</h5>
                 <div class="d-flex gap-2">
-                    <button class="btn btn-outline-primary btn-sm" data-coreui-toggle="modal" data-coreui-target="#reservationModal" onclick="openCreateModal()">
-                        New Reservation
-                    </button>
+                   <button class="btn btn-outline-primary btn-sm" data-coreui-toggle="modal" data-coreui-target="#reservationModal" onclick="openCreateModal()">
+                       <i class="cil-plus me-1"></i>New Reservation
+                   </button>
                     <div class="btn-group" role="group">
                         <input type="radio" class="btn-check" id="filter_all" name="filter_period" autocomplete="off" checked
                                hx-get="reservations.php?filter=" hx-target="#reservationsContainer" hx-swap="innerHTML">
@@ -596,7 +606,7 @@ $stats = $conn->query("
                                         </div>
                                     </div>
                                 </div>
-                                <div class="reservation-actions d-none justify-content-center">
+                                <div class="reservation-actions justify-content-center">
                                     <?php if ($reservation['reservation_status'] === 'Pending'): ?>
                                         <button class="btn btn-sm btn-success me-2" onclick="checkInReservation('<?php echo $reservation['id']; ?>')" title="Check In">
                                             <i class="cil-check me-1"></i>Check In
@@ -628,7 +638,7 @@ $stats = $conn->query("
                     <button type="button" class="btn-close" data-coreui-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <form id="reservationForm">
+                    <form id="reservationForm" hx-post="reservations.php" hx-target="#htmx-response" hx-swap="innerHTML" hx-on:htmx:after-request="handleReservationResponse(event)">
                         <input type="hidden" name="action" id="formAction" value="create">
                         <input type="hidden" name="id" id="reservationId">
 
@@ -776,12 +786,13 @@ $stats = $conn->query("
                                 </div>
                             </div>
                         </div>
+                        <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-coreui-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save</button>
+                </div>
                     </form>
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-coreui-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-primary" onclick="submitReservationForm()">Save</button>
-                </div>
+                
             </div>
         </div>
     </div>
@@ -1168,29 +1179,12 @@ $stats = $conn->query("
             return isValid;
         }
 
-        function submitReservationForm() {
-            if (!validateForm()) {
-                return;
-            }
+        function handleReservationResponse(event) {
+            const xhr = event.detail.xhr;
+            const response = xhr.responseText;
 
-            const form = document.getElementById('reservationForm');
-            const formData = new FormData(form);
-            const submitBtn = form.querySelector('button[type="button"][onclick="submitReservationForm()"]');
-            const originalText = submitBtn.innerHTML;
-
-            // Show loading state
-            submitBtn.disabled = true;
-            submitBtn.innerHTML = '<i class="cil-spinner cil-spin me-2"></i>Saving...';
-
-            fetch('reservations.php', {
-                method: 'POST',
-                headers: {
-                    'HX-Request': 'true'
-                },
-                body: formData
-            })
-            .then(response => response.json())
-            .then(data => {
+            try {
+                const data = JSON.parse(response);
                 if (data.success) {
                     showAlert('Reservation created successfully!', 'success');
                     new coreui.Modal(document.getElementById('reservationModal')).hide();
@@ -1198,17 +1192,24 @@ $stats = $conn->query("
                 } else {
                     showAlert(data.message || 'An error occurred while creating the reservation.', 'danger');
                 }
-            })
-            .catch(error => {
-                showAlert('Network error. Please try again.', 'danger');
-                console.error('Error:', error);
-            })
-            .finally(() => {
-                // Reset button state
-                submitBtn.disabled = false;
-                submitBtn.innerHTML = originalText;
-            });
+            } catch (e) {
+                showAlert('Server returned invalid response.', 'danger');
+                console.error('JSON parse error:', e);
+            }
         }
+
+        // Add form submit event listener
+        document.addEventListener('DOMContentLoaded', function() {
+            const reservationForm = document.getElementById('reservationForm');
+            if (reservationForm) {
+                reservationForm.addEventListener('submit', function(e) {
+                    if (!validateForm()) {
+                        e.preventDefault();
+                        return false;
+                    }
+                });
+            }
+        });
     </script>
 </body>
 </html>
