@@ -38,6 +38,10 @@ if(!isset($_SESSION['email'])){
             margin-left: 85px;
             margin-right: 20px;
         }
+        .sidebar-nav .nav-link {
+            padding: 0.375rem 0.75rem;
+            font-size: 0.875rem;
+        }
     </style>
     <!-- Popper.js for popovers -->
     <script src="js/popper.min.js"></script>

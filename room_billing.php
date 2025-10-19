@@ -16,6 +16,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_HX_REQUEST']))
 
             switch ($action) {
                 case 'create':
+                    // Dynamic Pricing: Get adjusted rate if room charge
+                    $dynamicRate = null;
+                    if ($_POST['transaction_type'] === 'Room Charge' && !empty($_POST['room_id'])) {
+                        $stmt = $conn->prepare("
+                            SELECT r.rate * (1 + IFNULL(mp.rate_modifier, 0)) AS dynamic_rate
+                            FROM rooms r
+                            LEFT JOIN marketing_promotion mp ON CURRENT_DATE BETWEEN mp.start_date AND mp.end_date
+                            WHERE r.id = ? AND (mp.promotion_type = 'Seasonal' OR mp.promotion_type IS NULL)
+                        ");
+                        $stmt->execute([$_POST['room_id']]);
+                        $rateResult = $stmt->fetch(PDO::FETCH_ASSOC);
+                        $dynamicRate = $rateResult['dynamic_rate'];
+                    }
+
                     // Create new billing transaction
                     $stmt = $conn->prepare("INSERT INTO room_billing (transaction_type, reservation_id, room_id, guest_id, item_description, quantity, unit_price, total_amount, payment_amount, balance, payment_method, billing_status, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
                     $stmt->execute([
@@ -25,7 +39,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_HX_REQUEST']))
                         $_POST['guest_id'] ?: null,
                         $_POST['item_description'] ?: null,
                         $_POST['quantity'] ?: 1,
-                        $_POST['unit_price'] ?: 0.00,
+                        $dynamicRate ?: ($_POST['unit_price'] ?: 0.00),
                         $_POST['total_amount'] ?: 0.00,
                         $_POST['payment_amount'] ?: 0.00,
                         $_POST['balance'] ?: 0.00,
@@ -63,6 +77,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_HX_REQUEST']))
                     $stmt = $conn->prepare("DELETE FROM room_billing WHERE id=?");
                     $stmt->execute([$_POST['id']]);
                     echo json_encode(['success' => true, 'message' => 'Billing transaction deleted successfully']);
+                    break;
+
+                case 'get_dynamic_rate':
+                    // Get dynamic rate for a room
+                    $stmt = $conn->prepare("
+                        SELECT r.rate * (1 + IFNULL(mp.rate_modifier, 0)) AS dynamic_rate
+                        FROM rooms r
+                        LEFT JOIN marketing_promotion mp ON CURRENT_DATE BETWEEN mp.start_date AND mp.end_date
+                        WHERE r.id = ? AND (mp.promotion_type = 'Seasonal' OR mp.promotion_type IS NULL)
+                    ");
+                    $stmt->execute([$_POST['room_id']]);
+                    $rateResult = $stmt->fetch(PDO::FETCH_ASSOC);
+                    echo json_encode(['dynamic_rate' => $rateResult['dynamic_rate'] ?: 0]);
                     break;
 
                 case 'get':
@@ -488,8 +515,53 @@ $recentTransactions = array_slice($billings, 0, 10);
             document.getElementById('balance').value = balance.toFixed(2);
         }
 
+        // Dynamic pricing: Update rate when room is selected
+        function updateDynamicRate() {
+            const roomId = document.getElementById('room_id').value;
+            const transactionType = document.getElementById('transaction_type').value;
+
+            if (roomId && transactionType === 'Room Charge') {
+                fetch('room_billing.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'HX-Request': 'true'
+                    },
+                    body: 'action=get_dynamic_rate&room_id=' + roomId
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.dynamic_rate > 0) {
+                        document.getElementById('unit_price').value = data.dynamic_rate;
+                        calculateTotal();
+                    }
+                });
+            }
+        }
+
+        // Auto-calculate total amount
+        function calculateTotal() {
+            const quantity = parseFloat(document.getElementById('quantity').value) || 1;
+            const unitPrice = parseFloat(document.getElementById('unit_price').value) || 0;
+            const total = quantity * unitPrice;
+            document.getElementById('total_amount').value = total.toFixed(2);
+            calculateBalance();
+        }
+
+        // Auto-calculate balance
+        function calculateBalance() {
+            const totalAmount = parseFloat(document.getElementById('total_amount').value) || 0;
+            const paymentAmount = parseFloat(document.getElementById('payment_amount').value) || 0;
+            const balance = totalAmount - paymentAmount;
+            document.getElementById('balance').value = balance.toFixed(2);
+        }
+
         // Add event listeners for auto-calculation
         document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('room_id').addEventListener('change', updateDynamicRate);
+            document.getElementById('transaction_type').addEventListener('change', updateDynamicRate);
+            document.getElementById('quantity').addEventListener('input', calculateTotal);
+            document.getElementById('unit_price').addEventListener('input', calculateTotal);
             document.getElementById('total_amount').addEventListener('input', calculateBalance);
             document.getElementById('payment_amount').addEventListener('input', calculateBalance);
         });

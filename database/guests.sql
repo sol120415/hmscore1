@@ -1,4 +1,4 @@
-USE hmscore1;
+ baUSE hmscore1;
 -- GUESTS TABLE (Guest Information Management)
 CREATE TABLE IF NOT EXISTS guests (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -14,6 +14,9 @@ CREATE TABLE IF NOT EXISTS guests (
     date_of_birth DATE NOT NULL,
     nationality VARCHAR(100) NULL,
     notes TEXT NULL,
+    loyalty_status ENUM('Regular', 'VIP') DEFAULT 'Regular',
+    stay_count INT DEFAULT 0,
+    total_spend DECIMAL(10,2) DEFAULT 0.00,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 

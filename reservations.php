@@ -16,55 +16,73 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_HX_REQUEST']))
 
             switch ($action) {
                 case 'create':
-                    // Create new reservation
-                    $id = 'RES-' . date('YmdHis') . sprintf('%04d', rand(0, 9999));
-                    $check_in_date = $_POST['check_in_date'];
-                    $hours = (int)$_POST['reservation_hour_count'];
-                    $days = (int)($_POST['reservation_days_count'] ?: 0);
-                    $check_out_date = date('Y-m-d H:i:s', strtotime($check_in_date) + ($hours * 3600) + ($days * 24 * 3600));
+                     // Handle new guest registration first if needed
+                     $guest_id = $_POST['guest_id'] ?: null;
 
-                    // Check for time conflicts if a room is selected
-                    if (!empty($_POST['room_id'])) {
-                        $stmt = $conn->prepare("SELECT COUNT(*) as conflict_count FROM reservations WHERE room_id = ? AND reservation_status IN ('Pending', 'Checked In') AND (
-                            (check_in_date < ? AND check_out_date > ?) OR
-                            (check_in_date < ? AND check_out_date > ?) OR
-                            (check_in_date >= ? AND check_out_date <= ?)
-                        )");
-                        $stmt->execute([
-                            $_POST['room_id'],
-                            $check_out_date, $check_in_date,  // overlap start
-                            $check_in_date, $check_out_date,  // overlap end
-                            $check_in_date, $check_out_date   // contained within
-                        ]);
-                        $conflict = $stmt->fetch(PDO::FETCH_ASSOC);
-                        if ($conflict['conflict_count'] > 0) {
-                            echo json_encode(['success' => false, 'message' => 'Time conflict: The selected room is already reserved for this time period.']);
-                            break;
-                        }
-                    }
+                     if (empty($guest_id) && !empty($_POST['new_first_name'])) {
+                         // Register new guest first
+                         $stmt = $conn->prepare("INSERT INTO guests (first_name, last_name, email, phone, id_type, id_number, date_of_birth) VALUES (?, ?, ?, ?, ?, ?, ?)");
+                         $stmt->execute([
+                             $_POST['new_first_name'],
+                             $_POST['new_last_name'],
+                             $_POST['new_email'],
+                             $_POST['new_phone'] ?: null,
+                             $_POST['new_id_type'],
+                             $_POST['new_id_number'],
+                             $_POST['new_date_of_birth']
+                         ]);
+                         $guest_id = $conn->lastInsertId();
+                     }
 
-                    $stmt = $conn->prepare("INSERT INTO reservations (id, guest_id, room_id, reservation_type, reservation_date, reservation_hour_count, reservation_days_count, check_in_date, check_out_date, reservation_status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-                    $stmt->execute([
-                        $id,
-                        $_POST['guest_id'] ?: null,
-                        $_POST['room_id'] ?: null,
-                        'Room',
-                        date('Y-m-d H:i:s'),
-                        $_POST['reservation_hour_count'],
-                        $_POST['reservation_days_count'] ?: null,
-                        $check_in_date,
-                        $check_out_date,
-                        'Pending'
-                    ]);
+                     // Create new reservation
+                     $id = 'RES-' . date('YmdHis') . sprintf('%04d', rand(0, 9999));
+                     $check_in_date = $_POST['check_in_date'];
+                     $hours = (int)$_POST['reservation_hour_count'];
+                     $days = (int)($_POST['reservation_days_count'] ?: 0);
+                     $check_out_date = date('Y-m-d H:i:s', strtotime($check_in_date) + ($hours * 3600) + ($days * 24 * 3600));
 
-                    // Update room status to Reserved if a room was selected
-                    if (!empty($_POST['room_id'])) {
-                        $stmt = $conn->prepare("UPDATE rooms SET room_status = 'Reserved' WHERE id = ?");
-                        $stmt->execute([$_POST['room_id']]);
-                    }
+                     // Check for time conflicts if a room is selected
+                     if (!empty($_POST['room_id'])) {
+                         $stmt = $conn->prepare("SELECT COUNT(*) as conflict_count FROM reservations WHERE room_id = ? AND reservation_status IN ('Pending', 'Checked In') AND (
+                             (check_in_date < ? AND check_out_date > ?) OR
+                             (check_in_date < ? AND check_out_date > ?) OR
+                             (check_in_date >= ? AND check_out_date <= ?)
+                         )");
+                         $stmt->execute([
+                             $_POST['room_id'],
+                             $check_out_date, $check_in_date,  // overlap start
+                             $check_in_date, $check_out_date,  // overlap end
+                             $check_in_date, $check_out_date   // contained within
+                         ]);
+                         $conflict = $stmt->fetch(PDO::FETCH_ASSOC);
+                         if ($conflict['conflict_count'] > 0) {
+                             echo json_encode(['success' => false, 'message' => 'Time conflict: The selected room is already reserved for this time period.']);
+                             break;
+                         }
+                     }
 
-                    echo json_encode(['success' => true, 'message' => 'Reservation created successfully']);
-                    break;
+                     $stmt = $conn->prepare("INSERT INTO reservations (id, guest_id, room_id, reservation_type, reservation_date, reservation_hour_count, reservation_days_count, check_in_date, check_out_date, reservation_status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+                     $stmt->execute([
+                         $id,
+                         $guest_id,
+                         $_POST['room_id'] ?: null,
+                         'Room',
+                         date('Y-m-d H:i:s'),
+                         $_POST['reservation_hour_count'],
+                         $_POST['reservation_days_count'] ?: null,
+                         $check_in_date,
+                         $check_out_date,
+                         'Pending'
+                     ]);
+
+                     // Update room status to Reserved if a room was selected
+                     if (!empty($_POST['room_id'])) {
+                         $stmt = $conn->prepare("UPDATE rooms SET room_status = 'Reserved' WHERE id = ?");
+                         $stmt->execute([$_POST['room_id']]);
+                     }
+
+                     echo json_encode(['success' => true, 'message' => 'Reservation created successfully']);
+                     break;
 
                 case 'update':
                     // Get current reservation data to handle room status changes
@@ -268,41 +286,154 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_HX_REQUEST']))
     exit;
 }
 
-// Get data for display
+// Handle filter requests
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'filter') {
+    $filter = $_POST['filter'] ?? '';
+    $whereClause = '';
+
+    switch ($filter) {
+        case 'day':
+            $whereClause = "WHERE r.created_at >= DATE_SUB(NOW(), INTERVAL 1 DAY)";
+            break;
+        case 'week':
+            $whereClause = "WHERE r.created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)";
+            break;
+        case 'month':
+            $whereClause = "WHERE r.created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)";
+            break;
+        case 'year':
+            $whereClause = "WHERE r.created_at >= DATE_SUB(NOW(), INTERVAL 1 YEAR)";
+            break;
+        default:
+            $whereClause = '';
+    }
+
+    $reservations = $conn->query("
+        SELECT r.*, g.first_name, g.last_name, rm.room_number, rm.room_type
+        FROM reservations r
+        LEFT JOIN guests g ON r.guest_id = g.id
+        LEFT JOIN rooms rm ON r.room_id = rm.id
+        $whereClause
+        ORDER BY r.created_at DESC
+    ")->fetchAll(PDO::FETCH_ASSOC);
+
+    // Output just the cards HTML for HTMX
+    foreach ($reservations as $reservation): ?>
+        <div class="col-md-6 col-lg-4 mb-3">
+            <div class="card h-100 reservation-card">
+                <div class="card-body">
+                    <div class="reservation-content">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <div class="flex-grow-1">
+                                <h6 class="mb-1"><?php echo htmlspecialchars(($reservation['first_name'] ?: '') . ' ' . ($reservation['last_name'] ?: 'Walk-in')); ?></h6>
+                                <small class="text-muted">
+                                    <?php if ($reservation['room_number']): ?>
+                                        <?php echo htmlspecialchars($reservation['room_number']); ?> • <?php echo date('M-d', strtotime($reservation['check_in_date'])); ?> • <?php echo date('M-d', strtotime($reservation['check_out_date'])); ?>
+                                    <?php else: ?>
+                                        No room • <?php echo date('M-d', strtotime($reservation['check_in_date'])); ?> • <?php echo date('M-d', strtotime($reservation['check_out_date'])); ?>
+                                    <?php endif; ?>
+                                </small>
+                            </div>
+                            <div class="d-flex flex-column gap-1">
+                                <span class="badge bg-<?php echo $reservation['reservation_type'] === 'Room' ? 'primary' : 'info'; ?>">
+                                    <?php echo htmlspecialchars($reservation['reservation_type']); ?>
+                                </span>
+                                <span class="badge bg-<?php
+                                    echo $reservation['reservation_status'] === 'Checked In' ? 'success' :
+                                         ($reservation['reservation_status'] === 'Checked Out' ? 'primary' :
+                                         ($reservation['reservation_status'] === 'Pending' ? 'warning' :
+                                         ($reservation['reservation_status'] === 'Cancelled' ? 'danger' : 'secondary')));
+                                ?>">
+                                    <?php echo htmlspecialchars($reservation['reservation_status']); ?>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="reservation-actions d-none justify-content-center">
+                        <?php if ($reservation['reservation_status'] === 'Pending'): ?>
+                            <button class="btn btn-sm btn-success me-2" onclick="checkInReservation('<?php echo $reservation['id']; ?>')" title="Check In">
+                                <i class="cil-check me-1"></i>Check In
+                            </button>
+                        <?php elseif ($reservation['reservation_status'] === 'Checked In'): ?>
+                            <button class="btn btn-sm btn-warning me-2" onclick="checkOutReservation('<?php echo $reservation['id']; ?>')" title="Check Out">
+                                <i class="cil-arrow-right me-1"></i>Check Out
+                            </button>
+                        <?php endif; ?>
+                        <button class="btn btn-sm btn-outline-danger" onclick="deleteReservation('<?php echo $reservation['id']; ?>')" title="Delete">
+                            <i class="cil-trash me-1"></i>Delete
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    <?php endforeach;
+    exit;
+}
+
+// Get data for display (filtered if applicable)
+$whereClause = '';
+
+switch ($_GET['filter'] ?? '') {
+    case 'day':
+        $whereClause = "WHERE r.created_at >= DATE_SUB(NOW(), INTERVAL 1 DAY)";
+        break;
+    case 'week':
+        $whereClause = "WHERE r.created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)";
+        break;
+    case 'month':
+        $whereClause = "WHERE r.created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)";
+        break;
+    case 'year':
+        $whereClause = "WHERE r.created_at >= DATE_SUB(NOW(), INTERVAL 1 YEAR)";
+        break;
+    default:
+        $whereClause = '';
+}
+
 $reservations = $conn->query("
     SELECT r.*, g.first_name, g.last_name, rm.room_number, rm.room_type
     FROM reservations r
     LEFT JOIN guests g ON r.guest_id = g.id
     LEFT JOIN rooms rm ON r.room_id = rm.id
+    $whereClause
     ORDER BY r.created_at DESC
 ")->fetchAll(PDO::FETCH_ASSOC);
 
 $guests = $conn->query("SELECT id, first_name, last_name, email FROM guests ORDER BY first_name, last_name")->fetchAll(PDO::FETCH_ASSOC);
 $rooms = $conn->query("SELECT id, room_number, room_type, room_status FROM rooms ORDER BY room_number")->fetchAll(PDO::FETCH_ASSOC);
 
-// Get statistics
+// Get filter parameter
+$filter = $_GET['filter'] ?? '';
+$whereClause = '';
+
+switch ($filter) {
+    case 'day':
+        $whereClause = "WHERE r.created_at >= DATE_SUB(NOW(), INTERVAL 1 DAY)";
+        break;
+    case 'week':
+        $whereClause = "WHERE r.created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)";
+        break;
+    case 'month':
+        $whereClause = "WHERE r.created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)";
+        break;
+    case 'year':
+        $whereClause = "WHERE r.created_at >= DATE_SUB(NOW(), INTERVAL 1 YEAR)";
+        break;
+    default:
+        $whereClause = '';
+}
+
+// Get statistics (filtered if applicable)
+$statsWhere = str_replace('r.', '', $whereClause); // Remove table alias for stats query
 $stats = $conn->query("
     SELECT
         COUNT(*) as total_reservations,
         COUNT(CASE WHEN reservation_status = 'Checked In' THEN 1 END) as checked_in,
         COUNT(CASE WHEN reservation_status = 'Pending' THEN 1 END) as pending,
-        COUNT(CASE WHEN reservation_status = 'Cancelled' THEN 1 END) as cancelled,
         COUNT(CASE WHEN reservation_type = 'Room' THEN 1 END) as room_reservations,
         COUNT(CASE WHEN reservation_type = 'Event' THEN 1 END) as event_reservations
-    FROM reservations
-")->fetch(PDO::FETCH_ASSOC);
-
-// Get today's check-ins and check-outs
-$todayCheckIns = $conn->query("
-    SELECT COUNT(*) as checkins_today
-    FROM reservations
-    WHERE DATE(check_in_date) = CURDATE() AND reservation_status = 'Pending'
-")->fetch(PDO::FETCH_ASSOC);
-
-$todayCheckOuts = $conn->query("
-    SELECT COUNT(*) as checkouts_today
-    FROM reservations
-    WHERE DATE(check_out_date) = CURDATE() AND reservation_status = 'Checked In'
+    FROM reservations r
+    $statsWhere
 ")->fetch(PDO::FETCH_ASSOC);
 ?>
 
@@ -340,267 +471,157 @@ $todayCheckOuts = $conn->query("
             border-radius: 8px;
             overflow: hidden;
         }
-        .modal-content {
-            background: #2d3748;
-            border: 1px solid #4a5568;
+        .input-group-text {
+            background: #4a5568;
+            border-color: #4a5568;
+            color: #e2e8f0;
+        }
+        .form-control:focus, .form-select:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
         }
         .reservation-card {
-            transition: transform 0.2s;
+            transition: all 0.2s ease;
+            cursor: pointer;
         }
         .reservation-card:hover {
             transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .reservation-card:hover .reservation-content {
+            display: none;
+        }
+        .reservation-card:hover .reservation-actions {
+            display: flex !important;
+        }
+        .reservation-actions {
+            min-height: 32px;
         }
     </style>
 </head>
 <body>
     <div class="container-fluid p-4">
-        <!-- Header -->
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <div class="text-center flex-grow-1">
+        <!-- Header with Stats -->
+        <div class="mb-4">
+            <div class="d-flex justify-content-between gap-3 text-center">
+                <div class="text-center flex-grow-1">
                 <?php include 'reservationstitle.html'; ?>
+                </div>
+                <div>
+                    <small class="text-muted d-block">Total</small>
+                    <span class="fw-bold text-primary"><?php echo $stats['total_reservations']; ?></span>
+                </div>
+                <div>
+                    <small class="text-muted d-block">Checked In</small>
+                    <span class="fw-bold text-success"><?php echo $stats['checked_in']; ?></span>
+                </div>
+                <div>
+                    <small class="text-muted d-block">Pending</small>
+                    <span class="fw-bold text-warning"><?php echo $stats['pending']; ?></span>
+                </div>
+                <div>
+                    <small class="text-muted d-block">Room Res.</small>
+                    <span class="fw-bold text-info"><?php echo $stats['room_reservations']; ?></span>
+                </div>
             </div>
-            <button class="btn btn-primary" data-coreui-toggle="modal" data-coreui-target="#reservationModal" onclick="openCreateModal()">
-                <i class="cil-plus me-2"></i>Add Reservation
-            </button>
+            
         </div>
 
-        <!-- Statistics Cards -->
-        <div class="row mb-4">
-            <div class="col-md-2">
-                <div class="card stats-card text-white">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <h6 class="card-title mb-1">Total</h6>
-                                <h3 class="mb-0"><?php echo $stats['total_reservations']; ?></h3>
-                            </div>
-                            <i class="cil-calendar fs-1 opacity-75"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-2">
-                <div class="card stats-card text-white">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <h6 class="card-title mb-1">Checked In</h6>
-                                <h3 class="mb-0"><?php echo $stats['checked_in']; ?></h3>
-                            </div>
-                            <i class="cil-check-circle fs-1 opacity-75"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-2">
-                <div class="card stats-card text-white">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <h6 class="card-title mb-1">Pending</h6>
-                                <h3 class="mb-0"><?php echo $stats['pending']; ?></h3>
-                            </div>
-                            <i class="cil-clock fs-1 opacity-75"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-2">
-                <div class="card stats-card text-white">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <h6 class="card-title mb-1">Room Res.</h6>
-                                <h3 class="mb-0"><?php echo $stats['room_reservations']; ?></h3>
-                            </div>
-                            <i class="cil-bed fs-1 opacity-75"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-2">
-                <div class="card stats-card text-white">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <h6 class="card-title mb-1">Today's Check-ins</h6>
-                                <h3 class="mb-0"><?php echo $todayCheckIns['checkins_today']; ?></h3>
-                            </div>
-                            <i class="cil-arrow-right fs-1 opacity-75"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-2">
-                <div class="card stats-card text-white">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <h6 class="card-title mb-1">Today's Check-outs</h6>
-                                <h3 class="mb-0"><?php echo $todayCheckOuts['checkouts_today']; ?></h3>
-                            </div>
-                            <i class="cil-arrow-left fs-1 opacity-75"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Reservations Table -->
+        <!-- Reservations -->
         <div class="card">
-            <div class="card-header">
+            <div class="card-header d-flex justify-content-between align-items-center">
                 <h5 class="mb-0">Reservations</h5>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-outline-primary btn-sm" data-coreui-toggle="modal" data-coreui-target="#reservationModal" onclick="openCreateModal()">
+                        New Reservation
+                    </button>
+                    <div class="btn-group" role="group">
+                        <input type="radio" class="btn-check" id="filter_all" name="filter_period" autocomplete="off" checked
+                               hx-get="reservations.php?filter=" hx-target="#reservationsContainer" hx-swap="innerHTML">
+                        <label class="btn btn-outline-secondary btn-sm" for="filter_all">All</label>
+
+                        <input type="radio" class="btn-check" id="filter_day" name="filter_period" autocomplete="off"
+                               hx-get="reservations.php?filter=day" hx-target="#reservationsContainer" hx-swap="innerHTML">
+                        <label class="btn btn-outline-secondary btn-sm" for="filter_day">Day</label>
+
+                        <input type="radio" class="btn-check" id="filter_week" name="filter_period" autocomplete="off"
+                               hx-get="reservations.php?filter=week" hx-target="#reservationsContainer" hx-swap="innerHTML">
+                        <label class="btn btn-outline-secondary btn-sm" for="filter_week">Week</label>
+
+                        <input type="radio" class="btn-check" id="filter_month" name="filter_period" autocomplete="off"
+                               hx-get="reservations.php?filter=month" hx-target="#reservationsContainer" hx-swap="innerHTML">
+                        <label class="btn btn-outline-secondary btn-sm" for="filter_month">Month</label>
+
+                        <input type="radio" class="btn-check" id="filter_year" name="filter_period" autocomplete="off"
+                               hx-get="reservations.php?filter=year" hx-target="#reservationsContainer" hx-swap="innerHTML">
+                        <label class="btn btn-outline-secondary btn-sm" for="filter_year">Year</label>
+                    </div>
+                </div>
             </div>
             <div class="card-body">
-                <div class="table-responsive">
-                    <table class="table table-hover mb-0">
-                        <thead class="table-dark">
-                            <tr>
-                                <th>Type</th>
-                                <th>Guest</th>
-                                <th>Room</th>
-                                <th>Check-in</th>
-                                <th>Check-out</th>
-                                <th>Status</th>
-                                <th>Created</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php foreach ($reservations as $reservation): ?>
-                            <tr>
-                                <td>
-                                    <span class="badge bg-<?php echo $reservation['reservation_type'] === 'Room' ? 'primary' : 'info'; ?>">
-                                        <?php echo htmlspecialchars($reservation['reservation_type']); ?>
-                                    </span>
-                                </td>
-                                <td><?php echo htmlspecialchars(($reservation['first_name'] ?: '') . ' ' . ($reservation['last_name'] ?: 'Walk-in')); ?></td>
-                                <td>
-                                    <?php if ($reservation['room_number']): ?>
-                                        <?php echo htmlspecialchars($reservation['room_number'] . ' - ' . $reservation['room_type']); ?>
-                                    <?php else: ?>
-                                        <span class="text-muted">Not assigned</span>
-                                    <?php endif; ?>
-                                </td>
-                                <td><?php echo date('M d, Y H:i', strtotime($reservation['check_in_date'])); ?></td>
-                                <td><?php echo date('M d, Y H:i', strtotime($reservation['check_out_date'])); ?></td>
-                                <td>
-                                    <span class="badge bg-<?php
-                                        echo $reservation['reservation_status'] === 'Checked In' ? 'success' :
-                                             ($reservation['reservation_status'] === 'Checked Out' ? 'primary' :
-                                             ($reservation['reservation_status'] === 'Pending' ? 'warning' :
-                                             ($reservation['reservation_status'] === 'Cancelled' ? 'danger' : 'secondary')));
-                                    ?>">
-                                        <?php echo htmlspecialchars($reservation['reservation_status']); ?>
-                                    </span>
-                                </td>
-                                <td><?php echo date('M d, Y', strtotime($reservation['created_at'])); ?></td>
-                                <td>
+                <div class="row" id="reservationsContainer">
+                    <?php foreach ($reservations as $reservation): ?>
+                    <div class="col-md-6 col-lg-4 mb-3">
+                        <div class="card h-100 reservation-card" style="border-left: 4px solid <?php
+                            echo $reservation['reservation_status'] === 'Checked In' ? '#198754' :
+                                 ($reservation['reservation_status'] === 'Checked Out' ? '#0d6efd' :
+                                 ($reservation['reservation_status'] === 'Pending' ? '#fd7e14' :
+                                 ($reservation['reservation_status'] === 'Cancelled' ? '#dc3545' : '#6c757d')));
+                        ?>;">
+                            <div class="card-body">
+                                <div class="reservation-content">
+                                    <div class="d-flex justify-content-between align-items-start mb-2">
+                                        <div class="flex-grow-1">
+                                            <h6 class="mb-1"><?php echo htmlspecialchars(($reservation['first_name'] ?: '') . ' ' . ($reservation['last_name'] ?: 'Walk-in')); ?></h6>
+                                            <small class="text-muted">
+                                                <?php if ($reservation['room_number']): ?>
+                                                    <?php echo htmlspecialchars($reservation['room_number']); ?> • <?php echo date('M-d', strtotime($reservation['check_in_date'])); ?> • <?php echo date('M-d', strtotime($reservation['check_out_date'])); ?>
+                                                <?php else: ?>
+                                                    No room • <?php echo date('M-d', strtotime($reservation['check_in_date'])); ?> • <?php echo date('M-d', strtotime($reservation['check_out_date'])); ?>
+                                                <?php endif; ?>
+                                            </small>
+                                        </div>
+                                        <div class="d-flex flex-column gap-1">
+                                            <span class="badge bg-<?php echo $reservation['reservation_type'] === 'Room' ? 'primary' : 'info'; ?>">
+                                                <?php echo htmlspecialchars($reservation['reservation_type']); ?>
+                                            </span>
+                                            <span class="badge bg-<?php
+                                                echo $reservation['reservation_status'] === 'Checked In' ? 'success' :
+                                                     ($reservation['reservation_status'] === 'Checked Out' ? 'primary' :
+                                                     ($reservation['reservation_status'] === 'Pending' ? 'warning' :
+                                                     ($reservation['reservation_status'] === 'Cancelled' ? 'danger' : 'secondary')));
+                                            ?>">
+                                                <?php echo htmlspecialchars($reservation['reservation_status']); ?>
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="reservation-actions d-none justify-content-center">
                                     <?php if ($reservation['reservation_status'] === 'Pending'): ?>
-                                        <button class="btn btn-sm btn-success me-1" onclick="checkInReservation('<?php echo $reservation['id']; ?>')" title="Check In">
-                                            <i class="cil-check"></i>
+                                        <button class="btn btn-sm btn-success me-2" onclick="checkInReservation('<?php echo $reservation['id']; ?>')" title="Check In">
+                                            <i class="cil-check me-1"></i>Check In
                                         </button>
                                     <?php elseif ($reservation['reservation_status'] === 'Checked In'): ?>
-                                        <button class="btn btn-sm btn-warning me-1" onclick="checkOutReservation('<?php echo $reservation['id']; ?>')" title="Check Out">
-                                            <i class="cil-arrow-right"></i>
+                                        <button class="btn btn-sm btn-warning me-2" onclick="checkOutReservation('<?php echo $reservation['id']; ?>')" title="Check Out">
+                                            <i class="cil-arrow-right me-1"></i>Check Out
                                         </button>
                                     <?php endif; ?>
-                                    <button class="btn btn-sm btn-outline-primary me-1" onclick="editReservation('<?php echo $reservation['id']; ?>')" title="Edit">
-                                        <i class="cil-pencil"></i>
-                                    </button>
                                     <button class="btn btn-sm btn-outline-danger" onclick="deleteReservation('<?php echo $reservation['id']; ?>')" title="Delete">
-                                        <i class="cil-trash"></i>
+                                        <i class="cil-trash me-1"></i>Delete
                                     </button>
-                                </td>
-                            </tr>
-                            <?php endforeach; ?>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-
-        <!-- Today's Activity -->
-        <div class="row mt-4">
-            <div class="col-md-6">
-                <div class="card">
-                    <div class="card-header">
-                        <h6 class="mb-0">Today's Check-ins</h6>
-                    </div>
-                    <div class="card-body">
-                        <?php
-                        $todayReservations = $conn->query("
-                            SELECT r.*, g.first_name, g.last_name, rm.room_number
-                            FROM reservations r
-                            LEFT JOIN guests g ON r.guest_id = g.id
-                            LEFT JOIN rooms rm ON r.room_id = rm.id
-                            WHERE DATE(r.check_in_date) = CURDATE() AND r.reservation_status = 'Pending'
-                            ORDER BY r.check_in_date
-                        ")->fetchAll(PDO::FETCH_ASSOC);
-
-                        if (empty($todayReservations)): ?>
-                            <p class="text-muted mb-0">No check-ins scheduled for today.</p>
-                        <?php else: ?>
-                            <div class="list-group list-group-flush">
-                                <?php foreach ($todayReservations as $res): ?>
-                                <div class="list-group-item px-0">
-                                    <div class="d-flex justify-content-between align-items-center">
-                                        <div>
-                                            <strong><?php echo htmlspecialchars(($res['first_name'] ?: '') . ' ' . ($res['last_name'] ?: 'Walk-in')); ?></strong>
-                                            <br><small class="text-muted">Room <?php echo htmlspecialchars($res['room_number'] ?: 'TBD'); ?> • <?php echo date('H:i', strtotime($res['check_in_date'])); ?></small>
-                                        </div>
-                                        <span class="badge bg-warning">Pending</span>
-                                    </div>
                                 </div>
-                                <?php endforeach; ?>
                             </div>
-                        <?php endif; ?>
+                        </div>
                     </div>
-                </div>
-            </div>
-
-            <div class="col-md-6">
-                <div class="card">
-                    <div class="card-header">
-                        <h6 class="mb-0">Today's Check-outs</h6>
-                    </div>
-                    <div class="card-body">
-                        <?php
-                        $todayCheckouts = $conn->query("
-                            SELECT r.*, g.first_name, g.last_name, rm.room_number
-                            FROM reservations r
-                            LEFT JOIN guests g ON r.guest_id = g.id
-                            LEFT JOIN rooms rm ON r.room_id = rm.id
-                            WHERE DATE(r.check_out_date) = CURDATE() AND r.reservation_status = 'Checked In'
-                            ORDER BY r.check_out_date
-                        ")->fetchAll(PDO::FETCH_ASSOC);
-
-                        if (empty($todayCheckouts)): ?>
-                            <p class="text-muted mb-0">No check-outs scheduled for today.</p>
-                        <?php else: ?>
-                            <div class="list-group list-group-flush">
-                                <?php foreach ($todayCheckouts as $res): ?>
-                                <div class="list-group-item px-0">
-                                    <div class="d-flex justify-content-between align-items-center">
-                                        <div>
-                                            <strong><?php echo htmlspecialchars(($res['first_name'] ?: '') . ' ' . ($res['last_name'] ?: 'Walk-in')); ?></strong>
-                                            <br><small class="text-muted">Room <?php echo htmlspecialchars($res['room_number']); ?> • <?php echo date('H:i', strtotime($res['check_out_date'])); ?></small>
-                                        </div>
-                                        <span class="badge bg-success">Checked In</span>
-                                    </div>
-                                </div>
-                                <?php endforeach; ?>
-                            </div>
-                        <?php endif; ?>
-                    </div>
+                    <?php endforeach; ?>
                 </div>
             </div>
         </div>
     </div>
 
     <!-- Reservation Modal -->
-    <div class="modal fade" id="reservationModal" tabindex="-1">
-        <div class="modal-dialog modal-lg">
+    <div class="modal fade" id="reservationModal" tabindex="-1" style="--cui-modal-border-radius: 16px; --cui-modal-box-shadow: 0 10px 40px rgba(0,0,0,0.3); --cui-modal-bg: #2d3748; --cui-modal-border-color: #4a5568;">
+        <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="modalTitle">Add Reservation</h5>
@@ -612,74 +633,147 @@ $todayCheckOuts = $conn->query("
                         <input type="hidden" name="id" id="reservationId">
 
 
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label for="guest_id" class="form-label">Guest</label>
-                                <select class="form-select" id="guest_id" name="guest_id">
-                                    <option value="">Walk-in Guest</option>
-                                    <?php foreach ($guests as $guest): ?>
-                                    <option value="<?php echo $guest['id']; ?>"><?php echo htmlspecialchars($guest['first_name'] . ' ' . $guest['last_name'] . ' (' . $guest['email'] . ')'); ?></option>
-                                    <?php endforeach; ?>
-                                </select>
+                        <!-- Guest Selection Tabs -->
+                        <ul class="nav nav-tabs mb-3" id="guestTabs" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link active" id="existing-guest-tab" data-coreui-toggle="tab" data-coreui-target="#existing-guest" type="button" role="tab">Existing Guest</button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="new-guest-tab" data-coreui-toggle="tab" data-coreui-target="#new-guest" type="button" role="tab">New Guest</button>
+                            </li>
+                        </ul>
+
+                        <div class="tab-content">
+                            <!-- Existing Guest Tab -->
+                            <div class="tab-pane fade show active" id="existing-guest" role="tabpanel">
+                                <div class="input-group mb-3">
+                                    <span class="input-group-text"><i class="cil-user"></i></span>
+                                    <select class="form-select" id="guest_id" name="guest_id">
+                                        <option value="">Choose a guest...</option>
+                                        <?php foreach ($guests as $guest): ?>
+                                        <option value="<?php echo $guest['id']; ?>"><?php echo htmlspecialchars($guest['first_name'] . ' ' . $guest['last_name'] . ' (' . $guest['email'] . ')'); ?></option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                </div>
                             </div>
-                            <div class="col-md-6 mb-3">
-                                <label for="room_id" class="form-label">Room</label>
-                                <select class="form-select" id="room_id" name="room_id" disabled>
-                                    <option value="">Select check-in date and duration first</option>
-                                    <?php foreach ($rooms as $room): ?>
-                                    <option value="<?php echo $room['id']; ?>" style="display: none;" data-status="<?php echo $room['room_status']; ?>">
-                                        <?php echo htmlspecialchars($room['room_number'] . ' - ' . $room['room_type'] . ' (' . $room['room_status'] . ')'); ?>
-                                    </option>
-                                    <?php endforeach; ?>
-                                </select>
+
+                            <!-- New Guest Tab -->
+                            <div class="tab-pane fade" id="new-guest" role="tabpanel">
+                                <div class="row g-2">
+                                    <div class="col-md-6">
+                                        <div class="input-group input-group-sm">
+                                            <span class="input-group-text"><i class="cil-user"></i></span>
+                                            <input type="text" class="form-control" id="new_first_name" name="new_first_name" placeholder="First Name *">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="input-group input-group-sm">
+                                            <span class="input-group-text"><i class="cil-user"></i></span>
+                                            <input type="text" class="form-control" id="new_last_name" name="new_last_name" placeholder="Last Name *">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="input-group input-group-sm">
+                                            <span class="input-group-text"><i class="cil-envelope-closed"></i></span>
+                                            <input type="email" class="form-control" id="new_email" name="new_email" placeholder="Email *">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="input-group input-group-sm">
+                                            <span class="input-group-text"><i class="cil-phone"></i></span>
+                                            <input type="tel" class="form-control" id="new_phone" name="new_phone" placeholder="Phone">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="input-group input-group-sm">
+                                            <span class="input-group-text"><i class="cil-id-card"></i></span>
+                                            <select class="form-select" id="new_id_type" name="new_id_type">
+                                                <option value="Passport">Passport</option>
+                                                <option value="Driver License">Driver License</option>
+                                                <option value="National ID">National ID</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="input-group input-group-sm">
+                                            <span class="input-group-text">#</span>
+                                            <input type="text" class="form-control" id="new_id_number" name="new_id_number" placeholder="ID Number *">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="input-group input-group-sm">
+                                            <span class="input-group-text"><i class="cil-calendar"></i></span>
+                                            <input type="date" class="form-control" id="new_date_of_birth" name="new_date_of_birth">
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label for="check_in_date" class="form-label">Check-in Date & Time *</label>
-                                <input type="datetime-local" class="form-control" id="check_in_date" name="check_in_date" required>
-                            </div>
-                            <div class="col-md-3 mb-3">
-                                <label class="form-label">Duration *</label>
-                                <div class="d-flex gap-2">
-                                    <input type="radio" class="btn-check" id="hours_8" name="reservation_hour_count" value="8" autocomplete="off" checked>
-                                    <label class="btn btn-outline-primary btn-sm" for="hours_8">
-                                        <i class="cil-clock me-1"></i>8h
-                                    </label>
-
-                                    <input type="radio" class="btn-check" id="hours_16" name="reservation_hour_count" value="16" autocomplete="off">
-                                    <label class="btn btn-outline-primary btn-sm" for="hours_16">
-                                        <i class="cil-clock me-1"></i>16h
-                                    </label>
+                        <div class="row g-2">
+                            <div class="col-md-6">
+                                <div class="mt-2 input-group input-group-sm">
+                                    <span class="input-group-text"><i class="cil-home"></i></span>
+                                    <select class="form-select" id="room_id" name="room_id" disabled>
+                                        <option value="">Select check-in date and duration first</option>
+                                        <?php foreach ($rooms as $room): ?>
+                                        <option value="<?php echo $room['id']; ?>" style="display: none;" data-status="<?php echo $room['room_status']; ?>">
+                                            <?php echo htmlspecialchars($room['room_number'] . ' - ' . $room['room_type'] . ' (' . $room['room_status'] . ')'); ?>
+                                        </option>
+                                        <?php endforeach; ?>
+                                    </select>
                                 </div>
                             </div>
-                            <div class="col-md-3 mb-3">
-                                <label for="reservation_days_count" class="form-label">Days</label>
-                                <select class="form-select form-select-sm" id="reservation_days_count" name="reservation_days_count">
-                                    <option value="0">0 days</option>
-                                    <option value="1">1 day</option>
-                                    <option value="2">2 days</option>
-                                    <option value="3">3 days</option>
-                                    <option value="4">4 days</option>
-                                    <option value="5">5 days</option>
-                                    <option value="6">6 days</option>
-                                    <option value="7">7 days</option>
-                                    <option value="14">2 weeks</option>
-                                    <option value="21">3 weeks</option>
-                                    <option value="30">1 month</option>
-                                    <option value="60">2 months</option>
-                                    <option value="90">3 months</option>
-                                    <option value="120">4 months</option>
-                                    <option value="150">5 months</option>
-                                    <option value="180">6 months</option>
-                                    <option value="210">7 months</option>
-                                    <option value="240">8 months</option>
-                                    <option value="270">9 months</option>
-                                    <option value="300">10 months</option>
-                                    <option value="330">11 months</option>
-                                    <option value="365">12 months</option>
-                                </select>
+                            <div class="col-md-6">
+                                <div class="mt-2 input-group input-group-sm">
+                                    <span class="input-group-text"><i class="cil-calendar-check"></i></span>
+                                    <input type="datetime-local" class="form-control" id="check_in_date" name="check_in_date" required>
+                                </div>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label small mb-1">Duration *</label>
+                                <div class="d-flex gap-2 align-items-center">
+                                    <div class="btn-group btn-group-sm flex-shrink-0" role="group">
+                                        <input type="radio" class="btn-check" id="hours_0" name="reservation_hour_count" value="0" autocomplete="off" checked>
+                                        <label class="btn btn-outline-primary" for="hours_0">
+                                            <i class="cil-clock me-1"></i>0h
+                                        </label>
+
+                                        <input type="radio" class="btn-check" id="hours_8" name="reservation_hour_count" value="8" autocomplete="off">
+                                        <label class="btn btn-outline-primary" for="hours_8">
+                                            <i class="cil-clock me-1"></i>8h
+                                        </label>
+
+                                        <input type="radio" class="btn-check" id="hours_16" name="reservation_hour_count" value="16" autocomplete="off">
+                                        <label class="btn btn-outline-primary" for="hours_16">
+                                            <i class="cil-clock me-1"></i>16h
+                                        </label>
+                                    </div>
+                                    <select class="form-select form-select-sm" id="reservation_days_count" name="reservation_days_count" style="width: 100px;">
+                                        <option value="">Days</option>
+                                        <option value="1">1</option>
+                                        <option value="2">2</option>
+                                        <option value="3">3</option>
+                                        <option value="4">4</option>
+                                        <option value="5">5</option>
+                                        <option value="6">6</option>
+                                        <option value="7">7</option>
+                                        <option value="14">14</option>
+                                        <option value="21">21</option>
+                                        <option value="30">30</option>
+                                        <option value="60">60</option>
+                                        <option value="90">90</option>
+                                        <option value="120">120</option>
+                                        <option value="150">150</option>
+                                        <option value="180">180</option>
+                                        <option value="210">210</option>
+                                        <option value="240">240</option>
+                                        <option value="270">270</option>
+                                        <option value="300">300</option>
+                                        <option value="330">330</option>
+                                        <option value="365">365</option>
+                                    </select>
+                                </div>
                             </div>
                         </div>
                     </form>
@@ -708,6 +802,14 @@ $todayCheckOuts = $conn->query("
             // Show only the placeholder
             document.querySelector('#room_id option[value=""]').style.display = 'block';
             document.querySelector('#room_id option[value=""]').textContent = 'Select check-in date and duration first';
+
+            // Reset to existing guest tab
+            const existingTab = document.getElementById('existing-guest-tab');
+            const newTab = document.getElementById('new-guest-tab');
+            existingTab.classList.add('active');
+            newTab.classList.remove('active');
+            document.getElementById('existing-guest').classList.add('show', 'active');
+            document.getElementById('new-guest').classList.remove('show', 'active');
         }
 
         function editReservation(id) {
@@ -741,6 +843,11 @@ $todayCheckOuts = $conn->query("
 
         function deleteReservation(id) {
             if (confirm('Are you sure you want to delete this reservation? This action cannot be undone.')) {
+                const btn = event.target.closest('button');
+                const originalHTML = btn.innerHTML;
+                btn.disabled = true;
+                btn.innerHTML = '<i class="cil-spinner cil-spin"></i>';
+
                 fetch('reservations.php', {
                     method: 'POST',
                     headers: {
@@ -752,16 +859,29 @@ $todayCheckOuts = $conn->query("
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {
-                        location.reload();
+                        showAlert('Reservation deleted successfully!', 'success');
+                        setTimeout(() => location.reload(), 1000);
                     } else {
-                        alert('Error: ' + data.message);
+                        showAlert(data.message || 'Deletion failed.', 'danger');
+                        btn.disabled = false;
+                        btn.innerHTML = originalHTML;
                     }
+                })
+                .catch(error => {
+                    showAlert('Network error. Please try again.', 'danger');
+                    btn.disabled = false;
+                    btn.innerHTML = originalHTML;
                 });
             }
         }
 
         function checkInReservation(id) {
             if (confirm('Are you sure you want to check in this guest?')) {
+                const btn = event.target.closest('button');
+                const originalHTML = btn.innerHTML;
+                btn.disabled = true;
+                btn.innerHTML = '<i class="cil-spinner cil-spin"></i>';
+
                 fetch('reservations.php', {
                     method: 'POST',
                     headers: {
@@ -773,16 +893,29 @@ $todayCheckOuts = $conn->query("
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {
-                        location.reload();
+                        showAlert('Guest checked in successfully!', 'success');
+                        setTimeout(() => location.reload(), 1000);
                     } else {
-                        alert('Error: ' + data.message);
+                        showAlert(data.message || 'Check-in failed.', 'danger');
+                        btn.disabled = false;
+                        btn.innerHTML = originalHTML;
                     }
+                })
+                .catch(error => {
+                    showAlert('Network error. Please try again.', 'danger');
+                    btn.disabled = false;
+                    btn.innerHTML = originalHTML;
                 });
             }
         }
 
         function checkOutReservation(id) {
             if (confirm('Are you sure you want to check out this guest?')) {
+                const btn = event.target.closest('button');
+                const originalHTML = btn.innerHTML;
+                btn.disabled = true;
+                btn.innerHTML = '<i class="cil-spinner cil-spin"></i>';
+
                 fetch('reservations.php', {
                     method: 'POST',
                     headers: {
@@ -794,10 +927,18 @@ $todayCheckOuts = $conn->query("
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {
-                        location.reload();
+                        showAlert('Guest checked out successfully!', 'success');
+                        setTimeout(() => location.reload(), 1000);
                     } else {
-                        alert('Error: ' + data.message);
+                        showAlert(data.message || 'Check-out failed.', 'danger');
+                        btn.disabled = false;
+                        btn.innerHTML = originalHTML;
                     }
+                })
+                .catch(error => {
+                    showAlert('Network error. Please try again.', 'danger');
+                    btn.disabled = false;
+                    btn.innerHTML = originalHTML;
                 });
             }
         }
@@ -857,12 +998,189 @@ $todayCheckOuts = $conn->query("
             document.querySelectorAll('input[name="reservation_hour_count"]').forEach(radio => {
                 radio.addEventListener('change', updateAvailableRooms);
             });
-            document.getElementById('reservation_days_count').addEventListener('change', updateAvailableRooms);
+            document.getElementById('reservation_days_count').addEventListener('change', function() {
+                updateAvailableRooms();
+                // Auto-set hours to 0 when days are selected
+                if (this.value) {
+                    document.getElementById('hours_0').checked = true;
+                }
+            });
         });
 
+
+        function showAlert(message, type = 'danger') {
+            const alertContainer = document.getElementById('alertContainer') || createAlertContainer();
+            const alertId = 'alert-' + Date.now();
+
+            const alertHTML = `
+                <div id="${alertId}" class="alert alert-${type} alert-dismissible fade show" role="alert">
+                    <i class="cil-${type === 'success' ? 'check-circle' : 'exclamation-circle'} me-2"></i>
+                    ${message}
+                    <button type="button" class="btn-close" data-coreui-dismiss="alert" aria-label="Close"></button>
+                </div>
+            `;
+
+            alertContainer.insertAdjacentHTML('beforeend', alertHTML);
+
+            // Auto-dismiss after 5 seconds
+            setTimeout(() => {
+                const alert = document.getElementById(alertId);
+                if (alert) {
+                    alert.remove();
+                }
+            }, 5000);
+        }
+
+        function createAlertContainer() {
+            const container = document.createElement('div');
+            container.id = 'alertContainer';
+            container.className = 'position-fixed top-0 end-0 p-3';
+            container.style.zIndex = '9999';
+            document.body.appendChild(container);
+            return container;
+        }
+
+        function validateForm() {
+            const form = document.getElementById('reservationForm');
+            let isValid = true;
+            const errors = [];
+
+            // Clear previous validation states
+            form.querySelectorAll('.is-invalid').forEach(el => el.classList.remove('is-invalid'));
+            form.querySelectorAll('.invalid-feedback').forEach(el => el.remove());
+
+            // Check if guest selection is made
+            const guestId = form.querySelector('#guest_id').value;
+            const newFirstName = form.querySelector('#new_first_name').value;
+
+            if (!guestId && !newFirstName) {
+                errors.push('Please select an existing guest or fill in the new guest information.');
+                isValid = false;
+            }
+
+            // Validate existing guest selection
+            if (guestId && newFirstName) {
+                errors.push('Please select either an existing guest OR create a new guest, not both.');
+                isValid = false;
+            }
+
+            // Validate new guest fields if creating new guest
+            if (!guestId && newFirstName) {
+                const requiredFields = [
+                    { id: 'new_first_name', name: 'First Name' },
+                    { id: 'new_last_name', name: 'Last Name' },
+                    { id: 'new_email', name: 'Email' },
+                    { id: 'new_id_type', name: 'ID Type' },
+                    { id: 'new_id_number', name: 'ID Number' },
+                    { id: 'new_date_of_birth', name: 'Date of Birth' }
+                ];
+
+                requiredFields.forEach(field => {
+                    const element = form.querySelector('#' + field.id);
+                    if (!element.value.trim()) {
+                        element.classList.add('is-invalid');
+                        const feedback = document.createElement('div');
+                        feedback.className = 'invalid-feedback';
+                        feedback.textContent = field.name + ' is required.';
+                        element.parentNode.appendChild(feedback);
+                        isValid = false;
+                    }
+                });
+
+                // Email validation
+                const emailField = form.querySelector('#new_email');
+                if (emailField.value && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailField.value)) {
+                    emailField.classList.add('is-invalid');
+                    const feedback = document.createElement('div');
+                    feedback.className = 'invalid-feedback';
+                    feedback.textContent = 'Please enter a valid email address.';
+                    emailField.parentNode.appendChild(feedback);
+                    isValid = false;
+                }
+
+                // Date of birth validation (must be at least 18 years old)
+                const dobField = form.querySelector('#new_date_of_birth');
+                if (dobField.value) {
+                    const dob = new Date(dobField.value);
+                    const today = new Date();
+                    const age = today.getFullYear() - dob.getFullYear();
+                    if (age < 18) {
+                        dobField.classList.add('is-invalid');
+                        const feedback = document.createElement('div');
+                        feedback.className = 'invalid-feedback';
+                        feedback.textContent = 'Guest must be at least 18 years old.';
+                        dobField.parentNode.appendChild(feedback);
+                        isValid = false;
+                    }
+                }
+            }
+
+            // Validate reservation fields
+            const checkInDate = form.querySelector('#check_in_date').value;
+            if (!checkInDate) {
+                const element = form.querySelector('#check_in_date');
+                element.classList.add('is-invalid');
+                const feedback = document.createElement('div');
+                feedback.className = 'invalid-feedback';
+                feedback.textContent = 'Check-in date and time are required.';
+                element.parentNode.appendChild(feedback);
+                isValid = false;
+            } else {
+                // Check if check-in date is not in the past (allow some buffer for form submission time)
+                const checkIn = new Date(checkInDate);
+                const now = new Date();
+                const bufferTime = 5 * 60 * 1000; // 5 minutes buffer
+                if (checkIn < (now - bufferTime)) {
+                    const element = form.querySelector('#check_in_date');
+                    element.classList.add('is-invalid');
+                    const feedback = document.createElement('div');
+                    feedback.className = 'invalid-feedback';
+                    feedback.textContent = 'Check-in date cannot be in the past.';
+                    element.parentNode.appendChild(feedback);
+                    isValid = false;
+                }
+            }
+
+            // Validate duration - either hours OR days must be selected
+            const hoursChecked = form.querySelector('input[name="reservation_hour_count"]:checked');
+            const daysSelected = form.querySelector('#reservation_days_count').value;
+
+            if (!hoursChecked && !daysSelected) {
+                errors.push('Please select either hours or days for the reservation duration.');
+                isValid = false;
+            }
+
+            // If hours is selected and it's 0, then days must be selected
+            if (hoursChecked && hoursChecked.value === '0' && !daysSelected) {
+                const element = form.querySelector('#reservation_days_count');
+                element.classList.add('is-invalid');
+                const feedback = document.createElement('div');
+                feedback.className = 'invalid-feedback';
+                feedback.textContent = 'Days are required when hours is set to 0.';
+                element.parentNode.appendChild(feedback);
+                isValid = false;
+            }
+
+            if (!isValid && errors.length > 0) {
+                errors.forEach(error => showAlert(error, 'warning'));
+            }
+
+            return isValid;
+        }
+
         function submitReservationForm() {
+            if (!validateForm()) {
+                return;
+            }
+
             const form = document.getElementById('reservationForm');
             const formData = new FormData(form);
+            const submitBtn = form.querySelector('button[type="button"][onclick="submitReservationForm()"]');
+            const originalText = submitBtn.innerHTML;
+
+            // Show loading state
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="cil-spinner cil-spin me-2"></i>Saving...';
 
             fetch('reservations.php', {
                 method: 'POST',
@@ -874,11 +1192,21 @@ $todayCheckOuts = $conn->query("
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
+                    showAlert('Reservation created successfully!', 'success');
                     new coreui.Modal(document.getElementById('reservationModal')).hide();
-                    location.reload();
+                    setTimeout(() => location.reload(), 1000);
                 } else {
-                    alert('Error: ' + data.message);
+                    showAlert(data.message || 'An error occurred while creating the reservation.', 'danger');
                 }
+            })
+            .catch(error => {
+                showAlert('Network error. Please try again.', 'danger');
+                console.error('Error:', error);
+            })
+            .finally(() => {
+                // Reset button state
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalText;
             });
         }
     </script>

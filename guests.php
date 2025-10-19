@@ -78,6 +78,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_HX_REQUEST']))
     exit;
 }
 
+// Guest Loyalty Program: Update VIP status based on stay count and spend
+$loyaltyUpdate = $conn->prepare("
+    UPDATE guests
+    SET loyalty_status = CASE
+        WHEN (stay_count >= 5 OR total_spend >= 1000) THEN 'VIP'
+        ELSE 'Regular'
+    END
+    WHERE stay_count >= 5 OR total_spend >= 1000
+");
+$loyaltyUpdate->execute();
+
 // Get all guests for display
 $stmt = $conn->query("SELECT * FROM guests ORDER BY created_at DESC");
 $guests = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -89,6 +100,7 @@ $stats = $conn->query("
         COUNT(CASE WHEN nationality = 'American' THEN 1 END) as american_guests,
         COUNT(CASE WHEN nationality = 'Canadian' THEN 1 END) as canadian_guests,
         COUNT(CASE WHEN id_type = 'Passport' THEN 1 END) as passport_guests,
+        COUNT(CASE WHEN loyalty_status = 'VIP' THEN 1 END) as vip_guests,
         AVG(TIMESTAMPDIFF(YEAR, date_of_birth, CURDATE())) as avg_age
     FROM guests
 ")->fetch(PDO::FETCH_ASSOC);
@@ -222,6 +234,19 @@ $recentGuests = array_slice($guests, 0, 10);
                     <div class="card-body">
                         <div class="d-flex justify-content-between align-items-center">
                             <div>
+                                <h6 class="card-title mb-1">VIP Guests</h6>
+                                <h3 class="mb-0"><?php echo $stats['vip_guests']; ?></h3>
+                            </div>
+                            <i class="cil-star fs-1 opacity-75"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card stats-card text-white">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
                                 <h6 class="card-title mb-1">Avg Age</h6>
                                 <h3 class="mb-0"><?php echo round($stats['avg_age'] ?: 0); ?> yrs</h3>
                             </div>
@@ -249,6 +274,7 @@ $recentGuests = array_slice($guests, 0, 10);
                                 <th>Contact</th>
                                 <th>ID Info</th>
                                 <th>Nationality</th>
+                                <th>Status</th>
                                 <th>Birth Date</th>
                                 <th>Created</th>
                                 <th>Actions</th>
@@ -277,6 +303,11 @@ $recentGuests = array_slice($guests, 0, 10);
                                     <small class="text-muted"><?php echo htmlspecialchars($guest['id_number']); ?></small>
                                 </td>
                                 <td><?php echo htmlspecialchars($guest['nationality'] ?: 'N/A'); ?></td>
+                                <td>
+                                    <span class="badge bg-<?php echo ($guest['loyalty_status'] ?? 'Regular') === 'VIP' ? 'warning' : 'secondary'; ?>">
+                                        <i class="cil-star me-1"></i><?php echo htmlspecialchars($guest['loyalty_status'] ?? 'Regular'); ?>
+                                    </span>
+                                </td>
                                 <td><?php echo date('M d, Y', strtotime($guest['date_of_birth'])); ?></td>
                                 <td><?php echo date('M d, Y', strtotime($guest['created_at'])); ?></td>
                                 <td>
