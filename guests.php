@@ -143,10 +143,6 @@ $recentGuests = array_slice($guests, 0, 10);
             border-radius: 8px;
             overflow: hidden;
         }
-        .modal-content {
-            background: #2d3748;
-            border: 1px solid #4a5568;
-        }
         .guest-avatar {
             width: 40px;
             height: 40px;
@@ -158,6 +154,12 @@ $recentGuests = array_slice($guests, 0, 10);
             color: white;
             font-weight: bold;
             font-size: 16px;
+        }
+        .reservation-card {
+            transition: transform 0.2s;
+        }
+        .reservation-card:hover {
+            transform: translateY(-2px);
         }
 
         /* Custom font for title */
@@ -178,80 +180,34 @@ $recentGuests = array_slice($guests, 0, 10);
 </head>
 <body>
     <div class="container-fluid p-4">
-        <!-- Header -->
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <div class="text-center flex-grow-1">
-                <?php include 'gueststitle.html'; ?>
-            </div>
-            <button class="btn btn-primary" data-coreui-toggle="modal" data-coreui-target="#guestModal" onclick="openCreateModal()">
-                <i class="cil-plus me-2"></i>Add Guest
-            </button>
-        </div>
 
-        <!-- Statistics Cards -->
-        <div class="row mb-4">
-            <div class="col-md-3">
-                <div class="card stats-card text-white">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <h6 class="card-title mb-1">Total Guests</h6>
-                                <h3 class="mb-0"><?php echo $stats['total_guests']; ?></h3>
-                            </div>
-                            <i class="cil-people fs-1 opacity-75"></i>
-                        </div>
+        <!-- Statistics Card -->
+        <div class="card stats-card text-white mb-4">
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-2">
+                        <h6 class="mb-1">Total</h6>
+                        <h4 class="mb-0"><?php echo $stats['total_guests']; ?></h4>
                     </div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="card stats-card text-white">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <h6 class="card-title mb-1">American Guests</h6>
-                                <h3 class="mb-0"><?php echo $stats['american_guests']; ?></h3>
-                            </div>
-                            <i class="cil-flag fs-1 opacity-75"></i>
-                        </div>
+                    <div class="col-2">
+                        <h6 class="mb-1">American</h6>
+                        <h4 class="mb-0"><?php echo $stats['american_guests']; ?></h4>
                     </div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="card stats-card text-white">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <h6 class="card-title mb-1">Passport Holders</h6>
-                                <h3 class="mb-0"><?php echo $stats['passport_guests']; ?></h3>
-                            </div>
-                            <i class="cil-id-card fs-1 opacity-75"></i>
-                        </div>
+                    <div class="col-2">
+                        <h6 class="mb-1">Passports</h6>
+                        <h4 class="mb-0"><?php echo $stats['passport_guests']; ?></h4>
                     </div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="card stats-card text-white">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <h6 class="card-title mb-1">VIP Guests</h6>
-                                <h3 class="mb-0"><?php echo $stats['vip_guests']; ?></h3>
-                            </div>
-                            <i class="cil-star fs-1 opacity-75"></i>
-                        </div>
+                    <div class="col-2">
+                        <h6 class="mb-1">VIP</h6>
+                        <h4 class="mb-0"><?php echo $stats['vip_guests']; ?></h4>
                     </div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="card stats-card text-white">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <h6 class="card-title mb-1">Avg Age</h6>
-                                <h3 class="mb-0"><?php echo round($stats['avg_age'] ?: 0); ?> yrs</h3>
-                            </div>
-                            <i class="cil-calendar fs-1 opacity-75"></i>
-                        </div>
+                    <div class="col-2">
+                        <h6 class="mb-1">Canadian</h6>
+                        <h4 class="mb-0"><?php echo $stats['canadian_guests']; ?></h4>
+                    </div>
+                    <div class="col-2">
+                        <h6 class="mb-1">Avg Age</h6>
+                        <h4 class="mb-0"><?php echo round($stats['avg_age'] ?: 0); ?> yrs</h4>
                     </div>
                 </div>
             </div>
@@ -261,11 +217,16 @@ $recentGuests = array_slice($guests, 0, 10);
         <div class="card">
             <div class="card-header d-flex justify-content-between align-items-center">
                 <h5 class="mb-0">Guests</h5>
-                <button class="btn btn-success btn-sm" onclick="generateReport()">
-                    <i class="cil-file-pdf me-2"></i>Generate Report
-                </button>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-sm btn-success" onclick="generateReport()">
+                        <i class="cil-file-pdf me-1"></i>Report
+                    </button>
+                    <button class="btn btn-sm btn-outline-primary" onclick="openCreateModal()">
+                        <i class="cil-plus me-1"></i>Add Guest
+                    </button>
+                </div>
             </div>
-            <div class="card-body">
+            <div class="card-body p-0">
                 <div class="table-responsive">
                     <table class="table table-hover mb-0">
                         <thead class="table-dark">
@@ -335,7 +296,7 @@ $recentGuests = array_slice($guests, 0, 10);
                 <div class="row">
                     <?php foreach ($recentGuests as $guest): ?>
                     <div class="col-md-6 col-lg-4 mb-3">
-                        <div class="card h-100">
+                        <div class="card h-100" style="border-left: 4px solid <?php echo ($guest['loyalty_status'] ?? 'Regular') === 'VIP' ? '#fd7e14' : '#6c757d'; ?>;">
                             <div class="card-body">
                                 <div class="d-flex align-items-center mb-3">
                                     <div class="guest-avatar me-3">

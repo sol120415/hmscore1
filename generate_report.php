@@ -249,7 +249,7 @@ switch ($page) {
 }
 
 $dompdf->loadHtml($html);
-$dompdf->setPaper('A4', 'portrait');
+$dompdf->setPaper('A4', 'landscape');
 $dompdf->render();
 
 $dompdf->stream($page . '_report_' . date('Y-m-d') . '.pdf', array('Attachment' => true));

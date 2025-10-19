@@ -35,8 +35,8 @@ if(!isset($_SESSION['email'])){
     <title>Dashboard</title>
     <style>
         .main-content {
-            margin-left: 85px;
-            margin-right: 20px;
+            margin-left: 40px;
+            margin-right: 30px;
         }
         .sidebar-nav .nav-link {
             padding: 0.375rem 0.75rem;
@@ -50,73 +50,76 @@ if(!isset($_SESSION['email'])){
     <script src="js/bootstrap.bundle.js"></script>
 </head>
 <body>
-<div class="sidebar sidebar-narrow-unfoldable border-start" >
+
+<div class="d-flex">
+  <div class="sidebar sidebar-narrow-unfoldable border-end" >
   <ul class="sidebar-nav">
     <li class="nav-item">
       <a class="nav-link" href="?page=frontdesk">
-        <i class="nav-icon cil-speedometer"></i> Frontdesk
+        <i class="nav-icon cil-speedometer"></i>Front Desk
       </a>
     </li>
     <li class="nav-item">
       <a class="nav-link" href="?page=reservations">
-        <i class="nav-icon cil-calendar"></i> Reservations
+        <i class="nav-icon cil-calendar"></i>Reservations
       </a>
     </li>
     <li class="nav-item">
       <a class="nav-link" href="?page=rooms">
-        <i class="nav-icon cil-bed"></i> Rooms
+        <i class="nav-icon cil-bed"></i>Rooms
       </a>
     </li>
     <li class="nav-item">
       <a class="nav-link" href="?page=room_billing">
-        <i class="nav-icon cil-dollar"></i> Room Billing
+        <i class="nav-icon cil-dollar"></i>Room Billing
       </a>
     </li>
     <li class="nav-item">
       <a class="nav-link" href="?page=events">
-        <i class="nav-icon cil-calendar-check"></i> Events
+        <i class="nav-icon cil-calendar-check"></i>Events
       </a>
     </li>
     <li class="nav-item">
       <a class="nav-link" href="?page=housekeeping">
-        <i class="nav-icon cil-home"></i> Housekeeping
+        <i class="nav-icon cil-home"></i>Housekeeping
       </a>
     </li>
     <li class="nav-item">
       <a class="nav-link" href="?page=guests">
-        <i class="nav-icon cil-people"></i> Guests
+        <i class="nav-icon cil-people"></i>Guests
       </a>
     </li>
     <li class="nav-item">
       <a class="nav-link" href="?page=inventory">
-        <i class="nav-icon cil-list"></i> Inventory
+        <i class="nav-icon cil-list"></i>Inventory  
       </a>
     </li>
     <li class="nav-item">
       <a class="nav-link" href="?page=marketing">
-        <i class="nav-icon cil-bullhorn"></i> Marketing
+        <i class="nav-icon cil-bullhorn"></i>Marketing
       </a>
     </li>
     <li class="nav-item">
       <a class="nav-link" href="?page=channels">
-        <i class="nav-icon cil-wifi-signal-4"></i> Channels
+        <i class="nav-icon cil-wifi-signal-4"></i>Channels
       </a>
     </li>
     <li class="nav-item">
       <a class="nav-link" href="?page=analytics">
-        <i class="nav-icon cil-chart-line"></i> Analytics
+        <i class="nav-icon cil-chart-line"></i>Analytics
       </a>
     </li>
     <li class="nav-item">
       <a class="nav-link" href="?page=logout">
-        <i class="nav-icon cil-exit-to-app"></i> Logout
+        <i class="nav-icon cil-exit-to-app"></i>Logout
       </a>
     </li>
-    
-    
+
+
   </ul>
 </div>
 <div class="main-content" id="main-content">
+</div>
   <?php
   $page = $_GET['page'] ?? 'frontdesk';
   $content_file = $page . '.php';
@@ -127,12 +130,27 @@ if(!isset($_SESSION['email'])){
   }
 
   // Handle logout
-if ($_GET['page'] == 'logout') {
-  session_destroy();
-  header('Location: login.php');
-  exit;
-}
+ if ($_GET['page'] == 'logout') {
+   session_destroy();
+   header('Location: login.php');
+   exit;
+ }
   ?>
+
+  <script>
+    // Highlight current page in sidebar
+    document.addEventListener('DOMContentLoaded', function() {
+      const currentPage = '<?php echo $page; ?>';
+      const navLinks = document.querySelectorAll('.sidebar-nav .nav-link');
+
+      navLinks.forEach(link => {
+        const href = link.getAttribute('href');
+        if (href && href.includes('page=' + currentPage)) {
+          link.classList.add('active');
+        }
+      });
+    });
+  </script>
   
   <script>
     // Initialize popover

@@ -30,6 +30,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_HX_REQUEST']))
                     echo json_encode(['success' => true, 'message' => 'Room created successfully']);
                     break;
 
+                case 'create_housekeeping':
+                    // Create housekeeping task
+                    $stmt = $conn->prepare("INSERT INTO housekeeping (room_id, housekeeper_id, task_type, priority, scheduled_date, scheduled_time, estimated_duration_minutes, supervisor_notes, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
+                    $stmt->execute([
+                        $_POST['room_id'],
+                        $_POST['housekeeper_id'] ?: null,
+                        $_POST['task_type'],
+                        $_POST['priority'],
+                        $_POST['scheduled_date'],
+                        $_POST['scheduled_time'],
+                        $_POST['estimated_duration_minutes'],
+                        $_POST['supervisor_notes'] ?: null,
+                        $_SESSION['user_id'] ?? 1 // Default to admin user
+                    ]);
+
+                    // Update room status to Cleaning if housekeeper assigned
+                    if (!empty($_POST['housekeeper_id'])) {
+                        $stmt = $conn->prepare("UPDATE rooms SET room_status = 'Cleaning' WHERE id = ?");
+                        $stmt->execute([$_POST['room_id']]);
+                    }
+
+                    echo json_encode(['success' => true, 'message' => 'Housekeeping task assigned successfully']);
+                    break;
+
                 case 'update':
                     // Update room
                     $stmt = $conn->prepare("UPDATE rooms SET room_number=?, room_type=?, room_floor=?, room_status=?, room_max_guests=?, room_amenities=?, room_maintenance_notes=? WHERE id=?");
@@ -68,8 +92,89 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_HX_REQUEST']))
     exit;
 }
 
-// Get all rooms for display
-$rooms = $conn->query("SELECT * FROM rooms ORDER BY room_floor ASC, room_number ASC")->fetchAll(PDO::FETCH_ASSOC);
+// Handle HTMX filter requests (GET requests)
+if (isset($_GET['floor']) || isset($_GET['status'])) {
+    $floor = $_GET['floor'] ?? '';
+    $status = $_GET['status'] ?? '';
+
+    $whereClause = '';
+    $conditions = [];
+
+    if (!empty($floor)) {
+        $conditions[] = "room_floor = '$floor'";
+    }
+    if (!empty($status)) {
+        $conditions[] = "room_status = '$status'";
+    }
+
+    if (!empty($conditions)) {
+        $whereClause = "WHERE " . implode(" AND ", $conditions);
+    }
+
+    $rooms = $conn->query("SELECT * FROM rooms $whereClause ORDER BY room_floor ASC, room_number ASC")->fetchAll(PDO::FETCH_ASSOC);
+
+    // Output just the rooms HTML for HTMX
+    ?>
+    <div class="row">
+        <?php foreach ($rooms as $room): ?>
+        <div class="col-md-3 col-lg-2 mb-3">
+            <div class="card room-card room-<?php echo strtolower($room['room_status']); ?> text-white h-100" onclick="editRoom(<?php echo $room['id']; ?>)">
+                <div class="card-body text-center position-relative">
+                    <?php
+                    // Check if room has an assigned housekeeper
+                    $hasHousekeeper = $conn->query("SELECT COUNT(*) as count FROM housekeeping WHERE room_id = {$room['id']} AND status IN ('Pending', 'In Progress')")->fetch(PDO::FETCH_ASSOC)['count'] > 0;
+                    ?>
+                    <?php if ($room['room_status'] === 'Cleaning'): ?>
+                    <div class="position-absolute top-0 end-0" style="margin-top: -8px; margin-right: -8px;">
+                        <button class="btn btn-success btn-sm rounded-circle shadow" onclick="event.stopPropagation(); openHousekeepingModal(<?php echo $room['id']; ?>, '<?php echo htmlspecialchars($room['room_number']); ?>')" title="Room Being Cleaned">
+                            <i class="cil-check text-white"></i>
+                        </button>
+                    </div>
+                    <?php elseif ($room['room_status'] === 'Maintenance'): ?>
+                    <div class="position-absolute top-0 end-0" style="margin-top: -8px; margin-right: -8px;">
+                        <button class="btn btn-warning btn-sm rounded-circle shadow" onclick="event.stopPropagation(); openHousekeepingModal(<?php echo $room['id']; ?>, '<?php echo htmlspecialchars($room['room_number']); ?>')" title="Assign Housekeeper">
+                            <i class="cil-wrench text-dark"></i>
+                        </button>
+                    </div>
+                    <?php elseif ($hasHousekeeper): ?>
+                    <div class="position-absolute top-0 end-0" style="margin-top: -8px; margin-right: -8px;">
+                        <button class="btn btn-info btn-sm rounded-circle shadow" onclick="event.stopPropagation(); openHousekeepingModal(<?php echo $room['id']; ?>, '<?php echo htmlspecialchars($room['room_number']); ?>')" title="View Housekeeping Task">
+                            <i class="cil-broom text-white"></i>
+                        </button>
+                    </div>
+                    <?php endif; ?>
+                    <h5 class="card-title mb-1"><?php echo htmlspecialchars($room['room_number']); ?></h5>
+                    <p class="card-text mb-2"><?php echo htmlspecialchars($room['room_type']); ?></p>
+                    <span class="badge bg-light text-dark"><?php echo htmlspecialchars($room['room_status']); ?></span>
+                    <br><small class="mt-2 d-block"><?php echo htmlspecialchars($room['room_max_guests']); ?> guests max</small>
+                </div>
+            </div>
+        </div>
+        <?php endforeach; ?>
+    </div>
+    <?php
+    exit;
+}
+
+// Get data for display (filtered if applicable)
+$floor = $_GET['floor'] ?? '';
+$status = $_GET['status'] ?? '';
+
+$whereClause = '';
+$conditions = [];
+
+if (!empty($floor)) {
+    $conditions[] = "room_floor = '$floor'";
+}
+if (!empty($status)) {
+    $conditions[] = "room_status = '$status'";
+}
+
+if (!empty($conditions)) {
+    $whereClause = "WHERE " . implode(" AND ", $conditions);
+}
+
+$rooms = $conn->query("SELECT * FROM rooms $whereClause ORDER BY room_floor ASC, room_number ASC")->fetchAll(PDO::FETCH_ASSOC);
 
 // Get room statistics
 $stats = $conn->query("
@@ -132,268 +237,300 @@ $occupancyRate = $stats['total_rooms'] > 0 ? round(($stats['occupied_rooms'] / $
             border-radius: 12px;
         }
         .room-card {
-            transition: transform 0.2s;
+            transition: all 0.2s ease;
             cursor: pointer;
+            border: 2px solid transparent;
         }
         .room-card:hover {
             transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
         }
         .room-vacant {
-            background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+            background: linear-gradient(135deg, #2d5016, #1a3326);
+            color: #d4edda;
         }
         .room-occupied {
-            background: linear-gradient(135deg, #ed8936 0%, #dd6b20 100%);
+            background: linear-gradient(135deg, #721c24, #4a0f14);
+            color: #f8d7da;
         }
         .room-cleaning {
-            background: linear-gradient(135deg, #4299e1 0%, #3182ce 100%);
+            background: linear-gradient(135deg, #856404, #5a3d02);
+            color: #fff3cd;
         }
         .room-maintenance {
-            background: linear-gradient(135deg, #e53e3e 0%, #c53030 100%);
+            background: linear-gradient(135deg, #0c5460, #062a30);
+            color: #d1ecf1;
         }
         .room-reserved {
-            background: linear-gradient(135deg, #9f7aea 0%, #805ad5 100%);
+            background: linear-gradient(135deg, #383d41, #212529);
+            color: #e2e3e5;
         }
-        .modal-content {
-            background: #2d3748;
-            border: 1px solid #4a5568;
+        .input-group-text {
+            background: #4a5568;
+            border-color: #4a5568;
+            color: #e2e8f0;
+        }
+        .form-control:focus, .form-select:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
         }
         .floor-section {
             margin-bottom: 2rem;
         }
         .floor-header {
-            background: #4a5568;
-            color: white;
-            padding: 0.75rem 1rem;
-            border-radius: 8px 8px 0 0;
-            margin-bottom: 0;
+            margin-bottom: 1rem;
+            padding: 0.5rem 1rem;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
         }
     </style>
 </head>
 <body>
     <div class="container-fluid p-4">
-        <!-- Header -->
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <div class="text-center flex-grow-1">
+
+        <!-- Header with Stats -->
+        <div class="mb-4">
+            <div class="d-flex justify-content-between gap-3 text-center">
+                <div class="text-center flex-grow-1">
                 <?php include 'roomtitle.html'; ?>
-            </div>
-            <button class="btn btn-primary" data-coreui-toggle="modal" data-coreui-target="#roomModal" onclick="openCreateModal()">
-                <i class="cil-plus me-2"></i>Add Room
-            </button>
-        </div>
-
-        <!-- Statistics Cards -->
-        <div class="row mb-4">
-            <div class="col-md-2">
-                <div class="card stats-card text-white">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <h6 class="card-title mb-1">Total Rooms</h6>
-                                <h3 class="mb-0"><?php echo $stats['total_rooms']; ?></h3>
-                            </div>
-                            <i class="cil-home fs-1 opacity-75"></i>
-                        </div>
-                    </div>
                 </div>
-            </div>
-            <div class="col-md-2">
-                <div class="card stats-card text-white">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <h6 class="card-title mb-1">Vacant</h6>
-                                <h3 class="mb-0"><?php echo $stats['vacant_rooms']; ?></h3>
-                            </div>
-                            <i class="cil-check-circle fs-1 opacity-75"></i>
-                        </div>
-                    </div>
+                <div>
+                    <small class="text-muted d-block">Total</small>
+                    <span class="fw-bold text-primary"><?php echo $stats['total_rooms']; ?></span>
                 </div>
-            </div>
-            <div class="col-md-2">
-                <div class="card stats-card text-white">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <h6 class="card-title mb-1">Occupied</h6>
-                                <h3 class="mb-0"><?php echo $stats['occupied_rooms']; ?></h3>
-                            </div>
-                            <i class="cil-user fs-1 opacity-75"></i>
-                        </div>
-                    </div>
+                <div>
+                    <small class="text-muted d-block">Vacant</small>
+                    <span class="fw-bold text-success"><?php echo $stats['vacant_rooms']; ?></span>
                 </div>
-            </div>
-            <div class="col-md-2">
-                <div class="card stats-card text-white">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <h6 class="card-title mb-1">Cleaning</h6>
-                                <h3 class="mb-0"><?php echo $stats['cleaning_rooms']; ?></h3>
-                            </div>
-                            <i class="cil-brush fs-1 opacity-75"></i>
-                        </div>
-                    </div>
+                <div>
+                    <small class="text-muted d-block">Occupied</small>
+                    <span class="fw-bold text-warning"><?php echo $stats['occupied_rooms']; ?></span>
                 </div>
-            </div>
-            <div class="col-md-2">
-                <div class="card stats-card text-white">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <h6 class="card-title mb-1">Maintenance</h6>
-                                <h3 class="mb-0"><?php echo $stats['maintenance_rooms']; ?></h3>
-                            </div>
-                            <i class="cil-wrench fs-1 opacity-75"></i>
-                        </div>
-                    </div>
+                <div>
+                    <small class="text-muted d-block">Cleaning</small>
+                    <span class="fw-bold text-info"><?php echo $stats['cleaning_rooms']; ?></span>
                 </div>
-            </div>
-            <div class="col-md-2">
-                <div class="card stats-card text-white">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <h6 class="card-title mb-1">Occupancy</h6>
-                                <h3 class="mb-0"><?php echo $occupancyRate; ?>%</h3>
-                            </div>
-                            <i class="cil-chart-pie fs-1 opacity-75"></i>
-                        </div>
-                    </div>
+                <div>
+                    <small class="text-muted d-block">Maintenance</small>
+                    <span class="fw-bold text-danger"><?php echo $stats['maintenance_rooms']; ?></span>
+                </div>
+                <div>
+                    <small class="text-muted d-block">Occupancy</small>
+                    <span class="fw-bold text-secondary"><?php echo $occupancyRate; ?>%</span>
+                </div>
+                <div class="vr"></div>
+                <div>
+                    <small class="text-muted d-block">Single</small>
+                    <span class="fw-bold text-primary"><?php echo $stats['single_rooms']; ?></span>
+                </div>
+                <div>
+                    <small class="text-muted d-block">Double</small>
+                    <span class="fw-bold text-success"><?php echo $stats['double_rooms']; ?></span>
+                </div>
+                <div>
+                    <small class="text-muted d-block">Deluxe</small>
+                    <span class="fw-bold text-warning"><?php echo $stats['deluxe_rooms']; ?></span>
+                </div>
+                <div>
+                    <small class="text-muted d-block">Suites</small>
+                    <span class="fw-bold text-danger"><?php echo $stats['suite_rooms']; ?></span>
                 </div>
             </div>
         </div>
 
-        <!-- Room Type Breakdown -->
-        <div class="row mb-4">
-            <div class="col-md-3">
-                <div class="card text-center">
-                    <div class="card-body">
-                        <h5 class="card-title">Single Rooms</h5>
-                        <h3 class="text-primary"><?php echo $stats['single_rooms']; ?></h3>
-                        <small class="text-muted">$1,500/night</small>
+
+        <!-- Rooms -->
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Rooms</h5>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-outline-primary btn-sm" data-coreui-toggle="modal" data-coreui-target="#roomModal" onclick="openCreateModal()">
+                        New Room
+                    </button>
+                    <div class="btn-group" role="group">
+                        <button type="button" class="btn btn-outline-secondary btn-sm active"
+                                hx-get="rooms.php" hx-target="#roomsContainer" hx-swap="innerHTML"
+                                onclick="setActive(this)">All</button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm"
+                                hx-get="rooms.php?floor=1" hx-target="#roomsContainer" hx-swap="innerHTML"
+                                onclick="setActive(this)">Floor 1</button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm"
+                                hx-get="rooms.php?floor=2" hx-target="#roomsContainer" hx-swap="innerHTML"
+                                onclick="setActive(this)">Floor 2</button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm"
+                                hx-get="rooms.php?floor=3" hx-target="#roomsContainer" hx-swap="innerHTML"
+                                onclick="setActive(this)">Floor 3</button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm"
+                                hx-get="rooms.php?floor=4" hx-target="#roomsContainer" hx-swap="innerHTML"
+                                onclick="setActive(this)">Floor 4</button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm"
+                                hx-get="rooms.php?floor=5" hx-target="#roomsContainer" hx-swap="innerHTML"
+                                onclick="setActive(this)">Floor 5</button>
+                    </div>
+                    <div class="btn-group" role="group">
+                        <button type="button" class="btn btn-outline-secondary btn-sm active"
+                                hx-get="rooms.php" hx-target="#roomsContainer" hx-swap="innerHTML"
+                                onclick="setActive(this)">All Status</button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm"
+                                hx-get="rooms.php?status=Vacant" hx-target="#roomsContainer" hx-swap="innerHTML"
+                                onclick="setActive(this)">Vacant</button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm"
+                                hx-get="rooms.php?status=Occupied" hx-target="#roomsContainer" hx-swap="innerHTML"
+                                onclick="setActive(this)">Occupied</button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm"
+                                hx-get="rooms.php?status=Cleaning" hx-target="#roomsContainer" hx-swap="innerHTML"
+                                onclick="setActive(this)">Cleaning</button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm"
+                                hx-get="rooms.php?status=Maintenance" hx-target="#roomsContainer" hx-swap="innerHTML"
+                                onclick="setActive(this)">Maintenance</button>
                     </div>
                 </div>
             </div>
-            <div class="col-md-3">
-                <div class="card text-center">
-                    <div class="card-body">
-                        <h5 class="card-title">Double Rooms</h5>
-                        <h3 class="text-success"><?php echo $stats['double_rooms']; ?></h3>
-                        <small class="text-muted">$2,500/night</small>
+            <div class="card-body">
+                <div class="row" id="roomsContainer">
+                    <?php foreach ($rooms as $room): ?>
+                    <div class="col-md-3 col-lg-2 mb-3">
+                        <div class="card room-card room-<?php echo strtolower($room['room_status']); ?> text-white h-100" onclick="editRoom(<?php echo $room['id']; ?>)">
+                            <div class="card-body text-center position-relative">
+                                <?php
+                                // Check if room has an assigned housekeeper
+                                $hasHousekeeper = $conn->query("SELECT COUNT(*) as count FROM housekeeping WHERE room_id = {$room['id']} AND status IN ('Pending', 'In Progress')")->fetch(PDO::FETCH_ASSOC)['count'] > 0;
+                                ?>
+                                <?php if ($room['room_status'] === 'Cleaning'): ?>
+                                <div class="position-absolute top-0 end-0" style="margin-top: -8px; margin-right: -8px;">
+                                    <button class="btn btn-success btn-sm rounded-circle shadow" onclick="event.stopPropagation(); openHousekeepingModal(<?php echo $room['id']; ?>, '<?php echo htmlspecialchars($room['room_number']); ?>')" title="Room Being Cleaned">
+                                        <i class="cil-check text-white"></i>
+                                    </button>
+                                </div>
+                                <?php elseif ($room['room_status'] === 'Maintenance'): ?>
+                                <div class="position-absolute top-0 end-0" style="margin-top: -8px; margin-right: -8px;">
+                                    <button class="btn btn-warning btn-sm rounded-circle shadow" onclick="event.stopPropagation(); openHousekeepingModal(<?php echo $room['id']; ?>, '<?php echo htmlspecialchars($room['room_number']); ?>')" title="Assign Housekeeper">
+                                        <i class="cil-settings text-dark"></i>
+                                    </button>
+                                </div>
+                                <?php elseif ($hasHousekeeper): ?>
+                                <div class="position-absolute top-0 end-0" style="margin-top: -8px; margin-right: -8px;">
+                                    <button class="btn btn-info btn-sm rounded-circle shadow" onclick="event.stopPropagation(); openHousekeepingModal(<?php echo $room['id']; ?>, '<?php echo htmlspecialchars($room['room_number']); ?>')" title="View Housekeeping Task">
+                                        <i class="cil-broom text-white"></i>
+                                    </button>
+                                </div>
+                                <?php endif; ?>
+                                <h5 class="card-title mb-1"><?php echo htmlspecialchars($room['room_number']); ?></h5>
+                                <p class="card-text mb-2"><?php echo htmlspecialchars($room['room_type']); ?></p>
+                                <span class="badge bg-light text-dark"><?php echo htmlspecialchars($room['room_status']); ?></span>
+                                <br><small class="mt-2 d-block"><?php echo htmlspecialchars($room['room_max_guests']); ?> guests max</small>
+                            </div>
+                        </div>
                     </div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="card text-center">
-                    <div class="card-body">
-                        <h5 class="card-title">Deluxe Rooms</h5>
-                        <h3 class="text-warning"><?php echo $stats['deluxe_rooms']; ?></h3>
-                        <small class="text-muted">$3,500/night</small>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="card text-center">
-                    <div class="card-body">
-                        <h5 class="card-title">Suites</h5>
-                        <h3 class="text-danger"><?php echo $stats['suite_rooms']; ?></h3>
-                        <small class="text-muted">$4,500/night</small>
-                    </div>
+                    <?php endforeach; ?>
                 </div>
             </div>
         </div>
+    </div>
 
-        <!-- Rooms by Floor -->
-        <?php foreach ($roomsByFloor as $floor => $floorRooms): ?>
-        <div class="floor-section">
-            <div class="floor-header">
-                <h4 class="mb-0">Floor <?php echo $floor; ?> (<?php echo count($floorRooms); ?> rooms)</h4>
-            </div>
-            <div class="card">
-                <div class="card-body">
-                    <div class="row">
-                        <?php foreach ($floorRooms as $room): ?>
-                        <div class="col-md-3 col-lg-2 mb-3">
-                            <div class="card room-card room-<?php echo strtolower($room['room_status']); ?> text-white h-100" onclick="editRoom(<?php echo $room['id']; ?>)">
-                                <div class="card-body text-center">
-                                    <h5 class="card-title mb-1"><?php echo htmlspecialchars($room['room_number']); ?></h5>
-                                    <p class="card-text mb-2"><?php echo htmlspecialchars($room['room_type']); ?></p>
-                                    <span class="badge bg-light text-dark"><?php echo htmlspecialchars($room['room_status']); ?></span>
-                                    <br><small class="mt-2 d-block"><?php echo htmlspecialchars($room['room_max_guests']); ?> guests max</small>
+    <!-- Housekeeping Modal -->
+    <div class="modal fade" id="housekeepingModal" tabindex="-1" style="--cui-modal-border-radius: 16px; --cui-modal-box-shadow: 0 10px 40px rgba(0,0,0,0.3); --cui-modal-bg: #2d3748; --cui-modal-border-color: #4a5568;">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="housekeepingModalTitle">Assign Housekeeper</h5>
+                    <button type="button" class="btn-close" data-coreui-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="housekeepingForm">
+                        <input type="hidden" name="action" value="create_housekeeping">
+                        <input type="hidden" name="room_id" id="housekeepingRoomId">
+
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label for="housekeepingRoomNumber" class="form-label fw-bold">Room Number</label>
+                                <div class="input-group input-group-sm">
+                                    <span class="input-group-text"><i class="cil-home"></i></span>
+                                    <input type="text" class="form-control" id="housekeepingRoomNumber" readonly>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="housekeeper_id" class="form-label fw-bold">Housekeeper</label>
+                                <div class="input-group input-group-sm">
+                                    <span class="input-group-text"><i class="cil-user"></i></span>
+                                    <select class="form-select" id="housekeeper_id" name="housekeeper_id">
+                                        <option value="">Select Housekeeper</option>
+                                        <?php
+                                        $housekeepers = $conn->query("SELECT id, first_name, last_name, employee_id FROM housekeepers WHERE status = 'Active' ORDER BY first_name, last_name")->fetchAll(PDO::FETCH_ASSOC);
+                                        foreach ($housekeepers as $housekeeper): ?>
+                                        <option value="<?php echo $housekeeper['id']; ?>"><?php echo htmlspecialchars($housekeeper['first_name'] . ' ' . $housekeeper['last_name'] . ' (' . $housekeeper['employee_id'] . ')'); ?></option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="task_type" class="form-label fw-bold">Task Type</label>
+                                <div class="input-group input-group-sm">
+                                    <span class="input-group-text"><i class="cil-task"></i></span>
+                                    <select class="form-select" id="task_type" name="task_type">
+                                        <option value="Regular Cleaning">Regular Cleaning</option>
+                                        <option value="Deep Cleaning">Deep Cleaning</option>
+                                        <option value="Maintenance">Maintenance</option>
+                                        <option value="Inspection">Inspection</option>
+                                        <option value="Emergency">Emergency</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="priority" class="form-label fw-bold">Priority</label>
+                                <div class="input-group input-group-sm">
+                                    <span class="input-group-text"><i class="cil-bell"></i></span>
+                                    <select class="form-select" id="priority" name="priority">
+                                        <option value="Low">Low</option>
+                                        <option value="Normal">Normal</option>
+                                        <option value="High">High</option>
+                                        <option value="Urgent">Urgent</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="scheduled_date" class="form-label fw-bold">Scheduled Date</label>
+                                <div class="input-group input-group-sm">
+                                    <span class="input-group-text"><i class="cil-calendar"></i></span>
+                                    <input type="date" class="form-control" id="scheduled_date" name="scheduled_date" value="<?php echo date('Y-m-d'); ?>" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="scheduled_time" class="form-label fw-bold">Scheduled Time</label>
+                                <div class="input-group input-group-sm">
+                                    <span class="input-group-text"><i class="cil-clock"></i></span>
+                                    <input type="time" class="form-control" id="scheduled_time" name="scheduled_time" value="09:00" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="estimated_duration_minutes" class="form-label fw-bold">Estimated Duration (minutes)</label>
+                                <div class="input-group input-group-sm">
+                                    <span class="input-group-text"><i class="cil-timer"></i></span>
+                                    <input type="number" class="form-control" id="estimated_duration_minutes" name="estimated_duration_minutes" min="15" max="480" value="60" placeholder="Minutes">
+                                </div>
+                            </div>
+                            <div class="col-12">
+                                <label for="supervisor_notes" class="form-label fw-bold">Supervisor Notes</label>
+                                <div class="input-group input-group-sm">
+                                    <span class="input-group-text"><i class="cil-notes"></i></span>
+                                    <textarea class="form-control" id="supervisor_notes" name="supervisor_notes" rows="2" placeholder="Supervisor notes or special instructions"></textarea>
                                 </div>
                             </div>
                         </div>
-                        <?php endforeach; ?>
-                    </div>
+                    </form>
                 </div>
-            </div>
-        </div>
-        <?php endforeach; ?>
-
-        <!-- Room Details Table -->
-        <div class="card mt-4">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <h5 class="mb-0">Room Details</h5>
-                <button class="btn btn-success btn-sm" onclick="generateReport()">
-                    <i class="cil-file-pdf me-2"></i>Generate Report
-                </button>
-            </div>
-            <div class="card-body">
-                <div class="table-responsive">
-                    <table class="table table-hover mb-0">
-                        <thead class="table-dark">
-                            <tr>
-                                <th>Room Number</th>
-                                <th>Type</th>
-                                <th>Floor</th>
-                                <th>Status</th>
-                                <th>Max Guests</th>
-                                <th>Amenities</th>
-                                <th>Last Cleaned</th>
-                                <th>Maintenance Notes</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php foreach ($rooms as $room): ?>
-                            <tr>
-                                <td><?php echo htmlspecialchars($room['room_number']); ?></td>
-                                <td><?php echo htmlspecialchars($room['room_type']); ?></td>
-                                <td><?php echo htmlspecialchars($room['room_floor']); ?></td>
-                                <td>
-                                    <span class="badge bg-<?php
-                                        echo $room['room_status'] === 'Vacant' ? 'success' :
-                                             ($room['room_status'] === 'Occupied' ? 'warning' :
-                                             ($room['room_status'] === 'Cleaning' ? 'primary' :
-                                             ($room['room_status'] === 'Maintenance' ? 'danger' : 'secondary')));
-                                    ?>">
-                                        <?php echo htmlspecialchars($room['room_status']); ?>
-                                    </span>
-                                </td>
-                                <td><?php echo htmlspecialchars($room['room_max_guests']); ?></td>
-                                <td><?php echo htmlspecialchars($room['room_amenities'] ?: 'N/A'); ?></td>
-                                <td><?php echo $room['room_last_cleaned'] ? date('M d, Y', strtotime($room['room_last_cleaned'])) : 'Never'; ?></td>
-                                <td><?php echo htmlspecialchars($room['room_maintenance_notes'] ?: 'N/A'); ?></td>
-                                <td>
-                                    <button class="btn btn-sm btn-outline-primary me-1" onclick="editRoom(<?php echo $room['id']; ?>)">
-                                        <i class="cil-pencil"></i>
-                                    </button>
-                                    <button class="btn btn-sm btn-outline-danger" onclick="deleteRoom(<?php echo $room['id']; ?>, '<?php echo htmlspecialchars($room['room_number']); ?>')">
-                                        <i class="cil-trash"></i>
-                                    </button>
-                                </td>
-                            </tr>
-                            <?php endforeach; ?>
-                        </tbody>
-                    </table>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-coreui-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Assign Task</button>
                 </div>
             </div>
         </div>
     </div>
 
     <!-- Room Modal -->
-    <div class="modal fade" id="roomModal" tabindex="-1">
-        <div class="modal-dialog modal-lg">
+    <div class="modal fade" id="roomModal" tabindex="-1" style="--cui-modal-border-radius: 16px; --cui-modal-box-shadow: 0 10px 40px rgba(0,0,0,0.3); --cui-modal-bg: #2d3748; --cui-modal-border-color: #4a5568;">
+        <div class="modal-dialog ">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="modalTitle">Add Room</h5>
@@ -404,54 +541,60 @@ $occupancyRate = $stats['total_rooms'] > 0 ? round(($stats['occupied_rooms'] / $
                         <input type="hidden" name="action" id="formAction" value="create">
                         <input type="hidden" name="id" id="roomId">
 
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label for="room_number" class="form-label">Room Number *</label>
-                                <input type="text" class="form-control" id="room_number" name="room_number" required>
+                        <div class="row g-2">
+                            <div class="col-md-6">
+                                <div class="input-group input-group-sm">
+                                    <span class="input-group-text"><i class="cil-home"></i></span>
+                                    <input type="text" class="form-control" id="room_number" name="room_number" placeholder="Room Number *">
+                                </div>
                             </div>
-                            <div class="col-md-6 mb-3">
-                                <label for="room_floor" class="form-label">Floor *</label>
-                                <input type="text" class="form-control" id="room_floor" name="room_floor" required>
+                            <div class="col-md-6">
+                                <div class="input-group input-group-sm">
+                                    <span class="input-group-text"><i class="cil-arrow-up"></i></span>
+                                    <input type="text" class="form-control" id="room_floor" name="room_floor" placeholder="Floor *">
+                                </div>
                             </div>
-                        </div>
-
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label for="room_type" class="form-label">Room Type *</label>
-                                <select class="form-select" id="room_type" name="room_type" required>
-                                    <option value="Single">Single</option>
-                                    <option value="Double">Double</option>
-                                    <option value="Deluxe">Deluxe</option>
-                                    <option value="Suite">Suite</option>
-                                </select>
+                            <div class="col-md-6">
+                                <div class="input-group input-group-sm">
+                                    <span class="input-group-text"><i class="cil-bed"></i></span>
+                                    <select class="form-select" id="room_type" name="room_type">
+                                        <option value="Single">Single</option>
+                                        <option value="Double">Double</option>
+                                        <option value="Deluxe">Deluxe</option>
+                                        <option value="Suite">Suite</option>
+                                    </select>
+                                </div>
                             </div>
-                            <div class="col-md-6 mb-3">
-                                <label for="room_status" class="form-label">Status *</label>
-                                <select class="form-select" id="room_status" name="room_status" required>
-                                    <option value="Vacant">Vacant</option>
-                                    <option value="Occupied">Occupied</option>
-                                    <option value="Cleaning">Cleaning</option>
-                                    <option value="Maintenance">Maintenance</option>
-                                    <option value="Reserved">Reserved</option>
-                                </select>
+                            <div class="col-md-6">
+                                <div class="input-group input-group-sm">
+                                    <span class="input-group-text"><i class="cil-check-circle"></i></span>
+                                    <select class="form-select" id="room_status" name="room_status">
+                                        <option value="Vacant">Vacant</option>
+                                        <option value="Occupied">Occupied</option>
+                                        <option value="Cleaning">Cleaning</option>
+                                        <option value="Maintenance">Maintenance</option>
+                                        <option value="Reserved">Reserved</option>
+                                    </select>
+                                </div>
                             </div>
-                        </div>
-
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label for="room_max_guests" class="form-label">Max Guests</label>
-                                <input type="number" class="form-control" id="room_max_guests" name="room_max_guests" min="1" value="2">
+                            <div class="col-md-6">
+                                <div class="input-group input-group-sm">
+                                    <span class="input-group-text"><i class="cil-people"></i></span>
+                                    <input type="number" class="form-control" id="room_max_guests" name="room_max_guests" min="1" value="2" placeholder="Max Guests">
+                                </div>
                             </div>
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="room_amenities" class="form-label">Amenities</label>
-                            <textarea class="form-control" id="room_amenities" name="room_amenities" rows="3" placeholder="e.g., TV, Air Conditioning, Bathroom, Kitchen"></textarea>
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="room_maintenance_notes" class="form-label">Maintenance Notes</label>
-                            <textarea class="form-control" id="room_maintenance_notes" name="room_maintenance_notes" rows="3" placeholder="Any maintenance issues or notes"></textarea>
+                            <div class="col-12">
+                                <div class="input-group input-group-sm">
+                                    <span class="input-group-text"><i class="cil-star"></i></span>
+                                    <textarea class="form-control" id="room_amenities" name="room_amenities" rows="2" placeholder="Amenities (e.g., TV, Air Conditioning, Bathroom, Kitchen)"></textarea>
+                                </div>
+                            </div>
+                            <div class="col-12">
+                                <div class="input-group input-group-sm">
+                                    <span class="input-group-text"><i class="cil-wrench"></i></span>
+                                    <textarea class="form-control" id="room_maintenance_notes" name="room_maintenance_notes" rows="2" placeholder="Maintenance Notes"></textarea>
+                                </div>
+                            </div>
                         </div>
                     </form>
                 </div>
@@ -543,6 +686,100 @@ $occupancyRate = $stats['total_rooms'] > 0 ? round(($stats['occupied_rooms'] / $
                     alert('Error: ' + data.message);
                 }
             });
+        }
+
+        function openHousekeepingModal(roomId, roomNumber) {
+            document.getElementById('housekeepingModalTitle').textContent = 'Assign Housekeeper - Room ' + roomNumber;
+            document.getElementById('housekeepingRoomId').value = roomId;
+            document.getElementById('housekeepingRoomNumber').value = roomNumber;
+            new coreui.Modal(document.getElementById('housekeepingModal')).show();
+        }
+
+        function submitHousekeepingForm(event) {
+            event.preventDefault();
+
+            const form = document.getElementById('housekeepingForm');
+            const formData = new FormData(form);
+            const submitBtn = form.querySelector('button[type="submit"]');
+            const originalText = submitBtn.innerHTML;
+
+            // Show loading state
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="cil-spinner cil-spin me-2"></i>Assigning...';
+
+            fetch('rooms.php', {
+                method: 'POST',
+                headers: {
+                    'HX-Request': 'true'
+                },
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showAlert('Housekeeping task assigned successfully!', 'success');
+                    new coreui.Modal(document.getElementById('housekeepingModal')).hide();
+                    setTimeout(() => location.reload(), 1000);
+                } else {
+                    showAlert(data.message || 'An error occurred while assigning the task.', 'danger');
+                }
+            })
+            .catch(error => {
+                showAlert('Network error. Please try again.', 'danger');
+                console.error('Error:', error);
+            })
+            .finally(() => {
+                // Reset button state
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalText;
+            });
+        }
+
+        // Add form submit event listener
+        document.addEventListener('DOMContentLoaded', function() {
+            const housekeepingForm = document.getElementById('housekeepingForm');
+            if (housekeepingForm) {
+                housekeepingForm.addEventListener('submit', submitHousekeepingForm);
+            }
+        });
+
+        function showAlert(message, type = 'danger') {
+            const alertContainer = document.getElementById('alertContainer') || createAlertContainer();
+            const alertId = 'alert-' + Date.now();
+
+            const alertHTML = `
+                <div id="${alertId}" class="alert alert-${type} alert-dismissible fade show" role="alert">
+                    <i class="cil-${type === 'success' ? 'check-circle' : 'exclamation-circle'} me-2"></i>
+                    ${message}
+                    <button type="button" class="btn-close" data-coreui-dismiss="alert" aria-label="Close"></button>
+                </div>
+            `;
+
+            alertContainer.insertAdjacentHTML('beforeend', alertHTML);
+
+            // Auto-dismiss after 5 seconds
+            setTimeout(() => {
+                const alert = document.getElementById(alertId);
+                if (alert) {
+                    alert.remove();
+                }
+            }, 5000);
+        }
+
+        function createAlertContainer() {
+            const container = document.createElement('div');
+            container.id = 'alertContainer';
+            container.className = 'position-fixed top-0 end-0 p-3';
+            container.style.zIndex = '9999';
+            document.body.appendChild(container);
+            return container;
+        }
+
+        function setActive(button) {
+            // Remove active class from all buttons in the same group
+            button.closest('.btn-group').querySelectorAll('button').forEach(btn => btn.classList.remove('active'));
+            // Add active class to clicked button
+            button.classList.add('active');
         }
 
         function generateReport() {
