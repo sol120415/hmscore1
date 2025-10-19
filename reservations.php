@@ -505,34 +505,36 @@ $todayCheckOuts = $conn->query("SELECT COUNT(*) as checkouts_today FROM reservat
 </head>
 <body>
     <div class="container-fluid p-4">
-        <!-- Statistics Card -->
-        <div class="card border-primary text-primary mb-4">
-            <div class="card-body">
-                <div class="row text-center">
-                    <div class="col-2">
-                        <h6 class="mb-1 text-primary">Total</h6>
-                        <h4 class="mb-0 text-primary"><?php echo $stats['total_reservations']; ?></h4>
-                    </div>
-                    <div class="col-2">
-                        <h6 class="mb-1 text-success">Checked In</h6>
-                        <h4 class="mb-0 text-success"><?php echo $stats['checked_in']; ?></h4>
-                    </div>
-                    <div class="col-2">
-                        <h6 class="mb-1 text-warning">Pending</h6>
-                        <h4 class="mb-0 text-warning"><?php echo $stats['pending']; ?></h4>
-                    </div>
-                    <div class="col-2">
-                        <h6 class="mb-1 text-info">Room Res.</h6>
-                        <h4 class="mb-0 text-info"><?php echo $stats['room_reservations']; ?></h4>
-                    </div>
-                    <div class="col-2">
-                        <h6 class="mb-1 text-success">Today In</h6>
-                        <h4 class="mb-0 text-success"><?php echo $todayCheckIns['checkins_today']; ?></h4>
-                    </div>
-                    <div class="col-2">
-                        <h6 class="mb-1 text-danger">Today Out</h6>
-                        <h4 class="mb-0 text-danger"><?php echo $todayCheckOuts['checkouts_today']; ?></h4>
-                    </div>
+
+        <!-- Header with Stats -->
+        <div class="mb-4">
+            <div class="d-flex justify-content-between gap-3 text-center">
+                <div class="text-center flex-grow-1">
+                <?php include 'reservationstitle.html'; ?>
+                </div>
+                <div>
+                    <small class="text-muted d-block">Total</small>
+                    <span class="fw-bold text-primary"><?php echo $stats['total_reservations']; ?></span>
+                </div>
+                <div>
+                    <small class="text-muted d-block">Checked In</small>
+                    <span class="fw-bold text-success"><?php echo $stats['checked_in']; ?></span>
+                </div>
+                <div>
+                    <small class="text-muted d-block">Pending</small>
+                    <span class="fw-bold text-warning"><?php echo $stats['pending']; ?></span>
+                </div>
+                <div>
+                    <small class="text-muted d-block">Room Res.</small>
+                    <span class="fw-bold text-info"><?php echo $stats['room_reservations']; ?></span>
+                </div>
+                <div>
+                    <small class="text-muted d-block">Today In</small>
+                    <span class="fw-bold text-success"><?php echo $todayCheckIns['checkins_today']; ?></span>
+                </div>
+                <div>
+                    <small class="text-muted d-block">Today Out</small>
+                    <span class="fw-bold text-danger"><?php echo $todayCheckOuts['checkouts_today']; ?></span>
                 </div>
             </div>
         </div>
