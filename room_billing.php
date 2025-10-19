@@ -80,6 +80,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_HX_REQUEST']))
     exit;
 }
 
+// Dynamic Pricing: Adjust room rates based on demand/season
+$dynamicPricingQuery = "
+    SELECT r.room_id, r.rate * (1 + IFNULL(mp.rate_modifier, 0)) AS dynamic_rate
+    FROM rooms r
+    LEFT JOIN marketing_promotion mp ON CURRENT_DATE BETWEEN mp.start_date AND mp.end_date
+    WHERE mp.promotion_type = 'Seasonal' OR mp.promotion_type IS NULL
+";
+
 // Get data for display
 $billings = $conn->query("
     SELECT rb.*, r.id as reservation_id_display, r.reservation_type, g.first_name, g.last_name, rm.room_number
@@ -161,9 +169,8 @@ $recentTransactions = array_slice($billings, 0, 10);
     <div class="container-fluid p-4">
         <!-- Header -->
         <div class="d-flex justify-content-between align-items-center mb-4">
-            <div>
-                <h2 class="mb-1">Room Billing</h2>
-                <p class="text-muted mb-0">Manage room charges, payments, and billing transactions</p>
+        <div class="text-center flex-grow-1">
+                <?php include 'billingtitle.html'; ?>
             </div>
             <button class="btn btn-primary" data-coreui-toggle="modal" data-coreui-target="#billingModal" onclick="openCreateModal()">
                 <i class="cil-plus me-2"></i>Add Transaction

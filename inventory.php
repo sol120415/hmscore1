@@ -139,7 +139,7 @@ $categories = $conn->query("SELECT DISTINCT item_category FROM items WHERE item_
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Inventory Management - Hotel Management System</title>
+    <title>Inventory - Hotel Management System</title>
 
     <!-- CoreUI CSS -->
     <link href="css/coreui.min.css" rel="stylesheet">
@@ -194,9 +194,8 @@ $categories = $conn->query("SELECT DISTINCT item_category FROM items WHERE item_
     <div class="container-fluid p-4">
         <!-- Header -->
         <div class="d-flex justify-content-between align-items-center mb-4">
-            <div>
-                <h2 class="mb-1">Inventory Management</h2>
-                <p class="text-muted mb-0">Track items, stock levels, and movements</p>
+            <div class="text-center flex-grow-1">
+                <?php include 'inventorytitle.html'; ?>
             </div>
             <div>
                 <button class="btn btn-primary me-2" data-coreui-toggle="modal" data-coreui-target="#itemModal" onclick="openCreateModal()">

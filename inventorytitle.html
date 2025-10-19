@@ -1,0 +1,34 @@
+<div class="bg-dark" style="display: flex; align-items: center; ">
+
+    <!-- Code snippet to create a "breathe" animation effect with a variable font -->
+      <style>
+        /* The @font-face rule is used to define a custom font that you want to use on your webpage. Here 'TheFont' is a name we give to reference the font later in CSS. The 'src' property specifies the path to the font file, and 'format' specifies the font format. */
+        @font-face {
+        font-family: 'TheFont';
+
+        /* Variable fonts like the one linked below allow for fine-tuned control over various font properties dynamically via CSS, such as weight ('wght'), width ('wdth'), etc. This link is where your web browser will download the font from. */
+        /* Insert the link to your custom variable font */
+        src: url("https://garet.typeforward.com/assets/fonts/shared/TFMixVF.woff2")
+          format('woff2'); }
+
+      /* Keyframes define the sequence of styles that an element will go through during an animation. */
+      @keyframes letter-breathe {
+
+        /* The 'from' and 'to' keyframes establish the initial and final states of the animation, respectively, using 'font-variation-settings'. This CSS property is used with variable fonts to adjust their weight ('wght'), width ('wdth'), etc., during the animation. */
+        from,
+        to {
+          /* Starting weight; adjust the numbers according to your specific font */
+          font-variation-settings: 'wght' 100;
+        }
+
+        /* At the midpoint (50%) of the animation, the font weight changes to 900. */
+        50% {
+          /* Ending weight; adjust the numbers according to your specific font */
+          font-variation-settings: 'wght' 900;
+        }
+      }
+      </style>
+
+
+    <span style="font-family: 'TheFont'; font-size: clamp(10px, 25px, 50px); color: white; text-align: center; animation: letter-breathe 3s ease-in-out infinite;">Inventory</span>
+</div>

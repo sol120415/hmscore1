@@ -175,7 +175,7 @@ $stats = $conn->query("
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Housekeeping Management - Hotel Management System</title>
+    <title>Housekeeping - Hotel Management System</title>
 
     <!-- CoreUI CSS -->
     <link href="css/coreui.min.css" rel="stylesheet">
@@ -230,9 +230,8 @@ $stats = $conn->query("
     <div class="container-fluid p-4">
         <!-- Header -->
         <div class="d-flex justify-content-between align-items-center mb-4">
-            <div>
-                <h2 class="mb-1">Housekeeping Management</h2>
-                <p class="text-muted mb-0">Manage staff, tasks, and supplies</p>
+            <div class="text-center flex-grow-1">
+                <?php include 'housekeepingtitle.html'; ?>
             </div>
         </div>
 

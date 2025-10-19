@@ -102,7 +102,7 @@ $recentGuests = array_slice($guests, 0, 10);
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Guest Management - Hotel Management System</title>
+    <title>Guests - Hotel Management System</title>
 
     <!-- CoreUI CSS -->
     <link href="css/coreui.min.css" rel="stylesheet">
@@ -147,15 +147,29 @@ $recentGuests = array_slice($guests, 0, 10);
             font-weight: bold;
             font-size: 16px;
         }
+
+        /* Custom font for title */
+        @font-face {
+            font-family: 'TheFont';
+            src: url("https://garet.typeforward.com/assets/fonts/shared/TFMixVF.woff2") format('woff2');
+        }
+
+        @keyframes letter-breathe {
+            from, to {
+                font-variation-settings: 'wght' 100;
+            }
+            50% {
+                font-variation-settings: 'wght' 900;
+            }
+        }
     </style>
 </head>
 <body>
     <div class="container-fluid p-4">
         <!-- Header -->
         <div class="d-flex justify-content-between align-items-center mb-4">
-            <div>
-                <h2 class="mb-1">Guest Management</h2>
-                <p class="text-muted mb-0">Manage guest information and profiles</p>
+            <div class="text-center flex-grow-1">
+                <?php include 'gueststitle.html'; ?>
             </div>
             <button class="btn btn-primary" data-coreui-toggle="modal" data-coreui-target="#guestModal" onclick="openCreateModal()">
                 <i class="cil-plus me-2"></i>Add Guest

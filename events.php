@@ -242,8 +242,9 @@ $stats = $conn->query("
         <!-- Header -->
         <div class="d-flex justify-content-between align-items-center mb-4">
             <div>
-                <h2 class="mb-1">Event Management</h2>
-                <p class="text-muted mb-0">Manage event venues, reservations, and billing</p>
+                <div class="text-center flex-grow-1">
+                    <?php include 'eventstitle.html'; ?>
+                </div>
             </div>
         </div>
 

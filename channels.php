@@ -103,7 +103,7 @@ $recentBookings = $conn->query("
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Channel Management - Hotel Management System</title>
+    <title>Channels - Hotel Management System</title>
 
     <!-- CoreUI CSS -->
     <link href="css/coreui.min.css" rel="stylesheet">
@@ -142,9 +142,8 @@ $recentBookings = $conn->query("
     <div class="container-fluid p-4">
         <!-- Header -->
         <div class="d-flex justify-content-between align-items-center mb-4">
-            <div>
-                <h2 class="mb-1">Channel Management</h2>
-                <p class="text-muted mb-0">Manage your booking channels and track performance</p>
+            <div class="text-center flex-grow-1">
+                <?php include 'channelstitle.html'; ?>
             </div>
             <button class="btn btn-primary" data-coreui-toggle="modal" data-coreui-target="#channelModal" onclick="openCreateModal()">
                 <i class="cil-plus me-2"></i>Add Channel

@@ -106,7 +106,7 @@ $occupancyRate = $stats['total_rooms'] > 0 ? round(($stats['occupied_rooms'] / $
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Room Management - Hotel Management System</title>
+    <title>Rooms - Hotel Management System</title>
 
     <!-- CoreUI CSS -->
     <link href="css/coreui.min.css" rel="stylesheet">
@@ -173,9 +173,8 @@ $occupancyRate = $stats['total_rooms'] > 0 ? round(($stats['occupied_rooms'] / $
     <div class="container-fluid p-4">
         <!-- Header -->
         <div class="d-flex justify-content-between align-items-center mb-4">
-            <div>
-                <h2 class="mb-1">Room Management</h2>
-                <p class="text-muted mb-0">Manage hotel rooms and monitor occupancy</p>
+            <div class="text-center flex-grow-1">
+                <?php include 'roomtitle.html'; ?>
             </div>
             <button class="btn btn-primary" data-coreui-toggle="modal" data-coreui-target="#roomModal" onclick="openCreateModal()">
                 <i class="cil-plus me-2"></i>Add Room
