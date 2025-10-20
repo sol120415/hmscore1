@@ -11,7 +11,7 @@ CREATE TABLE IF NOT EXISTS event_venues (
     venue_status ENUM('Available', 'Booked', 'Maintenance') DEFAULT 'Available',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+);
 
 -- Insert default venue capacities and rates
 INSERT INTO event_venues (venue_name, venue_address, venue_capacity, venue_rate, venue_description, venue_status)
@@ -47,7 +47,7 @@ CREATE TABLE IF NOT EXISTS event_reservation (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     INDEX idx_event_venue_id (event_venue_id),
     FOREIGN KEY (event_venue_id) REFERENCES event_venues(id) ON DELETE SET NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+);
 
 SELECT 'Event reservations table created successfully!' AS Status;
 
@@ -69,6 +69,6 @@ CREATE TABLE IF NOT EXISTS event_billing (
     INDEX idx_transaction_date (transaction_date),
     INDEX idx_status (status),
     FOREIGN KEY (event_reservation_id) REFERENCES event_reservation(id) ON DELETE SET NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+);
 
 SELECT 'Billing transactions table created successfully!' AS Status;

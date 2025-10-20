@@ -1,4 +1,4 @@
- baUSE hmscore1;
+ USE hmscore1;
 -- GUESTS TABLE (Guest Information Management)
 CREATE TABLE IF NOT EXISTS guests (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -24,7 +24,7 @@ CREATE TABLE IF NOT EXISTS guests (
     INDEX idx_phone (phone),
     INDEX idx_last_name (last_name),
     INDEX idx_created_at (created_at)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+);
 
 -- Sample Data
 INSERT INTO guests (first_name, last_name, email, phone, address, city, country, id_type, id_number, date_of_birth, nationality, notes) VALUES

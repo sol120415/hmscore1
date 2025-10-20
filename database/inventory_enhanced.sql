@@ -20,7 +20,7 @@ CREATE TABLE IF NOT EXISTS items (
     INDEX idx_item_name (item_name),
     INDEX idx_item_category (item_category),
     INDEX idx_item_status (item_status)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+);
 
 -- INVENTORY MOVEMENTS TABLE
 CREATE TABLE IF NOT EXISTS inventory_movements (
@@ -37,4 +37,4 @@ CREATE TABLE IF NOT EXISTS inventory_movements (
     INDEX idx_movement_date (movement_date),
     INDEX idx_movement_type (movement_type),
     FOREIGN KEY (item_id) REFERENCES items(id) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+);

@@ -2,13 +2,12 @@ USE hmscore1;
 
 -- RESERVATIONS TABLE (Booking Management)
 CREATE TABLE IF NOT EXISTS reservations (
-    id VARCHAR(50) PRIMARY KEY,
+    id INT PRIMARY KEY AUTO_INCREMENT,
     guest_id INT NULL,
     room_id INT NULL,
     reservation_type ENUM('Room', 'Event') NOT NULL,
     reservation_date DATETIME NOT NULL,
-    reservation_hour_count ENUM('8','16','24') DEFAULT '8',
-    reservation_days_count INT,
+    reservation_hour_count INT NOT NULL,
     check_in_date DATETIME NOT NULL,
     check_out_date DATETIME NOT NULL,
     reservation_status ENUM('Pending', 'Checked In', 'Checked Out', 'Cancelled') DEFAULT 'Pending',
@@ -26,5 +25,5 @@ CREATE TABLE IF NOT EXISTS reservations (
 
     FOREIGN KEY (guest_id) REFERENCES guests(id) ON DELETE SET NULL,
     FOREIGN KEY (room_id) REFERENCES rooms(id) ON DELETE SET NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+);
 

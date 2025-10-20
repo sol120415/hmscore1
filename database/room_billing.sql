@@ -4,7 +4,7 @@ USE hmscore1;
 CREATE TABLE IF NOT EXISTS room_billing (
     id INT AUTO_INCREMENT PRIMARY KEY,
     transaction_type ENUM('Room Charge', 'Event Charge', 'Refund') DEFAULT 'Room Charge',
-    reservation_id VARCHAR(50),
+    reservation_id INT,
     room_id INT,
     guest_id INT,
     item_description VARCHAR(255),
@@ -30,4 +30,4 @@ CREATE TABLE IF NOT EXISTS room_billing (
     FOREIGN KEY (reservation_id) REFERENCES reservations(id) ON DELETE SET NULL,
     FOREIGN KEY (room_id) REFERENCES rooms(id) ON DELETE SET NULL,
     FOREIGN KEY (guest_id) REFERENCES guests(id) ON DELETE SET NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+);

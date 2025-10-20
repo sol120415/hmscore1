@@ -19,7 +19,7 @@ CREATE TABLE IF NOT EXISTS channels (
     INDEX idx_channel_type (channel_type),
     INDEX idx_status (status),
     INDEX idx_created_at (created_at)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+);
 
 -- CHANNEL BOOKINGS TABLE (Track bookings from each channel)
 CREATE TABLE IF NOT EXISTS channel_bookings (
@@ -39,7 +39,7 @@ CREATE TABLE IF NOT EXISTS channel_bookings (
     INDEX idx_check_in_date (check_in_date),
     INDEX idx_booking_date (booking_date),
     FOREIGN KEY (channel_id) REFERENCES channels(id) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+);
 
 
 

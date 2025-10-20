@@ -34,12 +34,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_HX_REQUEST']))
                          $guest_id = $conn->lastInsertId();
                      }
 
+                     // Validate that guest_id is set
+                     if (empty($guest_id)) {
+                         echo json_encode(['success' => false, 'message' => 'Guest information is required.']);
+                         break;
+                     }
+
                      // Create new reservation
-                     $id = 'RES-' . date('YmdHis') . sprintf('%04d', rand(0, 9999));
                      $check_in_date = $_POST['check_in_date'];
-                     $hours = (int)$_POST['reservation_hour_count'];
-                     $days = (int)($_POST['reservation_days_count'] ?: 0);
-                     $check_out_date = date('Y-m-d H:i:s', strtotime($check_in_date) + ($hours * 3600) + ($days * 24 * 3600));
+                     $hours = (int)($_POST['reservation_hour_count'] ?: 0);
+
+                     // Validate duration - hours must be specified (8 or 16 for hours, or days)
+                     if ($hours === 0) {
+                         echo json_encode(['success' => false, 'message' => 'Reservation duration must be specified.']);
+                         break;
+                     }
+
+                     // Calculate check-out date based on hours (8 or 16) or days (if hours > 16)
+                     if ($hours <= 16) {
+                         $check_out_date = date('Y-m-d H:i:s', strtotime($check_in_date) + ($hours * 3600));
+                     } else {
+                         // For values > 16, treat as days
+                         $days = $hours;
+                         $check_out_date = date('Y-m-d H:i:s', strtotime($check_in_date) + ($days * 24 * 3600));
+                     }
 
                      // Check for time conflicts if a room is selected
                      if (!empty($_POST['room_id'])) {
@@ -56,25 +74,49 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_HX_REQUEST']))
                          ]);
                          $conflict = $stmt->fetch(PDO::FETCH_ASSOC);
                          if ($conflict['conflict_count'] > 0) {
-                             echo json_encode(['success' => false, 'message' => 'Time conflict: The selected room is already reserved for this time period.']);
+                             // Find next available time for the room
+                             $stmt = $conn->prepare("SELECT check_out_date FROM reservations WHERE room_id = ? AND reservation_status IN ('Pending', 'Checked In') AND check_out_date > ? ORDER BY check_out_date ASC LIMIT 1");
+                             $stmt->execute([$_POST['room_id'], $check_in_date]);
+                             $nextAvailable = $stmt->fetch(PDO::FETCH_ASSOC);
+
+                             $message = 'Time conflict: The selected room is already reserved for this time period.';
+                             if ($nextAvailable) {
+                                 $nextTime = strtotime($nextAvailable['check_out_date']);
+
+                                 // Calculate requested duration based on hours value
+                                 if ($hours <= 16) {
+                                     $requestedDuration = $hours * 3600; // hours
+                                     $minGap = 8 * 3600; // 8 hours minimum gap
+                                 } else {
+                                     $requestedDuration = $hours * 24 * 3600; // days
+                                     $minGap = 24 * 3600; // 24 hours minimum gap
+                                 }
+
+                                 if (($nextTime - strtotime($check_in_date)) < $minGap) {
+                                     // Not enough time, suggest time after the next reservation
+                                     $suggestedTime = date('Y-m-d H:i:s', $nextTime);
+                                     $message .= ' Room will be available after ' . date('M-d H:i', $nextTime) . '.';
+                                 } else {
+                                     // There might be a gap, but we don't allow reservations in small gaps
+                                     $message .= ' Room will be available after ' . date('M-d H:i', $nextTime) . '.';
+                                 }
+                             }
+                             echo json_encode(['success' => false, 'message' => $message]);
                              break;
                          }
                      }
 
-                     $stmt = $conn->prepare("INSERT INTO reservations (id, guest_id, room_id, reservation_type, reservation_date, reservation_hour_count, reservation_days_count, check_in_date, check_out_date, reservation_status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+                     $stmt = $conn->prepare("INSERT INTO reservations (guest_id, room_id, reservation_type, reservation_date, reservation_hour_count, check_in_date, check_out_date, reservation_status) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
                      $stmt->execute([
-                         $id,
                          $guest_id,
                          $_POST['room_id'] ?: null,
                          'Room',
                          date('Y-m-d H:i:s'),
-                         $_POST['reservation_hour_count'],
-                         $_POST['reservation_days_count'] ?: null,
-                         $check_in_date,
+                         $hours,
+                         $_POST['check_in_date'],
                          $check_out_date,
                          'Pending'
                      ]);
-
                      // Update room status to Reserved if a room was selected
                      if (!empty($_POST['room_id'])) {
                          $stmt = $conn->prepare("UPDATE rooms SET room_status = 'Reserved' WHERE id = ?");
@@ -92,9 +134,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_HX_REQUEST']))
 
                     // Calculate new check-out date if dates changed
                     $check_in_date = $_POST['check_in_date'];
-                    $hours = (int)$_POST['reservation_hour_count'];
-                    $days = (int)($_POST['reservation_days_count'] ?: 0);
-                    $check_out_date = date('Y-m-d H:i:s', strtotime($check_in_date) + ($hours * 3600) + ($days * 24 * 3600));
+                    $hours = (int)($_POST['reservation_hour_count'] ?: 0);
+
+                    // Validate duration
+                    if ($hours === 0) {
+                        echo json_encode(['success' => false, 'message' => 'Reservation duration must be specified.']);
+                        break;
+                    }
+
+                    // Calculate check-out date based on hours (8 or 16) or days (if hours > 16)
+                    if ($hours <= 16) {
+                        $check_out_date = date('Y-m-d H:i:s', strtotime($check_in_date) + ($hours * 3600));
+                    } else {
+                        // For values > 16, treat as days
+                        $days = $hours;
+                        $check_out_date = date('Y-m-d H:i:s', strtotime($check_in_date) + ($days * 24 * 3600));
+                    }
 
                     // Check for time conflicts if room changed or dates changed
                     if (!empty($_POST['room_id']) && (!empty($_POST['room_id']) || $check_in_date !== $current['check_in_date'] || $check_out_date !== $current['check_out_date'])) {
@@ -112,25 +167,55 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_HX_REQUEST']))
                         ]);
                         $conflict = $stmt->fetch(PDO::FETCH_ASSOC);
                         if ($conflict['conflict_count'] > 0) {
-                            echo json_encode(['success' => false, 'message' => 'Time conflict: The selected room is already reserved for this time period.']);
+                            // Find next available time for the room
+                            $stmt = $conn->prepare("SELECT check_out_date FROM reservations WHERE room_id = ? AND id != ? AND reservation_status IN ('Pending', 'Checked In') AND check_out_date > ? ORDER BY check_out_date ASC LIMIT 1");
+                            $stmt->execute([$_POST['room_id'], $_POST['id'], $check_in_date]);
+                            $nextAvailable = $stmt->fetch(PDO::FETCH_ASSOC);
+
+                            $message = 'Time conflict: The selected room is already reserved for this time period.';
+                            if ($nextAvailable) {
+                                $nextTime = strtotime($nextAvailable['check_out_date']);
+
+                                // Calculate requested duration based on hours value
+                                if ($hours <= 16) {
+                                    $requestedDuration = $hours * 3600; // hours
+                                    $minGap = 8 * 3600; // 8 hours minimum gap
+                                } else {
+                                    $requestedDuration = $hours * 24 * 3600; // days
+                                    $minGap = 24 * 3600; // 24 hours minimum gap
+                                }
+
+                                if (($nextTime - strtotime($check_in_date)) < $minGap) {
+                                    // Not enough time, suggest time after the next reservation
+                                    $suggestedTime = date('Y-m-d H:i:s', $nextTime);
+                                    $message .= ' Room will be available after ' . date('M-d H:i', $nextTime) . '.';
+                                } else {
+                                    // There might be a gap, but we don't allow reservations in small gaps
+                                    $message .= ' Room will be available after ' . date('M-d H:i', $nextTime) . '.';
+                                }
+                            }
+                            echo json_encode(['success' => false, 'message' => $message]);
                             break;
                         }
                     }
 
                     // Update reservation
-                    $stmt = $conn->prepare("UPDATE reservations SET guest_id=?, room_id=?, reservation_type=?, reservation_date=?, reservation_hour_count=?, reservation_days_count=?, check_in_date=?, check_out_date=?, reservation_status=? WHERE id=?");
+                    $stmt = $conn->prepare("UPDATE reservations SET guest_id=?, room_id=?, reservation_type=?, reservation_date=?, reservation_hour_count=?, check_in_date=?, check_out_date=?, reservation_status=? WHERE id=?");
                     $stmt->execute([
                         $_POST['guest_id'] ?: null,
                         $_POST['room_id'] ?: null,
                         $_POST['reservation_type'],
                         $_POST['reservation_date'],
-                        $_POST['reservation_hour_count'],
-                        $_POST['reservation_days_count'] ?: null,
+                        $hours,
                         $check_in_date,
                         $check_out_date,
                         $_POST['reservation_status'],
                         $_POST['id']
                     ]);
+
+                    // Set check_out_date in the database
+                    $stmt = $conn->prepare("UPDATE reservations SET check_out_date=? WHERE id=?");
+                    $stmt->execute([$check_out_date, $_POST['id']]);
 
                     // Handle room status changes based on reservation status
                     if ($_POST['reservation_status'] === 'Checked In' && $current['reservation_status'] !== 'Checked In') {
@@ -243,12 +328,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_HX_REQUEST']))
                 case 'get_available_rooms':
                     // Get available rooms for a specific date/time range - rooms where the check-in/check-out time range doesn't conflict with existing reservations
                     $check_in_date = $_POST['check_in_date'];
-                    $hours = (int)$_POST['reservation_hour_count'];
-                    $days = (int)($_POST['reservation_days_count'] ?: 0);
-                    $check_out_date = date('Y-m-d H:i:s', strtotime($check_in_date) + ($hours * 3600) + ($days * 24 * 3600));
+                    $hours = (int)($_POST['reservation_hour_count'] ?: 0);
+
+                    // Validate duration
+                    if ($hours === 0) {
+                        echo json_encode([]);
+                        break;
+                    }
+
+                    // Calculate check-out date based on hours (8 or 16) or days (if hours > 16)
+                    if ($hours <= 16) {
+                        $check_out_date = date('Y-m-d H:i:s', strtotime($check_in_date) + ($hours * 3600));
+                    } else {
+                        // For values > 16, treat as days
+                        $days = $hours;
+                        $check_out_date = date('Y-m-d H:i:s', strtotime($check_in_date) + ($days * 24 * 3600));
+                    }
 
                     $stmt = $conn->prepare("
-                        SELECT r.id, r.room_number, r.room_type, r.room_status
+                        SELECT r.id, r.room_number, r.room_type, r.room_status,
+                               (
+                                   SELECT MIN(res.check_out_date)
+                                   FROM reservations res
+                                   WHERE res.room_id = r.id
+                                   AND res.reservation_status IN ('Pending', 'Checked In')
+                                   AND res.check_out_date > ?
+                               ) as next_available
                         FROM rooms r
                         WHERE NOT EXISTS (
                             SELECT 1 FROM reservations res
@@ -263,6 +368,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_HX_REQUEST']))
                         ORDER BY r.room_number
                     ");
                     $stmt->execute([
+                        $check_in_date,  // for next_available subquery
                         $check_in_date, $check_in_date,     // existing reservation overlaps new check-in
                         $check_out_date, $check_out_date,   // existing reservation overlaps new check-out
                         $check_in_date, $check_out_date     // existing reservation is contained within new reservation
@@ -276,6 +382,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_HX_REQUEST']))
                     $stmt = $conn->prepare("SELECT * FROM reservations WHERE id=?");
                     $stmt->execute([$_POST['id']]);
                     $reservation = $stmt->fetch(PDO::FETCH_ASSOC);
+
+                    if (!$reservation) {
+                        echo json_encode(['success' => false, 'message' => 'Reservation not found.']);
+                        break;
+                    }
+
                     echo json_encode($reservation);
                     break;
             }
@@ -587,9 +699,9 @@ $todayCheckOuts = $conn->query("SELECT COUNT(*) as checkouts_today FROM reservat
                                             <h6 class="mb-1"><?php echo htmlspecialchars(($reservation['first_name'] ?: '') . ' ' . ($reservation['last_name'] ?: 'Walk-in')); ?></h6>
                                             <small class="text-muted">
                                                 <?php if ($reservation['room_number']): ?>
-                                                    <?php echo htmlspecialchars($reservation['room_number']); ?> • <?php echo date('M-d', strtotime($reservation['check_in_date'])); ?> • <?php echo date('M-d', strtotime($reservation['check_out_date'])); ?>
+                                                    <?php echo htmlspecialchars($reservation['room_number']); ?> • <?php echo date('M-d H:i', strtotime($reservation['check_in_date'])); ?> to <?php echo date('M-d H:i', strtotime($reservation['check_out_date'])); ?>
                                                 <?php else: ?>
-                                                    No room • <?php echo date('M-d', strtotime($reservation['check_in_date'])); ?> • <?php echo date('M-d', strtotime($reservation['check_out_date'])); ?>
+                                                    No room • <?php echo date('M-d H:i', strtotime($reservation['check_in_date'])); ?> to <?php echo date('M-d H:i', strtotime($reservation['check_out_date'])); ?>
                                                 <?php endif; ?>
                                             </small>
                                         </div>
@@ -633,7 +745,7 @@ $todayCheckOuts = $conn->query("SELECT COUNT(*) as checkouts_today FROM reservat
 
     <!-- Reservation Modal -->
     <div class="modal fade" id="reservationModal" tabindex="-1" style="--cui-modal-border-radius: 16px; --cui-modal-box-shadow: 0 10px 40px rgba(0,0,0,0.3); --cui-modal-bg: #2d3748; --cui-modal-border-color: #4a5568;">
-        <div class="modal-dialog">
+        <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="modalTitle">Add Reservation</h5>
@@ -642,126 +754,104 @@ $todayCheckOuts = $conn->query("SELECT COUNT(*) as checkouts_today FROM reservat
                 <div class="modal-body">
                     <form id="reservationForm" hx-post="reservations.php" hx-target="#htmx-response" hx-swap="innerHTML" hx-on:htmx:after-request="handleReservationResponse(event)">
                         <input type="hidden" name="action" id="formAction" value="create">
-                        <input type="hidden" name="id" id="reservationId">
 
+                        <!-- Guest Selection -->
+                        <div class="mb-3">
+                            <label class="form-label small mb-2">Guest *</label>
+                            <ul class="nav nav-tabs nav-fill mb-3" id="guestTabs" role="tablist">
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link active" id="existing-guest-tab" data-coreui-toggle="tab" data-coreui-target="#existing-guest" type="button" role="tab">Existing Guest</button>
+                                </li>
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link" id="new-guest-tab" data-coreui-toggle="tab" data-coreui-target="#new-guest" type="button" role="tab">New Guest</button>
+                                </li>
+                            </ul>
 
-                        <!-- Guest Selection Tabs -->
-                        <ul class="nav nav-tabs mb-3" id="guestTabs" role="tablist">
-                            <li class="nav-item" role="presentation">
-                                <button class="nav-link active" id="existing-guest-tab" data-coreui-toggle="tab" data-coreui-target="#existing-guest" type="button" role="tab">Existing Guest</button>
-                            </li>
-                            <li class="nav-item" role="presentation">
-                                <button class="nav-link" id="new-guest-tab" data-coreui-toggle="tab" data-coreui-target="#new-guest" type="button" role="tab">New Guest</button>
-                            </li>
-                        </ul>
-
-                        <div class="tab-content">
-                            <!-- Existing Guest Tab -->
-                            <div class="tab-pane fade show active" id="existing-guest" role="tabpanel">
-                                <div class="input-group mb-3">
-                                    <span class="input-group-text"><i class="cil-user"></i></span>
-                                    <select class="form-select" id="guest_id" name="guest_id">
-                                        <option value="">Choose a guest...</option>
-                                        <?php foreach ($guests as $guest): ?>
-                                        <option value="<?php echo $guest['id']; ?>"><?php echo htmlspecialchars($guest['first_name'] . ' ' . $guest['last_name'] . ' (' . $guest['email'] . ')'); ?></option>
-                                        <?php endforeach; ?>
-                                    </select>
+                            <div class="tab-content">
+                                <!-- Existing Guest Tab -->
+                                <div class="tab-pane fade show active" id="existing-guest" role="tabpanel">
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="cil-user"></i></span>
+                                        <select class="form-select" id="guest_id" name="guest_id">
+                                            <option value="">Choose a guest...</option>
+                                            <?php foreach ($guests as $guest): ?>
+                                            <option value="<?php echo $guest['id']; ?>"><?php echo htmlspecialchars($guest['first_name'] . ' ' . $guest['last_name'] . ' (' . $guest['email'] . ')'); ?></option>
+                                            <?php endforeach; ?>
+                                        </select>
+                                    </div>
                                 </div>
-                            </div>
 
-                            <!-- New Guest Tab -->
-                            <div class="tab-pane fade" id="new-guest" role="tabpanel">
-                                <div class="row g-2">
-                                    <div class="col-md-6">
-                                        <div class="input-group input-group-sm">
-                                            <span class="input-group-text"><i class="cil-user"></i></span>
-                                            <input type="text" class="form-control" id="new_first_name" name="new_first_name" placeholder="First Name *">
+                                <!-- New Guest Tab -->
+                                <div class="tab-pane fade" id="new-guest" role="tabpanel">
+                                    <div class="row g-2">
+                                        <div class="col-md-6">
+                                            <input type="text" class="form-control form-control-sm" id="new_first_name" name="new_first_name" placeholder="First Name *">
                                         </div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <div class="input-group input-group-sm">
-                                            <span class="input-group-text"><i class="cil-user"></i></span>
-                                            <input type="text" class="form-control" id="new_last_name" name="new_last_name" placeholder="Last Name *">
+                                        <div class="col-md-6">
+                                            <input type="text" class="form-control form-control-sm" id="new_last_name" name="new_last_name" placeholder="Last Name *">
                                         </div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <div class="input-group input-group-sm">
-                                            <span class="input-group-text"><i class="cil-envelope-closed"></i></span>
-                                            <input type="email" class="form-control" id="new_email" name="new_email" placeholder="Email *">
+                                        <div class="col-md-6">
+                                            <input type="email" class="form-control form-control-sm" id="new_email" name="new_email" placeholder="Email *">
                                         </div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <div class="input-group input-group-sm">
-                                            <span class="input-group-text"><i class="cil-phone"></i></span>
-                                            <input type="tel" class="form-control" id="new_phone" name="new_phone" placeholder="Phone">
+                                        <div class="col-md-6">
+                                            <input type="tel" class="form-control form-control-sm" id="new_phone" name="new_phone" placeholder="Phone">
                                         </div>
-                                    </div>
-                                    <div class="col-md-4">
-                                        <div class="input-group input-group-sm">
-                                            <span class="input-group-text"><i class="cil-id-card"></i></span>
-                                            <select class="form-select" id="new_id_type" name="new_id_type">
+                                        <div class="col-md-4">
+                                            <select class="form-select form-select-sm" id="new_id_type" name="new_id_type">
                                                 <option value="Passport">Passport</option>
                                                 <option value="Driver License">Driver License</option>
                                                 <option value="National ID">National ID</option>
                                             </select>
                                         </div>
-                                    </div>
-                                    <div class="col-md-4">
-                                        <div class="input-group input-group-sm">
-                                            <span class="input-group-text">#</span>
-                                            <input type="text" class="form-control" id="new_id_number" name="new_id_number" placeholder="ID Number *">
+                                        <div class="col-md-4">
+                                            <input type="text" class="form-control form-control-sm" id="new_id_number" name="new_id_number" placeholder="ID Number *">
                                         </div>
-                                    </div>
-                                    <div class="col-md-4">
-                                        <div class="input-group input-group-sm">
-                                            <span class="input-group-text"><i class="cil-calendar"></i></span>
-                                            <input type="date" class="form-control" id="new_date_of_birth" name="new_date_of_birth">
+                                        <div class="col-md-4">
+                                            <input type="date" class="form-control form-control-sm" id="new_date_of_birth" name="new_date_of_birth" placeholder="Date of Birth">
                                         </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
 
-                        <div class="row g-2">
+                        <!-- Reservation Details -->
+                        <div class="row g-3">
                             <div class="col-md-6">
-                                <div class="mt-2 input-group input-group-sm">
+                                <label class="form-label small mb-1">Room *</label>
+                                <div class="input-group input-group-sm">
                                     <span class="input-group-text"><i class="cil-home"></i></span>
-                                    <select class="form-select" id="room_id" name="room_id" disabled>
-                                        <option value="">Select check-in date and duration first</option>
+                                    <select class="form-select" id="room_id" name="room_id" required>
+                                        <option value="">Select a room first</option>
                                         <?php foreach ($rooms as $room): ?>
-                                        <option value="<?php echo $room['id']; ?>" style="display: none;" data-status="<?php echo $room['room_status']; ?>">
-                                            <?php echo htmlspecialchars($room['room_number'] . ' - ' . $room['room_type'] . ' (' . $room['room_status'] . ')'); ?>
+                                        <option value="<?php echo $room['id']; ?>" data-status="<?php echo $room['room_status']; ?>">
+                                            <?php echo htmlspecialchars($room['room_number'] . ' - ' . $room['room_type']); ?>
+                                            <small class="text-muted">(<?php echo $room['room_status']; ?>)</small>
                                         </option>
                                         <?php endforeach; ?>
                                     </select>
                                 </div>
                             </div>
                             <div class="col-md-6">
-                                <div class="mt-2 input-group input-group-sm">
+                                <label class="form-label small mb-1">Check-in Date & Time *</label>
+                                <div class="input-group input-group-sm">
                                     <span class="input-group-text"><i class="cil-calendar-check"></i></span>
-                                    <input type="datetime-local" class="form-control" id="check_in_date" name="check_in_date" required>
+                                    <input type="datetime-local" class="form-control" id="check_in_date" name="check_in_date" disabled required>
                                 </div>
                             </div>
                             <div class="col-12">
-                                <label class="form-label small mb-1">Duration *</label>
+                                <label class="form-label small mb-2">Duration *</label>
                                 <div class="d-flex gap-2 align-items-center">
                                     <div class="btn-group btn-group-sm flex-shrink-0" role="group">
-                                        <input type="radio" class="btn-check" id="hours_0" name="reservation_hour_count" value="0" autocomplete="off" checked>
-                                        <label class="btn btn-outline-primary" for="hours_0">
-                                            <i class="cil-clock me-1"></i>0h
-                                        </label>
-
                                         <input type="radio" class="btn-check" id="hours_8" name="reservation_hour_count" value="8" autocomplete="off">
                                         <label class="btn btn-outline-primary" for="hours_8">
                                             <i class="cil-clock me-1"></i>8h
                                         </label>
-
                                         <input type="radio" class="btn-check" id="hours_16" name="reservation_hour_count" value="16" autocomplete="off">
                                         <label class="btn btn-outline-primary" for="hours_16">
                                             <i class="cil-clock me-1"></i>16h
                                         </label>
                                     </div>
-                                    <select class="form-select form-select-sm" id="reservation_days_count" name="reservation_days_count" style="width: 100px;">
+                                    <select class="form-select form-select-sm" id="reservation_days_count" name="reservation_hour_count" style="width: 100px;">
                                         <option value="">Days</option>
                                         <option value="1">1</option>
                                         <option value="2">2</option>
@@ -788,13 +878,13 @@ $todayCheckOuts = $conn->query("SELECT COUNT(*) as checkouts_today FROM reservat
                                 </div>
                             </div>
                         </div>
-                        <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-coreui-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-primary">Save</button>
-                </div>
+
+                        <div class="modal-footer mt-3">
+                            <button type="button" class="btn btn-secondary" data-coreui-dismiss="modal">Cancel</button>
+                            <button type="submit" class="btn btn-primary">Create Reservation</button>
+                        </div>
                     </form>
                 </div>
-                
             </div>
         </div>
     </div>
@@ -808,13 +898,6 @@ $todayCheckOuts = $conn->query("SELECT COUNT(*) as checkouts_today FROM reservat
             document.getElementById('formAction').value = 'create';
             document.getElementById('reservationId').value = '';
             document.getElementById('reservationForm').reset();
-            document.getElementById('room_id').disabled = true;
-            // Hide all room options initially
-            const roomOptions = document.querySelectorAll('#room_id option[data-status]');
-            roomOptions.forEach(option => option.style.display = 'none');
-            // Show only the placeholder
-            document.querySelector('#room_id option[value=""]').style.display = 'block';
-            document.querySelector('#room_id option[value=""]').textContent = 'Select check-in date and duration first';
 
             // Reset to existing guest tab
             const existingTab = document.getElementById('existing-guest-tab');
@@ -823,6 +906,12 @@ $todayCheckOuts = $conn->query("SELECT COUNT(*) as checkouts_today FROM reservat
             newTab.classList.remove('active');
             document.getElementById('existing-guest').classList.add('show', 'active');
             document.getElementById('new-guest').classList.remove('show', 'active');
+
+            // Disable date and duration initially, enable room selection
+            document.getElementById('room_id').disabled = false;
+            document.getElementById('check_in_date').disabled = true;
+            document.querySelectorAll('input[name="reservation_hour_count"]').forEach(radio => radio.disabled = true);
+            document.getElementById('reservation_days_count').disabled = true;
         }
 
         function editReservation(id) {
@@ -841,7 +930,6 @@ $todayCheckOuts = $conn->query("SELECT COUNT(*) as checkouts_today FROM reservat
             .then(response => response.json())
             .then(data => {
                 document.getElementById('reservationId').value = data.id;
-                document.getElementById('reservation_id').value = data.id;
                 document.getElementById('reservation_type').value = data.reservation_type;
                 document.getElementById('guest_id').value = data.guest_id || '';
                 document.getElementById('room_id').value = data.room_id || '';
@@ -956,17 +1044,45 @@ $todayCheckOuts = $conn->query("SELECT COUNT(*) as checkouts_today FROM reservat
             }
         }
 
+        function updateRoomSelection() {
+            const roomId = document.getElementById('room_id').value;
+
+            if (roomId) {
+                // Room selected, enable date and duration
+                document.getElementById('check_in_date').disabled = false;
+                document.querySelectorAll('input[name="reservation_hour_count"]').forEach(radio => radio.disabled = false);
+                document.getElementById('reservation_days_count').disabled = false;
+            } else {
+                // No room selected, disable date and duration
+                document.getElementById('check_in_date').disabled = true;
+                document.getElementById('check_in_date').value = '';
+                document.querySelectorAll('input[name="reservation_hour_count"]').forEach(radio => {
+                    radio.disabled = true;
+                    radio.checked = false;
+                });
+                document.getElementById('reservation_days_count').disabled = true;
+                document.getElementById('reservation_days_count').value = '';
+            }
+        }
+
         function updateAvailableRooms() {
             const checkInDate = document.getElementById('check_in_date').value;
-            const hours = document.querySelector('input[name="reservation_hour_count"]:checked')?.value;
-            const days = document.getElementById('reservation_days_count').value || 0;
+            const hoursChecked = document.querySelector('input[name="reservation_hour_count"]:checked');
+            const daysSelected = document.getElementById('reservation_days_count').value;
 
-            if (checkInDate && hours) {
+            // Determine the duration value
+            let durationValue = 0;
+            if (hoursChecked) {
+                durationValue = hoursChecked.value;
+            } else if (daysSelected) {
+                durationValue = daysSelected;
+            }
+
+            if (checkInDate && durationValue > 0) {
                 const formData = new FormData();
                 formData.append('action', 'get_available_rooms');
                 formData.append('check_in_date', checkInDate);
-                formData.append('reservation_hour_count', hours);
-                formData.append('reservation_days_count', days);
+                formData.append('reservation_hour_count', durationValue);
 
                 fetch('reservations.php', {
                     method: 'POST',
@@ -977,14 +1093,20 @@ $todayCheckOuts = $conn->query("SELECT COUNT(*) as checkouts_today FROM reservat
                 })
                 .then(response => response.json())
                 .then(data => {
+                    console.log('Available rooms:', data);
                     const roomSelect = document.getElementById('room_id');
                     const roomOptions = roomSelect.querySelectorAll('option[data-status]');
 
-                    // Hide all room options first
-                    roomOptions.forEach(option => option.style.display = 'none');
+                    // First, hide all room options except the "No room assignment" option
+                    roomOptions.forEach(option => {
+                        if (option.value !== '') {
+                            option.style.display = 'none';
+                        }
+                    });
 
                     // Show only available rooms
                     const availableRoomIds = data.map(room => room.id.toString());
+                    console.log('Available room IDs:', availableRoomIds);
                     roomOptions.forEach(option => {
                         if (availableRoomIds.includes(option.value)) {
                             option.style.display = 'block';
@@ -992,32 +1114,37 @@ $todayCheckOuts = $conn->query("SELECT COUNT(*) as checkouts_today FROM reservat
                     });
 
                     roomSelect.disabled = false;
-                    // Update placeholder text
-                    document.querySelector('#room_id option[value=""]').textContent = 'Not assigned';
+                    // Update the placeholder to show available count
+                    const placeholderOption = document.querySelector('#room_id option[value=""]');
+                    if (placeholderOption) {
+                        placeholderOption.textContent = `No room assignment (${data.length} available)`;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching available rooms:', error);
                 });
             } else {
+                // Show all rooms when no date/duration is selected
                 const roomSelect = document.getElementById('room_id');
                 const roomOptions = roomSelect.querySelectorAll('option[data-status]');
-                roomOptions.forEach(option => option.style.display = 'none');
-                roomSelect.disabled = true;
-                document.querySelector('#room_id option[value=""]').textContent = 'Select check-in date and duration first';
+                roomOptions.forEach(option => option.style.display = 'block');
+                roomSelect.disabled = false;
+                const placeholderOption = document.querySelector('#room_id option[value=""]');
+                if (placeholderOption) {
+                    placeholderOption.textContent = 'Select a room first';
+                }
             }
         }
 
         // Add event listeners for date/time and duration changes
         document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('room_id').addEventListener('change', updateRoomSelection);
             document.getElementById('check_in_date').addEventListener('change', updateAvailableRooms);
             // Listen for radio button changes for hours
             document.querySelectorAll('input[name="reservation_hour_count"]').forEach(radio => {
                 radio.addEventListener('change', updateAvailableRooms);
             });
-            document.getElementById('reservation_days_count').addEventListener('change', function() {
-                updateAvailableRooms();
-                // Auto-set hours to 0 when days are selected
-                if (this.value) {
-                    document.getElementById('hours_0').checked = true;
-                }
-            });
+            document.getElementById('reservation_days_count').addEventListener('change', updateAvailableRooms);
         });
 
 
@@ -1075,6 +1202,18 @@ $todayCheckOuts = $conn->query("SELECT COUNT(*) as checkouts_today FROM reservat
             if (guestId && newFirstName) {
                 errors.push('Please select either an existing guest OR create a new guest, not both.');
                 isValid = false;
+            }
+
+            // Ensure required fields are present in POST data
+            if (!guestId && newFirstName) {
+                // Check for new guest required fields
+                const requiredNewGuestFields = ['new_first_name', 'new_last_name', 'new_email', 'new_id_type', 'new_id_number'];
+                requiredNewGuestFields.forEach(field => {
+                    if (!form.querySelector('#' + field).value.trim()) {
+                        errors.push(field.replace('new_', '').replace('_', ' ').toUpperCase() + ' is required for new guest.');
+                        isValid = false;
+                    }
+                });
             }
 
             // Validate new guest fields if creating new guest
@@ -1144,6 +1283,7 @@ $todayCheckOuts = $conn->query("SELECT COUNT(*) as checkouts_today FROM reservat
                 const now = new Date();
                 const bufferTime = 5 * 60 * 1000; // 5 minutes buffer
                 if (checkIn < (now - bufferTime)) {
+                    showAlert('Check-in date and time cannot be in the past.', 'warning');
                     const element = form.querySelector('#check_in_date');
                     element.classList.add('is-invalid');
                     const feedback = document.createElement('div');
@@ -1154,7 +1294,20 @@ $todayCheckOuts = $conn->query("SELECT COUNT(*) as checkouts_today FROM reservat
                 }
             }
 
-            // Validate duration - either hours OR days must be selected
+            // Validate room selection is required
+            const roomId = form.querySelector('#room_id').value;
+            if (!roomId) {
+                showAlert('Room selection is required.', 'warning');
+                const element = form.querySelector('#room_id');
+                element.classList.add('is-invalid');
+                const feedback = document.createElement('div');
+                feedback.className = 'invalid-feedback';
+                feedback.textContent = 'Please select a room.';
+                element.parentNode.appendChild(feedback);
+                isValid = false;
+            }
+
+            // Validate duration - either hours (8 or 16) OR days must be selected
             const hoursChecked = form.querySelector('input[name="reservation_hour_count"]:checked');
             const daysSelected = form.querySelector('#reservation_days_count').value;
 
@@ -1163,15 +1316,32 @@ $todayCheckOuts = $conn->query("SELECT COUNT(*) as checkouts_today FROM reservat
                 isValid = false;
             }
 
-            // If hours is selected and it's 0, then days must be selected
-            if (hoursChecked && hoursChecked.value === '0' && !daysSelected) {
-                const element = form.querySelector('#reservation_days_count');
-                element.classList.add('is-invalid');
-                const feedback = document.createElement('div');
-                feedback.className = 'invalid-feedback';
-                feedback.textContent = 'Days are required when hours is set to 0.';
-                element.parentNode.appendChild(feedback);
-                isValid = false;
+            // Ensure duration values are sent in POST
+            if (hoursChecked) {
+                // Add hidden input for hours if not already present
+                let hiddenHours = form.querySelector('input[name="reservation_hour_count"][type="hidden"]');
+                if (!hiddenHours) {
+                    hiddenHours = document.createElement('input');
+                    hiddenHours.type = 'hidden';
+                    hiddenHours.name = 'reservation_hour_count';
+                    form.appendChild(hiddenHours);
+                }
+                hiddenHours.value = hoursChecked.value;
+            }
+            if (daysSelected) {
+                // Days dropdown uses the same name as hours, so set it properly
+                const daysInput = form.querySelector('#reservation_days_count');
+                if (daysInput && daysInput.value) {
+                    // Override the radio button selection with days value
+                    let hiddenHours = form.querySelector('input[name="reservation_hour_count"][type="hidden"]');
+                    if (!hiddenHours) {
+                        hiddenHours = document.createElement('input');
+                        hiddenHours.type = 'hidden';
+                        hiddenHours.name = 'reservation_hour_count';
+                        form.appendChild(hiddenHours);
+                    }
+                    hiddenHours.value = daysInput.value;
+                }
             }
 
             if (!isValid && errors.length > 0) {
@@ -1195,8 +1365,9 @@ $todayCheckOuts = $conn->query("SELECT COUNT(*) as checkouts_today FROM reservat
                     showAlert(data.message || 'An error occurred while creating the reservation.', 'danger');
                 }
             } catch (e) {
-                showAlert('Server returned invalid response.', 'danger');
+                showAlert('Server returned invalid response: ' + response, 'danger');
                 console.error('JSON parse error:', e);
+                console.error('Response:', response);
             }
         }
 

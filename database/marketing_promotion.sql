@@ -24,7 +24,7 @@ CREATE TABLE IF NOT EXISTS marketing_campaigns (
     INDEX idx_start_date (start_date),
     INDEX idx_end_date (end_date),
     INDEX idx_created_by (created_by)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+);
 
 -- PROMOTIONAL OFFERS TABLE
 CREATE TABLE IF NOT EXISTS promotional_offers (
@@ -51,7 +51,7 @@ CREATE TABLE IF NOT EXISTS promotional_offers (
     INDEX idx_valid_dates (valid_from, valid_until),
     INDEX idx_is_active (is_active),
     INDEX idx_offer_type (offer_type)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+);
 
 -- CAMPAIGN PERFORMANCE TRACKING
 CREATE TABLE IF NOT EXISTS campaign_performance (
@@ -70,7 +70,7 @@ CREATE TABLE IF NOT EXISTS campaign_performance (
     INDEX idx_campaign_id (campaign_id),
     INDEX idx_performance_date (performance_date),
     UNIQUE KEY unique_campaign_date (campaign_id, performance_date)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+);
 
 -- Insert sample marketing campaigns
 INSERT INTO marketing_campaigns (name, description, campaign_type, target_audience, start_date, end_date, budget, status, leads_generated, conversions, revenue_generated, roi_percentage, created_by) VALUES
@@ -81,7 +81,7 @@ INSERT INTO marketing_campaigns (name, description, campaign_type, target_audien
 ('Email Newsletter Campaign', 'Monthly newsletter with hotel updates and offers', 'email', 'Newsletter subscribers', '2023-01-01', '2023-12-31', 2000.00, 'active', 156, 42, 4200.00, 110.00, 1),
 ('Social Media Engagement', 'Social media campaign to increase followers and engagement', 'social_media', 'Social media users, millennials', '2023-03-01', '2023-06-30', 4000.00, 'completed', 78, 19, 5800.00, 45.00, 1),
 ('Business Traveler Special', 'Special rates and packages for business travelers', 'promotion', 'Business professionals, corporate clients', '2023-07-01', '2023-12-31', 6000.00, 'active', 92, 25, 9500.00, 58.33, 1),
-('Romantic Getaway Package', 'Valentine\'s Day and anniversary packages', 'seasonal', 'Couples, honeymooners', '2023-02-01', '2023-02-28', 3500.00, 'completed', 34, 8, 4800.00, 37.14, 1),
+('Romantic Getaway Package', 'Valentiness Day and anniversary packages', 'seasonal', 'Couples, honeymooners', '2023-02-01', '2023-02-28', 3500.00, 'completed', 34, 8, 4800.00, 37.14, 1),
 ('Student Discount Program', 'Special rates for students and educational groups', 'promotion', 'Students, educational institutions', '2023-09-01', '2023-05-31', 2500.00, 'active', 45, 11, 3200.00, 28.00, 1),
 ('Luxury Experience Upgrade', 'Premium package upgrades and VIP services', 'loyalty', 'High-value customers, VIP members', '2023-04-01', '2023-12-31', 7000.00, 'active', 56, 15, 11200.00, 60.00, 1),
 ('Draft Campaign Example', 'Example campaign in draft status', 'email', 'Test audience', '2023-12-01', '2024-01-31', 1500.00, 'draft', 0, 0, 0.00, 0.00, 1),

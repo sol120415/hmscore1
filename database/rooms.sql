@@ -22,7 +22,7 @@ CREATE TABLE IF NOT EXISTS rooms (
 
     INDEX idx_room_number (room_number),
     INDEX idx_room_created_at (room_created_at)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+);
 
 -- ROOMS TABLE
 
