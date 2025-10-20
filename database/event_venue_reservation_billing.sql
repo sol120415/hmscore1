@@ -22,7 +22,7 @@ CREATE TABLE IF NOT EXISTS event_reservation (
     event_expected_attendees INT NOT NULL,
     event_description TEXT,
     event_venue_id INT, -- Already NULLable
-    event_status ENUM('Pending', 'Checked In', 'Checked Out', 'Cancelled') DEFAULT 'Pending',
+    event_status ENUM('Pending', 'Checked In', 'Checked Out', 'Cancelled', 'Archived') DEFAULT 'Pending',
     event_checkin DATETIME,
     event_checkout DATETIME,
     event_hour_count INT,

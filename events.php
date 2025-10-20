@@ -71,6 +71,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_HX_REQUEST']))
                          }
                      }
 
+                     // Calculate check-out date based on hours and days
+                     $event_checkin = $_POST['event_checkin'];
+                     $hours = (int)($_POST['event_hours'] ?: 0);
+                     $days = (int)($_POST['event_days'] ?: 0);
+                     $total_hours = $hours + $days;
+
+                     // Validate duration - hours must be specified
+                     if ($total_hours === 0) {
+                         echo json_encode(['success' => false, 'message' => 'Event duration must be specified.']);
+                         break;
+                     }
+
+                     $event_checkout = date('Y-m-d H:i:s', strtotime($event_checkin) + ($total_hours * 3600));
+
                      // Check for time conflicts if a venue is selected
                      if (!empty($_POST['event_venue_id'])) {
                          $stmt = $conn->prepare("SELECT COUNT(*) as conflict_count FROM event_reservation WHERE event_venue_id = ? AND event_status IN ('Pending', 'Checked In', 'Checked Out') AND event_status != 'Archived' AND (
@@ -80,15 +94,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_HX_REQUEST']))
                          )");
                          $stmt->execute([
                              $_POST['event_venue_id'],
-                             $_POST['event_checkout'], $_POST['event_checkin'],  // overlap start
-                             $_POST['event_checkin'], $_POST['event_checkout'],  // overlap end
-                             $_POST['event_checkin'], $_POST['event_checkout']   // contained within
+                             $event_checkout, $event_checkin,  // overlap start
+                             $event_checkin, $event_checkout,  // overlap end
+                             $event_checkin, $event_checkout   // contained within
                          ]);
                          $conflict = $stmt->fetch(PDO::FETCH_ASSOC);
                          if ($conflict['conflict_count'] > 0) {
                              // Find next available time for the venue
                              $stmt = $conn->prepare("SELECT event_checkout FROM event_reservation WHERE event_venue_id = ? AND event_status IN ('Pending', 'Checked In') AND event_checkout > ? ORDER BY event_checkout ASC LIMIT 1");
-                             $stmt->execute([$_POST['event_venue_id'], $_POST['event_checkin']]);
+                             $stmt->execute([$_POST['event_venue_id'], $event_checkin]);
                              $nextAvailable = $stmt->fetch(PDO::FETCH_ASSOC);
 
                              $message = 'Time conflict: The selected venue is already reserved for this time period.';
@@ -96,7 +110,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_HX_REQUEST']))
                                  $nextTime = strtotime($nextAvailable['event_checkout']);
 
                                  // Calculate requested duration based on hours value
-                                 $hours = (int)$_POST['event_hour_count'];
                                  if ($hours <= 16) {
                                      $requestedDuration = $hours * 3600; // hours
                                      $minGap = 8 * 3600; // 8 hours minimum gap
@@ -105,7 +118,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_HX_REQUEST']))
                                      $minGap = 24 * 3600; // 24 hours minimum gap
                                  }
 
-                                 if (($nextTime - strtotime($_POST['event_checkin'])) < $minGap) {
+                                 if (($nextTime - strtotime($event_checkin)) < $minGap) {
                                      // Not enough time, suggest time after the next reservation
                                      $suggestedTime = date('Y-m-d H:i:s', $nextTime);
                                      $message .= ' Venue will be available after ' . date('M-d H:i', $nextTime) . '.';
@@ -128,9 +141,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_HX_REQUEST']))
                          $_POST['event_expected_attendees'],
                          $_POST['event_description'] ?: null,
                          $_POST['event_venue_id'] ?: null,
-                         $_POST['event_checkin'],
-                         $_POST['event_checkout'],
-                         $_POST['event_hour_count'],
+                         $event_checkin,
+                         $event_checkout,
+                         $total_hours,
                          $_POST['event_status'] ?: 'Pending'
                      ]);
                      echo json_encode(['success' => true, 'message' => 'Reservation created successfully']);
@@ -141,6 +154,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_HX_REQUEST']))
                      $stmt = $conn->prepare("SELECT event_venue_id, event_status, event_checkin, event_checkout FROM event_reservation WHERE id=?");
                      $stmt->execute([$_POST['id']]);
                      $current = $stmt->fetch(PDO::FETCH_ASSOC);
+
+                     // Calculate new check-out date if dates changed
+                     $event_checkin = $_POST['event_checkin'];
+                     $hours = (int)($_POST['event_hours'] ?: 0);
+                     $days = (int)($_POST['event_days'] ?: 0);
+                     $total_hours = $hours + $days;
+
+                     // Validate duration
+                     if ($total_hours === 0) {
+                         echo json_encode(['success' => false, 'message' => 'Event duration must be specified.']);
+                         break;
+                     }
+
+                     $event_checkout = date('Y-m-d H:i:s', strtotime($event_checkin) + ($total_hours * 3600));
 
                      // Validate expected attendees against venue capacity
                      if (!empty($_POST['event_venue_id'])) {
@@ -154,7 +181,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_HX_REQUEST']))
                      }
 
                      // Check for time conflicts if venue changed or dates changed
-                     if (!empty($_POST['event_venue_id']) && (!empty($_POST['event_venue_id']) || $_POST['event_checkin'] !== $current['event_checkin'] || $_POST['event_checkout'] !== $current['event_checkout'])) {
+                     if (!empty($_POST['event_venue_id']) && (!empty($_POST['event_venue_id']) || $event_checkin !== $current['event_checkin'] || $event_checkout !== $current['event_checkout'])) {
                          $stmt = $conn->prepare("SELECT COUNT(*) as conflict_count FROM event_reservation WHERE event_venue_id = ? AND id != ? AND event_status IN ('Pending', 'Checked In', 'Checked Out') AND event_status != 'Archived' AND (
                              (event_checkin < ? AND event_checkout > ?) OR
                              (event_checkin < ? AND event_checkout > ?) OR
@@ -163,15 +190,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_HX_REQUEST']))
                          $stmt->execute([
                              $_POST['event_venue_id'],
                              $_POST['id'],  // Exclude current reservation
-                             $_POST['event_checkout'], $_POST['event_checkin'],  // overlap start
-                             $_POST['event_checkin'], $_POST['event_checkout'],  // overlap end
-                             $_POST['event_checkin'], $_POST['event_checkout']   // contained within
+                             $event_checkout, $event_checkin,  // overlap start
+                             $event_checkin, $event_checkout,  // overlap end
+                             $event_checkin, $event_checkout   // contained within
                          ]);
                          $conflict = $stmt->fetch(PDO::FETCH_ASSOC);
                          if ($conflict['conflict_count'] > 0) {
                              // Find next available time for the venue
                              $stmt = $conn->prepare("SELECT event_checkout FROM event_reservation WHERE event_venue_id = ? AND id != ? AND event_status IN ('Pending', 'Checked In') AND event_checkout > ? ORDER BY event_checkout ASC LIMIT 1");
-                             $stmt->execute([$_POST['event_venue_id'], $_POST['id'], $_POST['event_checkin']]);
+                             $stmt->execute([$_POST['event_venue_id'], $_POST['id'], $event_checkin]);
                              $nextAvailable = $stmt->fetch(PDO::FETCH_ASSOC);
 
                              $message = 'Time conflict: The selected venue is already reserved for this time period.';
@@ -179,7 +206,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_HX_REQUEST']))
                                  $nextTime = strtotime($nextAvailable['event_checkout']);
 
                                  // Calculate requested duration based on hours value
-                                 $hours = (int)$_POST['event_hour_count'];
                                  if ($hours <= 16) {
                                      $requestedDuration = $hours * 3600; // hours
                                      $minGap = 8 * 3600; // 8 hours minimum gap
@@ -188,7 +214,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_HX_REQUEST']))
                                      $minGap = 24 * 3600; // 24 hours minimum gap
                                  }
 
-                                 if (($nextTime - strtotime($_POST['event_checkin'])) < $minGap) {
+                                 if (($nextTime - strtotime($event_checkin)) < $minGap) {
                                      // Not enough time, suggest time after the next reservation
                                      $suggestedTime = date('Y-m-d H:i:s', $nextTime);
                                      $message .= ' Venue will be available after ' . date('M-d H:i', $nextTime) . '.';
@@ -211,12 +237,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_HX_REQUEST']))
                          $_POST['event_expected_attendees'],
                          $_POST['event_description'] ?: null,
                          $_POST['event_venue_id'] ?: null,
-                         $_POST['event_checkin'],
-                         $_POST['event_checkout'],
-                         $_POST['event_hour_count'],
+                         $event_checkin,
+                         $event_checkout,
+                         $total_hours,
                          $_POST['event_status'],
                          $_POST['id']
                      ]);
+
+                     // Set check_out_date in the database
+                     $stmt = $conn->prepare("UPDATE event_reservation SET event_checkout=? WHERE id=?");
+                     $stmt->execute([$event_checkout, $_POST['id']]);
+
                      echo json_encode(['success' => true, 'message' => 'Reservation updated successfully']);
                      break;
 
@@ -225,6 +256,42 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_HX_REQUEST']))
                     $stmt = $conn->prepare("DELETE FROM event_reservation WHERE id=?");
                     $stmt->execute([$_POST['id']]);
                     echo json_encode(['success' => true, 'message' => 'Reservation deleted successfully']);
+                    break;
+
+                case 'checkin':
+                    // Check-in reservation
+                    $stmt = $conn->prepare("UPDATE event_reservation SET event_status = 'Checked In' WHERE id = ? AND event_status = 'Pending'");
+                    $result = $stmt->execute([$_POST['id']]);
+
+                    if ($result && $stmt->rowCount() > 0) {
+                        echo json_encode(['success' => true, 'message' => 'Event checked in successfully']);
+                    } else {
+                        echo json_encode(['success' => false, 'message' => 'Check-in failed or event not found']);
+                    }
+                    break;
+
+                case 'checkout':
+                    // Check-out reservation
+                    $stmt = $conn->prepare("UPDATE event_reservation SET event_status = 'Checked Out' WHERE id = ? AND event_status = 'Checked In'");
+                    $result = $stmt->execute([$_POST['id']]);
+
+                    if ($result && $stmt->rowCount() > 0) {
+                        echo json_encode(['success' => true, 'message' => 'Event checked out successfully']);
+                    } else {
+                        echo json_encode(['success' => false, 'message' => 'Check-out failed or event not found']);
+                    }
+                    break;
+
+                case 'archive':
+                    // Archive reservation
+                    $stmt = $conn->prepare("UPDATE event_reservation SET event_status = 'Archived' WHERE id = ?");
+                    $result = $stmt->execute([$_POST['id']]);
+
+                    if ($result && $stmt->rowCount() > 0) {
+                        echo json_encode(['success' => true, 'message' => 'Event archived successfully']);
+                    } else {
+                        echo json_encode(['success' => false, 'message' => 'Archive failed or event not found']);
+                    }
                     break;
 
                 case 'get_reservation':
@@ -249,6 +316,15 @@ $reservations = $conn->query("
    SELECT er.*, ev.venue_name, ev.venue_capacity
    FROM event_reservation er
    LEFT JOIN event_venues ev ON er.event_venue_id = ev.id
+   WHERE er.event_status != 'Archived'
+   ORDER BY er.created_at DESC
+")->fetchAll(PDO::FETCH_ASSOC);
+
+$archived_reservations = $conn->query("
+   SELECT er.*, ev.venue_name, ev.venue_capacity
+   FROM event_reservation er
+   LEFT JOIN event_venues ev ON er.event_venue_id = ev.id
+   WHERE er.event_status = 'Archived'
    ORDER BY er.created_at DESC
 ")->fetchAll(PDO::FETCH_ASSOC);
 
@@ -377,7 +453,11 @@ $stats = $conn->query("
                                         <div class="flex-grow-1">
                                             <h6 class="mb-1"><?php echo htmlspecialchars($reservation['event_title']); ?></h6>
                                             <small class="text-muted">
-                                                <?php echo htmlspecialchars($reservation['event_organizer']); ?> • <?php echo htmlspecialchars($reservation['venue_name'] ?: 'No venue'); ?>
+                                                <?php if ($reservation['venue_name']): ?>
+                                                    <?php echo htmlspecialchars($reservation['venue_name']); ?> • <?php echo date('M-d H:i', strtotime($reservation['event_checkin'])); ?> to <?php echo date('M-d H:i', strtotime($reservation['event_checkout'])); ?>
+                                                <?php else: ?>
+                                                    No venue • <?php echo date('M-d H:i', strtotime($reservation['event_checkin'])); ?> to <?php echo date('M-d H:i', strtotime($reservation['event_checkout'])); ?>
+                                                <?php endif; ?>
                                             </small>
                                         </div>
                                         <div class="d-flex flex-column gap-1">
@@ -392,9 +472,22 @@ $stats = $conn->query("
                                     </div>
                                 </div>
                                 <div class="event-actions justify-content-center">
-                                    <button class="btn btn-sm btn-outline-primary me-2" onclick="editReservation(<?php echo $reservation['id']; ?>)" title="Edit">
-                                        <i class="cil-pencil me-1"></i>Edit
-                                    </button>
+                                    <?php if ($reservation['event_status'] === 'Pending'): ?>
+                                        <button class="btn btn-sm btn-success me-2" onclick="checkInReservation(<?php echo $reservation['id']; ?>)" title="Check In">
+                                            <i class="cil-check me-1"></i>Check In
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-primary me-2" onclick="editReservation(<?php echo $reservation['id']; ?>)" title="Edit">
+                                            <i class="cil-pencil me-1"></i>Edit
+                                        </button>
+                                    <?php elseif ($reservation['event_status'] === 'Checked In'): ?>
+                                        <button class="btn btn-sm btn-warning me-2" onclick="checkOutReservation(<?php echo $reservation['id']; ?>)" title="Check Out">
+                                            <i class="cil-arrow-right me-1"></i>Check Out
+                                        </button>
+                                    <?php elseif ($reservation['event_status'] === 'Checked Out'): ?>
+                                        <button class="btn btn-sm btn-outline-secondary me-2" onclick="archiveReservation(<?php echo $reservation['id']; ?>)" title="Archive">
+                                            <i class="cil-archive me-1"></i>Archive
+                                        </button>
+                                    <?php endif; ?>
                                     <button class="btn btn-sm btn-outline-danger" onclick="deleteReservation(<?php echo $reservation['id']; ?>, '<?php echo htmlspecialchars($reservation['event_title']); ?>')" title="Remove">
                                         <i class="cil-trash me-1"></i>Remove
                                     </button>
@@ -404,6 +497,53 @@ $stats = $conn->query("
                     </div>
                     <?php endforeach; ?>
                 </div>
+            </div>
+        </div>
+
+        <!-- Archived Events -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5 class="mb-0">Archived Events</h5>
+            </div>
+            <div class="card-body">
+                <?php if (!empty($archived_reservations)): ?>
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Event Title</th>
+                                <th>Organizer</th>
+                                <th>Venue</th>
+                                <th>Check-in</th>
+                                <th>Check-out</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($archived_reservations as $reservation): ?>
+                            <tr>
+                                <td><?php echo htmlspecialchars($reservation['event_title']); ?></td>
+                                <td><?php echo htmlspecialchars($reservation['event_organizer']); ?></td>
+                                <td><?php echo htmlspecialchars($reservation['venue_name'] ?: 'No venue'); ?></td>
+                                <td><?php echo date('M-d H:i', strtotime($reservation['event_checkin'])); ?></td>
+                                <td><?php echo date('M-d H:i', strtotime($reservation['event_checkout'])); ?></td>
+                                <td>
+                                    <span class="badge bg-secondary"><?php echo htmlspecialchars($reservation['event_status']); ?></span>
+                                </td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-danger" onclick="deleteReservation(<?php echo $reservation['id']; ?>, '<?php echo htmlspecialchars($reservation['event_title']); ?>')" title="Remove">
+                                        <i class="cil-trash me-1"></i>Remove
+                                    </button>
+                                </td>
+                            </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+                <?php else: ?>
+                <p class="text-muted mb-0">No archived events yet.</p>
+                <?php endif; ?>
             </div>
         </div>
     </div>
@@ -523,12 +663,63 @@ $stats = $conn->query("
                                 <input type="datetime-local" class="form-control" id="event_checkin" name="event_checkin" required>
                             </div>
                             <div class="col-md-6 mb-3">
-                                <label for="event_checkout" class="form-label">Check-out Date & Time *</label>
-                                <input type="datetime-local" class="form-control" id="event_checkout" name="event_checkout" required>
+                                <label class="form-label small mb-2">Duration *</label>
+                                <div class="d-flex gap-2 align-items-center">
+                                    <select class="form-select form-select-sm" id="event_hours" name="event_hours" style="width: 120px;">
+                                        <option value="0">Hours</option>
+                                        <option value="1">1</option>
+                                        <option value="2">2</option>
+                                        <option value="3">3</option>
+                                        <option value="4">4</option>
+                                        <option value="5">5</option>
+                                        <option value="6">6</option>
+                                        <option value="7">7</option>
+                                        <option value="8">8</option>
+                                        <option value="9">9</option>
+                                        <option value="10">10</option>
+                                        <option value="11">11</option>
+                                        <option value="12">12</option>
+                                        <option value="13">13</option>
+                                        <option value="14">14</option>
+                                        <option value="15">15</option>
+                                        <option value="16">16</option>
+                                        <option value="17">17</option>
+                                        <option value="18">18</option>
+                                        <option value="19">19</option>
+                                        <option value="20">20</option>
+                                        <option value="21">21</option>
+                                        <option value="22">22</option>
+                                        <option value="23">23</option>
+                                    </select>
+                                    <select class="form-select form-select-sm" id="event_days" name="event_days" style="width: 100px;">
+                                        <option value="0">Days</option>
+                                        <option value="24">1</option>
+                                        <option value="48">2</option>
+                                        <option value="72">3</option>
+                                        <option value="96">4</option>
+                                        <option value="120">5</option>
+                                        <option value="144">6</option>
+                                        <option value="168">7</option>
+                                        <option value="336">14</option>
+                                        <option value="504">21</option>
+                                        <option value="720">30</option>
+                                        <option value="1440">60</option>
+                                        <option value="2160">90</option>
+                                        <option value="2880">120</option>
+                                        <option value="3600">150</option>
+                                        <option value="4320">180</option>
+                                        <option value="5040">210</option>
+                                        <option value="5760">240</option>
+                                        <option value="6480">270</option>
+                                        <option value="7200">300</option>
+                                        <option value="7920">330</option>
+                                        <option value="8760">365</option>
+                                    </select>
+                                </div>
                             </div>
                         </div>
 
-                        <input type="hidden" name="event_status" value="Pending">
+                        <input type="hidden" name="event_status" id="event_status" value="Pending">
 
                         <div class="mb-3">
                             <label for="event_description" class="form-label">Description</label>
@@ -659,12 +850,81 @@ $stats = $conn->query("
                 document.getElementById('event_description').value = data.event_description || '';
                 document.getElementById('event_venue_id').value = data.event_venue_id || '';
                 document.getElementById('event_checkin').value = data.event_checkin ? data.event_checkin.substring(0, 16) : '';
-                document.getElementById('event_checkout').value = data.event_checkout ? data.event_checkout.substring(0, 16) : '';
-                document.getElementById('event_hour_count').value = data.event_hour_count;
+
+                // Calculate hours and days from total hours
+                const totalHours = data.event_hour_count;
+                const days = Math.floor(totalHours / 24);
+                const hours = totalHours % 24;
+
+                document.getElementById('event_hours').value = hours;
+                document.getElementById('event_days').value = days * 24;
                 document.getElementById('event_status').value = data.event_status || 'Pending';
 
                 new coreui.Modal(document.getElementById('reservationModal')).show();
             });
+        }
+
+        function checkInReservation(id) {
+            if (confirm('Are you sure you want to check in this event?')) {
+                fetch('events.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'HX-Request': 'true'
+                    },
+                    body: 'action=checkin&id=' + id
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        location.reload();
+                    } else {
+                        alert('Error: ' + data.message);
+                    }
+                });
+            }
+        }
+
+        function checkOutReservation(id) {
+            if (confirm('Are you sure you want to check out this event?')) {
+                fetch('events.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'HX-Request': 'true'
+                    },
+                    body: 'action=checkout&id=' + id
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        location.reload();
+                    } else {
+                        alert('Error: ' + data.message);
+                    }
+                });
+            }
+        }
+
+        function archiveReservation(id) {
+            if (confirm('Are you sure you want to archive this event? This will remove it from active events.')) {
+                fetch('events.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'HX-Request': 'true'
+                    },
+                    body: 'action=archive&id=' + id
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        location.reload();
+                    } else {
+                        alert('Error: ' + data.message);
+                    }
+                });
+            }
         }
 
         function deleteReservation(id, title) {
