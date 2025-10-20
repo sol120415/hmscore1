@@ -92,8 +92,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         }
     } else {
-        $error = implode('<br>', $errors);
+        $error = implode(' ', $errors);
     }
+
+    // No HTMX response needed
 }
 ?>
 <!DOCTYPE html>
@@ -109,6 +111,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <link href="css/coreui-reboot.min.css" rel="stylesheet">
     <link href="css/coreui-utilities.min.css" rel="stylesheet">
     <link href="css/coreui-forms.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/@coreui/icons/css/all.min.css">
+
+    <script src="js/htmx.min.js"></script>
+    <script src="/js/htmx.min.js"></script>
 
     <link href="loginbg.css" rel="stylesheet">
 
@@ -127,10 +133,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </style>
 </head>
 <body>
+<div class="toast-container position-fixed top-0 end-0 p-3" id="toast-container"></div>
 <header>
 
     <?php //include 'header.php'; ?>
-   
+
 </header>
 
 <section>
@@ -152,6 +159,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             </div>
 
                             <div class="text-center mb-4">
+                                <?php if (isset($error)) { ?>
+                                <div class="alert alert-danger" role="alert">
+                                    <?php echo htmlspecialchars($error); ?>
+                                </div>
+                                <?php } ?>
 
                             <form action="login.php" method="post" class="needs-validation" novalidate>
                                 <!-- Email Input Group -->
@@ -191,12 +203,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                     </div>
                                     <div class="invalid-feedback">
                                         Please enter your password.
-                                    </div>
-                                    <div class="form-check mt-2 ms-2">
-                                        <input class="form-check-input" type="checkbox" id="rememberMe">
-                                        <label class="form-check-label" for="rememberMe">
-                                            <small>Remember me</small>
-                                        </label>
                                     </div>
                                 </div>
 
@@ -256,28 +262,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </div>
     <?php } ?>
 
-    <?php if (isset($error)) { ?>
-    <div class="alert alert-danger d-flex align-items-center mb-3 animate__animated animate__shakeX" role="alert" style="border-radius: 12px; background: linear-gradient(135deg, #dc3545 0%, #c82333 100%); border: none; color: white; box-shadow: 0 4px 15px rgba(220, 53, 69, 0.3);">
-        <svg class="icon me-2 flex-shrink-0" style="width: 1.2rem; height: 1.2rem;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="12" cy="12" r="10"></circle>
-            <line x1="15" y1="9" x2="9" y2="15"></line>
-            <line x1="9" y1="9" x2="15" y2="15"></line>
-        </svg>
-        <div class="flex-grow-1">
-            <strong>Login Failed</strong><br>
-            <small class="error-details"><?php echo htmlspecialchars($error); ?></small>
-        </div>
-        <button type="button" class="btn-close btn-close-white ms-2" data-bs-dismiss="alert" aria-label="Close"></button>
-    </div>
-    <?php } ?>
 
 
     <!-- CoreUI JS -->
     <script src="js/coreui.bundle.js"></script>
     <script src="js/bootstrap.bundle.js"></script>
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            // Initialize toasts after HTMX swap
+            document.body.addEventListener('htmx:afterSwap', function(evt) {
+                const toasts = evt.detail.target.querySelectorAll('.toast');
+                toasts.forEach(toastEl => {
+                    const toast = new bootstrap.Toast(toastEl);
+                    toast.show();
+                });
+            });
             // Password toggle functionality
             const togglePassword = document.getElementById('togglePassword');
             const passwordInput = document.getElementById('password');
@@ -365,8 +366,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 if (!isValid) {
                     e.preventDefault();
-                    // Show error alert with animation
-                    showErrorAlert('Please fix the errors above and try again.');
+                    // Errors are already shown inline
                 }
             });
 
@@ -390,35 +390,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
             }
 
-            function showErrorAlert(message) {
-                // Remove existing error alert
-                const existingAlert = document.querySelector('.error-alert');
-                if (existingAlert) {
-                    existingAlert.remove();
-                }
-
-                // Create new error alert
-                const alertDiv = document.createElement('div');
-                alertDiv.className = 'alert alert-danger error-alert animate__animated animate__shakeX';
-                alertDiv.innerHTML = `
-                    <svg class="icon me-2" style="width: 1.2rem; height: 1.2rem;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <circle cx="12" cy="12" r="10"></circle>
-                        <line x1="15" y1="9" x2="9" y2="15"></line>
-                        <line x1="9" y1="9" x2="15" y2="15"></line>
-                    </svg>
-                    <strong>Validation Error</strong><br>
-                    <small>${message}</small>
+            function showToast(message, type = 'error') {
+                const toastContainer = document.getElementById('toast-container');
+                const toastId = 'toast-' + Date.now();
+                const toastDiv = document.createElement('div');
+                toastDiv.id = toastId;
+                toastDiv.className = `toast align-items-center text-white bg-${type === 'error' ? 'danger' : 'success'} border-0`;
+                toastDiv.setAttribute('role', 'alert');
+                toastDiv.setAttribute('aria-live', 'assertive');
+                toastDiv.setAttribute('aria-atomic', 'true');
+                toastDiv.innerHTML = `
+                    <div class="d-flex">
+                        <div class="toast-body">
+                            ${message}
+                        </div>
+                        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                    </div>
                 `;
-
-                // Insert before the form
-                const form = document.querySelector('form');
-                form.parentNode.insertBefore(alertDiv, form);
-
+                toastContainer.appendChild(toastDiv);
+                const toast = new bootstrap.Toast(toastDiv);
+                toast.show();
                 // Auto-hide after 5 seconds
                 setTimeout(() => {
-                    if (alertDiv.parentNode) {
-                        alertDiv.remove();
-                    }
+                    toast.hide();
                 }, 5000);
             }
         });
@@ -455,14 +449,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             background-size: calc(0.75em + 0.375rem) calc(0.75em + 0.375rem);
         }
 
-        .error-alert {
-            border-radius: 12px !important;
-            background: linear-gradient(135deg, #dc3545 0%, #c82333 100%) !important;
-            border: none !important;
-            color: white !important;
-            box-shadow: 0 4px 15px rgba(220, 53, 69, 0.3) !important;
-            margin-bottom: 1rem;
-        }
     </style>
 </body>
 </html>

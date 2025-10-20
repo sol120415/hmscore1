@@ -61,14 +61,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // Insert user into database
         $stmt = $conn->prepare("INSERT INTO users (email, password) VALUES (?, ?)");
         if ($stmt->execute([$email, $hashed_password])) {
-            // Registration successful, redirect to login
-            header('Location: login.php?registered=1');
+            // Registration successful, show toast and redirect
+            echo '<div class="toast align-items-center text-white bg-success border-0" role="alert" aria-live="assertive" aria-atomic="true" data-bs-autohide="true" data-bs-delay="3000">
+                    <div class="d-flex">
+                        <div class="toast-body">Registration successful! Redirecting to login...</div>
+                        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                    </div>
+                  </div>
+                  <script>setTimeout(() => { window.location.href = "login.php"; }, 3000);</script>';
             exit;
         } else {
             $error = 'Registration failed. Please try again.';
         }
     } else {
-        $error = implode('<br>', $errors);
+        $error = implode(' ', $errors);
+    }
+
+    // For HTMX response, output toast if error
+    if (isset($error)) {
+        echo '<div class="toast align-items-center text-white bg-danger border-0" role="alert" aria-live="assertive" aria-atomic="true" data-bs-autohide="true" data-bs-delay="5000">
+                <div class="d-flex">
+                    <div class="toast-body">' . htmlspecialchars($error) . '</div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                </div>
+              </div>';
+        exit;
     }
 }
 ?>
@@ -103,6 +120,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </style>
 </head>
 <body>
+<div class="toast-container position-fixed top-0 end-0 p-3" id="toast-container"></div>
 <header>
     <?php //include 'header.php'; ?>
 </header>
@@ -129,7 +147,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 <h4 class="text-white">Create Account</h4>
                             </div>
 
-                            <form action="register.php" method="post" class="needs-validation" novalidate>
+                            <form action="register.php" method="post" class="needs-validation" novalidate hx-post="register.php" hx-target="#toast-container" hx-swap="beforeend">
                                 <!-- Email Input Group -->
                                 <div class="mb-3">
                                     <div class="input-group">
@@ -251,9 +269,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <!-- CoreUI JS -->
     <script src="js/coreui.bundle.js"></script>
     <script src="js/bootstrap.bundle.js"></script>
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            // Initialize toasts after HTMX swap
+            document.body.addEventListener('htmx:afterSwap', function(evt) {
+                const toasts = evt.detail.target.querySelectorAll('.toast');
+                toasts.forEach(toastEl => {
+                    const toast = new bootstrap.Toast(toastEl);
+                    toast.show();
+                });
+            });
             // Password toggle functionality
             const togglePassword = document.getElementById('togglePassword');
             const passwordInput = document.getElementById('password');
@@ -382,7 +409,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 if (!isValid) {
                     e.preventDefault();
-                    showErrorAlert('Please fix the errors above and try again.');
+                    // Errors are already shown inline
                 }
             });
 
@@ -471,14 +498,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             background-size: calc(0.75em + 0.375rem) calc(0.75em + 0.375rem);
         }
 
-        .error-alert {
-            border-radius: 12px !important;
-            background: linear-gradient(135deg, #dc3545 0%, #c82333 100%) !important;
-            border: none !important;
-            color: white !important;
-            box-shadow: 0 4px 15px rgba(220, 53, 69, 0.3) !important;
-            margin-bottom: 1rem;
-        }
     </style>
 </body>
 </html>
