@@ -115,14 +115,13 @@ $dynamicPricingQuery = "
     WHERE mp.promotion_type = 'Seasonal' OR mp.promotion_type IS NULL
 ";
 
-// Get data for display
+// Get pending billings from reservations
 $billings = $conn->query("
-    SELECT rb.*, r.id as reservation_id_display, r.reservation_type, g.first_name, g.last_name, rm.room_number
-    FROM room_billing rb
-    LEFT JOIN reservations r ON rb.reservation_id = r.id
-    LEFT JOIN guests g ON rb.guest_id = g.id
-    LEFT JOIN rooms rm ON rb.room_id = rm.id
-    ORDER BY rb.transaction_date DESC
+    SELECT r.*, rm.room_number, rm.room_rate, g.first_name, g.last_name, (r.reservation_hour_count / 8 * rm.room_rate) as calculated_balance
+    FROM reservations r
+    LEFT JOIN rooms rm ON r.room_id = rm.id
+    LEFT JOIN guests g ON r.guest_id = g.id
+    ORDER BY r.id DESC
 ")->fetchAll(PDO::FETCH_ASSOC);
 
 $reservations = $conn->query("SELECT id, reservation_type FROM reservations ORDER BY id DESC LIMIT 50")->fetchAll(PDO::FETCH_ASSOC);
@@ -251,37 +250,25 @@ $recentTransactions = array_slice($billings, 0, 10);
                 <div class="row" id="billingContainer">
                     <?php foreach ($billings as $billing): ?>
                     <div class="col-md-6 col-lg-4 mb-3">
-                        <div class="card h-100 billing-card" style="border-left: 4px solid <?php
-                            echo $billing['billing_status'] === 'Paid' ? '#198754' :
-                                 ($billing['billing_status'] === 'Pending' ? '#fd7e14' :
-                                 ($billing['billing_status'] === 'Failed' ? '#dc3545' : '#6c757d'));
-                        ?>;">
+                        <div class="card h-100 billing-card" style="border-left: 4px solid #fd7e14;">
                             <div class="card-body">
                                 <div class="billing-content">
                                     <div class="d-flex justify-content-between align-items-start mb-2">
                                         <div class="flex-grow-1">
-                                            <h6 class="mb-1">#<?php echo htmlspecialchars($billing['id']); ?> - <?php echo htmlspecialchars($billing['transaction_type']); ?></h6>
+                                            <h6 class="mb-1">Reservation #<?php echo htmlspecialchars($billing['id']); ?> - <?php echo htmlspecialchars($billing['reservation_type']); ?></h6>
                                             <small class="text-muted">
                                                 <?php echo htmlspecialchars(($billing['first_name'] ?: '') . ' ' . ($billing['last_name'] ?: 'N/A')); ?> • Room <?php echo htmlspecialchars($billing['room_number'] ?: 'N/A'); ?>
                                             </small>
                                         </div>
                                         <div class="d-flex flex-column gap-1">
-                                            <span class="badge bg-<?php
-                                                echo $billing['billing_status'] === 'Paid' ? 'success' :
-                                                     ($billing['billing_status'] === 'Pending' ? 'warning' :
-                                                     ($billing['billing_status'] === 'Failed' ? 'danger' : 'secondary'));
-                                            ?>">
-                                                <?php echo htmlspecialchars($billing['billing_status']); ?>
-                                            </span>
+                                            <span class="badge bg-warning">Pending</span>
+                                            <small class="text-muted">Balance: $<?php echo number_format($billing['calculated_balance'], 2); ?></small>
                                         </div>
                                     </div>
                                 </div>
                                 <div class="billing-actions justify-content-center">
-                                    <button class="btn btn-sm btn-outline-primary me-2" onclick="editBilling(<?php echo $billing['id']; ?>)" title="Edit">
-                                        <i class="cil-pencil me-1"></i>Edit
-                                    </button>
-                                    <button class="btn btn-sm btn-outline-danger" onclick="deleteBilling(<?php echo $billing['id']; ?>)" title="Remove">
-                                        <i class="cil-trash me-1"></i>Remove
+                                    <button class="btn btn-sm btn-outline-primary" onclick="openBillingModal(<?php echo $billing['id']; ?>, <?php echo $billing['calculated_balance']; ?>, '<?php echo htmlspecialchars($billing['room_number']); ?>', '<?php echo htmlspecialchars($billing['first_name'] . ' ' . $billing['last_name']); ?>')" title="Create Billing">
+                                        <i class="cil-plus me-1"></i>Create Billing
                                     </button>
                                 </div>
                             </div>
@@ -480,6 +467,24 @@ $recentTransactions = array_slice($billings, 0, 10);
             document.getElementById('billingId').value = '';
             document.getElementById('billingForm').reset();
             document.getElementById('balance').value = '0.00';
+            new coreui.Modal(document.getElementById('billingModal')).show();
+        }
+
+        function openBillingModal(reservationId, calculatedBalance, roomNumber, guestName) {
+            document.getElementById('modalTitle').textContent = 'Create Room Billing';
+            document.getElementById('formAction').value = 'create';
+            document.getElementById('billingId').value = '';
+            document.getElementById('billingForm').reset();
+
+            // Pre-fill form with reservation data
+            document.getElementById('reservation_id').value = reservationId;
+            document.getElementById('transaction_type').value = 'Room Charge';
+            document.getElementById('billing_status').value = 'Pending';
+            document.getElementById('total_amount').value = calculatedBalance.toFixed(2);
+            document.getElementById('balance').value = calculatedBalance.toFixed(2);
+            document.getElementById('item_description').value = 'Room charge for ' + roomNumber + ' - ' + guestName;
+
+            new coreui.Modal(document.getElementById('billingModal')).show();
         }
 
         function editBilling(id) {
