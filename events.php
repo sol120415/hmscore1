@@ -460,6 +460,9 @@ $stats = $conn->query("
                     <button class="btn btn-sm btn-outline-info" onclick="openViewVenuesModal()">
                         <i class="cil-building me-1"></i>View Venues
                     </button>
+                    <button class="btn btn-sm btn-outline-warning" onclick="window.location.href='?page=event_billing'">
+                        <i class="cil-dollar me-1"></i>Event Billing
+                    </button>
                 </div>
             </div>
             <div class="card-body">
@@ -724,6 +727,65 @@ $stats = $conn->query("
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-coreui-dismiss="modal">Cancel</button>
                     <button type="button" class="btn btn-primary" onclick="submitVenueForm()">Save</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Event Billing Modal -->
+    <div class="modal fade" id="eventBillingModal" tabindex="-1" style="--cui-modal-border-radius: 16px; --cui-modal-box-shadow: 0 10px 40px rgba(0,0,0,0.3); --cui-modal-bg: #2d3748; --cui-modal-border-color: #4a5568;">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Event Billing</h5>
+                    <button type="button" class="btn-close" data-coreui-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row" id="eventBillingContainer">
+                        <?php
+                        $eventBillings = $conn->query("
+                            SELECT er.*, ev.id as venue_id, ev.venue_name, ev.venue_rate, (er.event_hour_count * ev.venue_rate) as calculated_balance
+                            FROM event_reservation er
+                            LEFT JOIN event_venues ev ON er.event_venue_id = ev.id
+                            WHERE er.event_status IN ('Checked Out', 'Archived') AND NOT EXISTS (
+                                SELECT 1
+                                FROM event_billing eb
+                                WHERE eb.reservation_id = er.id AND eb.billing_status = 'Paid'
+                            )
+                            ORDER BY er.id DESC
+                        ")->fetchAll(PDO::FETCH_ASSOC);
+                        ?>
+                        <?php foreach ($eventBillings as $billing): ?>
+                        <div class="col-md-6 col-lg-4 mb-3">
+                            <div class="card h-100 billing-card" style="border-left: 4px solid #fd7e14;">
+                                <div class="card-body">
+                                    <div class="billing-content">
+                                        <div class="d-flex justify-content-between align-items-start mb-2">
+                                            <div class="flex-grow-1">
+                                                <h6 class="mb-1">Event #<?php echo htmlspecialchars($billing['id']); ?> - <?php echo htmlspecialchars($billing['event_title']); ?></h6>
+                                                <small class="text-muted">
+                                                    <?php echo htmlspecialchars($billing['event_organizer']); ?> • Venue <?php echo htmlspecialchars($billing['venue_name'] ?: 'N/A'); ?>
+                                                </small>
+                                            </div>
+                                            <div class="d-flex flex-column gap-1">
+                                                <span class="badge bg-warning">Pending</span>
+                                                <small class="text-muted">Balance: $<?php echo number_format($billing['calculated_balance'], 2); ?></small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="billing-actions justify-content-center">
+                                        <button class="btn btn-sm btn-outline-primary" onclick="openEventBillingForm(<?php echo $billing['id']; ?>, <?php echo $billing['calculated_balance']; ?>, '<?php echo htmlspecialchars($billing['venue_name']); ?>', '<?php echo htmlspecialchars($billing['event_organizer']); ?>', <?php echo $billing['venue_id']; ?>)" title="Create Billing">
+                                            <i class="cil-plus me-1"></i>Create Billing
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-coreui-dismiss="modal">Close</button>
                 </div>
             </div>
         </div>
@@ -1126,8 +1188,32 @@ $stats = $conn->query("
             }
         }
 
+        function openEventBillingModal() {
+            new coreui.Modal(document.getElementById('eventBillingModal')).show();
+        }
+
         function openViewVenuesModal() {
             new coreui.Modal(document.getElementById('viewVenuesModal')).show();
+        }
+
+        function openEventBillingForm(reservationId, calculatedBalance, venueName, organizerName, venueId) {
+            // Close the event billing modal first
+            new coreui.Modal(document.getElementById('eventBillingModal')).hide();
+
+            // Open the billing form modal (reuse the existing billing modal)
+            document.getElementById('billingModalTitle').textContent = 'Create Event Billing';
+            document.getElementById('billingFormAction').value = 'create';
+            document.getElementById('billingId').value = '';
+            document.getElementById('billingForm').reset();
+
+            // Pre-fill form with event data
+            document.getElementById('reservation_id').value = reservationId;
+            document.getElementById('venue_id').value = venueId;
+            document.getElementById('balance').value = calculatedBalance.toFixed(2);
+            document.getElementById('balance_display').textContent = '$' + calculatedBalance.toFixed(2);
+            document.getElementById('billing_description_display').textContent = 'Event charge for ' + venueName + ' - ' + organizerName;
+
+            new coreui.Modal(document.getElementById('billingModal')).show();
         }
 
         function openHousekeepingModal(venueId, venueName) {
