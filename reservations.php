@@ -421,7 +421,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_HX_REQUEST']))
 }
 
 // Handle HTMX filter requests (GET requests)
-if (isset($_GET['status']) || isset($_GET['sort'])) {
+if (isset($_SERVER['HTTP_HX_REQUEST']) && $_SERVER['REQUEST_METHOD'] === 'GET') {
     $status = $_GET['status'] ?? '';
     $sort = $_GET['sort'] ?? '';
 
