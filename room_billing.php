@@ -6,6 +6,68 @@ if (!isset($_SESSION['email'])) {
     exit;
 }
 
+// Handle GET requests for PDF export
+if (isset($_GET['action']) && $_GET['action'] === 'export_pdf') {
+    $date = $_GET['date'];
+    $stmt = $conn->prepare("SELECT * FROM room_billing WHERE DATE(transaction_date) = ? ORDER BY transaction_date DESC");
+    $stmt->execute([$date]);
+    $billings = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    require_once 'vendor/autoload.php';
+    $dompdf = new \Dompdf\Dompdf();
+
+    $html = '
+    <html>
+    <head>
+        <style>
+            body { font-family: Arial, sans-serif; }
+            table { width: 100%; border-collapse: collapse; }
+            th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+            th { background-color: #f2f2f2; }
+            h1 { text-align: center; }
+        </style>
+    </head>
+    <body>
+        <h1>Billing Report - ' . $date . '</h1>
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Transaction Type</th>
+                    <th>Payment Amount</th>
+                    <th>Balance</th>
+                    <th>Payment Method</th>
+                    <th>Status</th>
+                    <th>Date</th>
+                </tr>
+            </thead>
+            <tbody>';
+
+    foreach ($billings as $billing) {
+        $html .= '<tr>
+            <td>' . htmlspecialchars($billing['id']) . '</td>
+            <td>' . htmlspecialchars($billing['transaction_type']) . '</td>
+            <td>$' . number_format($billing['payment_amount'], 2) . '</td>
+            <td>$' . number_format($billing['balance'], 2) . '</td>
+            <td>' . htmlspecialchars($billing['payment_method']) . '</td>
+            <td>' . htmlspecialchars($billing['billing_status']) . '</td>
+            <td>' . htmlspecialchars(date('Y-m-d H:i', strtotime($billing['transaction_date']))) . '</td>
+        </tr>';
+    }
+
+    $html .= '
+            </tbody>
+        </table>
+    </body>
+    </html>';
+
+    $dompdf->loadHtml($html);
+    $dompdf->setPaper('A4', 'landscape');
+    $dompdf->render();
+    $dompdf->stream('billing_report_' . $date . '.pdf');
+    exit;
+}
+
 // Handle HTMX requests
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_HX_REQUEST'])) {
     header('Content-Type: application/json');
@@ -91,6 +153,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_HX_REQUEST']))
                         </tr>
                     <?php endforeach;
                     break;
+
             }
         }
     } catch (Exception $e) {
@@ -213,12 +276,10 @@ $recentTransactions = array_slice($billings, 0, 10);
             <div class="card-header d-flex justify-content-between align-items-center">
                 <h5 class="mb-0">Room Billing</h5>
                 <div class="d-flex gap-2">
-                    <button class="btn btn-success btn-sm" onclick="generateReport()">
+                    <button class="btn btn-success btn-sm" onclick="openReportModal()">
                         <i class="cil-file-pdf me-1"></i>Report
                     </button>
-                    <button class="btn btn-sm btn-outline-primary" onclick="openCreateModal()">
-                        <i class="cil-plus me-1"></i>Add Transaction
-                    </button>
+                    
                 </div>
             </div>
             <div class="card-body">
@@ -365,6 +426,28 @@ $recentTransactions = array_slice($billings, 0, 10);
         </div>
     </div>
 
+    <!-- Report Modal -->
+    <div class="modal fade" id="reportModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Generate Billing Report</h5>
+                    <button type="button" class="btn-close" data-coreui-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="reportDate" class="form-label">Select Date</label>
+                        <input type="date" class="form-control" id="reportDate" value="<?php echo date('Y-m-d'); ?>">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-coreui-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="generateReport()">Generate PDF</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- HTMX Response Target -->
     <div id="htmx-response" class="d-none"></div>
 
@@ -424,6 +507,23 @@ $recentTransactions = array_slice($billings, 0, 10);
             document.getElementById('billingForm').reset();
             document.getElementById('balance').value = '0.00';
             new coreui.Modal(document.getElementById('billingModal')).show();
+        }
+
+        function openReportModal() {
+            new coreui.Modal(document.getElementById('reportModal')).show();
+        }
+
+        function generateReport() {
+            const date = document.getElementById('reportDate').value;
+            if (!date) {
+                alert('Please select a date');
+                return;
+            }
+
+            // Open PDF in new window/tab
+            window.open('room_billing.php?action=export_pdf&date=' + date + '&HX-Request=true', '_blank');
+
+            new coreui.Modal(document.getElementById('reportModal')).hide();
         }
 
         function openBillingModal(reservationId, calculatedBalance, roomNumber, guestName, roomId) {
