@@ -17,7 +17,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_HX_REQUEST']))
             switch ($action) {
                 case 'create':
                     // Create new guest
-                    $stmt = $conn->prepare("INSERT INTO guests (first_name, last_name, email, phone, address, city, country, id_type, id_number, date_of_birth, nationality, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+                    $stmt = $conn->prepare("INSERT INTO guests (first_name, last_name, email, phone, address, city, country, id_type, id_number, date_of_birth, nationality, guest_status, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Active', ?)");
                     $stmt->execute([
                         $_POST['first_name'],
                         $_POST['last_name'],
@@ -37,7 +37,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_HX_REQUEST']))
 
                 case 'update':
                     // Update guest
-                    $stmt = $conn->prepare("UPDATE guests SET first_name=?, last_name=?, email=?, phone=?, address=?, city=?, country=?, id_type=?, id_number=?, date_of_birth=?, nationality=?, notes=? WHERE id=?");
+                    $stmt = $conn->prepare("UPDATE guests SET first_name=?, last_name=?, email=?, phone=?, address=?, city=?, country=?, id_type=?, id_number=?, date_of_birth=?, nationality=?, notes=?, stay_count=?, total_spend=? WHERE id=?");
                     $stmt->execute([
                         $_POST['first_name'],
                         $_POST['last_name'],
@@ -51,9 +51,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_HX_REQUEST']))
                         $_POST['date_of_birth'],
                         $_POST['nationality'] ?: null,
                         $_POST['notes'] ?: null,
+                        $_POST['stay_count'] ?: 0,
+                        $_POST['total_spend'] ?: 0.00,
                         $_POST['id']
                     ]);
                     echo json_encode(['success' => true, 'message' => 'Guest updated successfully']);
+                    break;
+
+                case 'archive':
+                    // Archive guest
+                    $stmt = $conn->prepare("UPDATE guests SET guest_status='Archived' WHERE id=?");
+                    $stmt->execute([$_POST['id']]);
+                    echo json_encode(['success' => true, 'message' => 'Guest archived successfully']);
+                    break;
+
+                case 'restore':
+                    // Restore guest
+                    $stmt = $conn->prepare("UPDATE guests SET guest_status='Active' WHERE id=?");
+                    $stmt->execute([$_POST['id']]);
+                    echo json_encode(['success' => true, 'message' => 'Guest restored successfully']);
                     break;
 
                 case 'delete':
@@ -79,19 +95,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_HX_REQUEST']))
 }
 
 // Guest Loyalty Program: Update VIP status based on stay count and spend
-$loyaltyUpdate = $conn->prepare("
-    UPDATE guests
-    SET loyalty_status = CASE
-        WHEN (stay_count >= 5 OR total_spend >= 1000) THEN 'VIP'
-        ELSE 'Regular'
-    END
-    WHERE stay_count >= 5 OR total_spend >= 1000
-");
-$loyaltyUpdate->execute();
+// Removed - VIP status is now manually managed
 
-// Get all guests for display
-$stmt = $conn->query("SELECT * FROM guests ORDER BY created_at DESC");
+// Get all active guests for display
+$stmt = $conn->query("SELECT * FROM guests WHERE guest_status = 'Active' ORDER BY created_at DESC");
 $guests = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+// Get all archived guests for display
+$stmt = $conn->query("SELECT * FROM guests WHERE guest_status = 'Archived' ORDER BY updated_at DESC");
+$archivedGuests = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 // Get guest statistics
 $stats = $conn->query("
@@ -220,10 +232,10 @@ $recentGuests = array_slice($guests, 0, 10);
             </div>
         </div>
 
-        <!-- Guests -->
-        <div class="card">
+        <!-- Active Guests -->
+        <div class="card mb-4">
             <div class="card-header d-flex justify-content-between align-items-center">
-                <h5 class="mb-0">Guests</h5>
+                <h5 class="mb-0">Active Guests</h5>
                 <div class="d-flex gap-2">
                     <button class="btn btn-sm btn-success" onclick="generateReport()">
                         <i class="cil-file-pdf me-1"></i>Report
@@ -261,6 +273,9 @@ $recentGuests = array_slice($guests, 0, 10);
                                     <button class="btn btn-sm btn-outline-primary me-2" onclick="editGuest(<?php echo $guest['id']; ?>)" title="Edit">
                                         <i class="cil-pencil me-1"></i>Edit
                                     </button>
+                                    <button class="btn btn-sm btn-outline-warning me-2" onclick="archiveGuest(<?php echo $guest['id']; ?>, '<?php echo htmlspecialchars($guest['first_name'] . ' ' . $guest['last_name']); ?>')" title="Archive">
+                                        <i class="cil-archive me-1"></i>Archive
+                                    </button>
                                     <button class="btn btn-sm btn-outline-danger" onclick="deleteGuest(<?php echo $guest['id']; ?>, '<?php echo htmlspecialchars($guest['first_name'] . ' ' . $guest['last_name']); ?>')" title="Remove">
                                         <i class="cil-trash me-1"></i>Remove
                                     </button>
@@ -270,6 +285,68 @@ $recentGuests = array_slice($guests, 0, 10);
                     </div>
                     <?php endforeach; ?>
                 </div>
+                <?php if (empty($guests)): ?>
+                <p class="text-muted mb-0">No active guests.</p>
+                <?php endif; ?>
+            </div>
+        </div>
+
+        <!-- Archived Guests -->
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Archived Guests</h5>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-sm btn-info" onclick="generateArchivedReport()">
+                        <i class="cil-file-pdf me-1"></i>Archived Report
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="row" id="archivedContainer">
+                    <?php foreach ($archivedGuests as $guest): ?>
+                    <div class="col-md-6 col-lg-4 mb-3">
+                        <div class="card h-100 archived-card" style="border-left: 4px solid #6c757d; opacity: 0.7;">
+                            <div class="card-body">
+                                <div class="archived-content">
+                                    <div class="d-flex justify-content-between align-items-start mb-2">
+                                        <div class="flex-grow-1">
+                                            <h6 class="mb-1"><?php echo htmlspecialchars($guest['first_name'] . ' ' . $guest['last_name']); ?></h6>
+                                            <small class="text-muted">
+                                                <?php echo htmlspecialchars($guest['email']); ?> • <?php echo htmlspecialchars($guest['nationality'] ?: 'N/A'); ?>
+                                            </small>
+                                            <br><small class="text-secondary">
+                                                Archived: <?php echo date('M j, Y', strtotime($guest['updated_at'])); ?>
+                                            </small>
+                                        </div>
+                                        <div class="d-flex flex-column gap-1">
+                                            <span class="badge bg-secondary">
+                                                <?php echo htmlspecialchars($guest['guest_status']); ?>
+                                            </span>
+                                            <span class="badge bg-<?php echo ($guest['loyalty_status'] ?? 'Regular') === 'VIP' ? 'warning' : 'secondary'; ?>">
+                                                <?php echo htmlspecialchars($guest['loyalty_status'] ?? 'Regular'); ?>
+                                            </span>
+                                            <span class="badge bg-info">
+                                                <?php echo htmlspecialchars($guest['id_type']); ?>
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="archived-actions justify-content-center">
+                                    <button class="btn btn-sm btn-outline-success me-2" onclick="restoreGuest(<?php echo $guest['id']; ?>, '<?php echo htmlspecialchars($guest['first_name'] . ' ' . $guest['last_name']); ?>')" title="Restore">
+                                        <i class="cil-reload me-1"></i>Restore
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-danger" onclick="deleteGuest(<?php echo $guest['id']; ?>, '<?php echo htmlspecialchars($guest['first_name'] . ' ' . $guest['last_name']); ?>')" title="Remove">
+                                        <i class="cil-trash me-1"></i>Remove
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <?php endforeach; ?>
+                </div>
+                <?php if (empty($archivedGuests)): ?>
+                <p class="text-muted mb-0">No archived guests.</p>
+                <?php endif; ?>
             </div>
         </div>
 
@@ -387,6 +464,14 @@ $recentGuests = array_slice($guests, 0, 10);
                                 <label for="nationality" class="form-label">Nationality</label>
                                 <input type="text" class="form-control" id="nationality" name="nationality">
                             </div>
+                            <div class="col-md-3 mb-3">
+                                <label for="stay_count" class="form-label">Stay Count</label>
+                                <input type="number" class="form-control" id="stay_count" name="stay_count" min="0" value="0">
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <label for="total_spend" class="form-label">Total Spend ($)</label>
+                                <input type="number" class="form-control" id="total_spend" name="total_spend" min="0" step="0.01" value="0.00">
+                            </div>
                         </div>
 
                         <div class="mb-3">
@@ -441,6 +526,8 @@ $recentGuests = array_slice($guests, 0, 10);
                 document.getElementById('id_number').value = data.id_number;
                 document.getElementById('date_of_birth').value = data.date_of_birth;
                 document.getElementById('nationality').value = data.nationality || '';
+                document.getElementById('stay_count').value = data.stay_count || 0;
+                document.getElementById('total_spend').value = data.total_spend || 0.00;
                 document.getElementById('notes').value = data.notes || '';
 
                 new coreui.Modal(document.getElementById('guestModal')).show();
@@ -490,8 +577,54 @@ $recentGuests = array_slice($guests, 0, 10);
             });
         }
 
+        function archiveGuest(id, name) {
+            if (confirm('Are you sure you want to archive the guest "' + name + '"? They will be moved to the archived list.')) {
+                fetch('guests.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'HX-Request': 'true'
+                    },
+                    body: 'action=archive&id=' + id
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        location.reload();
+                    } else {
+                        alert('Error: ' + data.message);
+                    }
+                });
+            }
+        }
+
+        function restoreGuest(id, name) {
+            if (confirm('Are you sure you want to restore the guest "' + name + '"? They will be moved back to active guests.')) {
+                fetch('guests.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'HX-Request': 'true'
+                    },
+                    body: 'action=restore&id=' + id
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        location.reload();
+                    } else {
+                        alert('Error: ' + data.message);
+                    }
+                });
+            }
+        }
+
         function generateReport() {
             window.open('generate_report.php?page=guests&type=pdf', '_blank');
+        }
+
+        function generateArchivedReport() {
+            window.open('generate_report.php?page=archived_guests&type=pdf', '_blank');
         }
     </script>
 </body>

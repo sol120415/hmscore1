@@ -540,7 +540,7 @@ $reservations = $conn->query("
     ORDER BY r.created_at $orderBy
 ")->fetchAll(PDO::FETCH_ASSOC);
 
-$guests = $conn->query("SELECT id, first_name, last_name, email FROM guests ORDER BY first_name, last_name")->fetchAll(PDO::FETCH_ASSOC);
+$guests = $conn->query("SELECT id, first_name, last_name, email FROM guests WHERE guest_status = 'Active' ORDER BY first_name, last_name")->fetchAll(PDO::FETCH_ASSOC);
 $rooms = $conn->query("SELECT id, room_number, room_type, room_status FROM rooms ORDER BY room_number")->fetchAll(PDO::FETCH_ASSOC);
 
 // Get filter parameters
