@@ -225,6 +225,35 @@ $stats = $conn->query("
         .housekeeping-card:hover .housekeeping-actions {
             display: flex;
         }
+        .room-card {
+            transition: all 0.2s ease;
+            cursor: pointer;
+            border: 2px solid transparent;
+        }
+        .room-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .room-vacant {
+            background: linear-gradient(135deg, #2d5016, #1a3326);
+            color: #d4edda;
+        }
+        .room-occupied {
+            background: linear-gradient(135deg, #721c24, #4a0f14);
+            color: #f8d7da;
+        }
+        .room-cleaning {
+            background: linear-gradient(135deg, #856404, #5a3d02);
+            color: #fff3cd;
+        }
+        .room-maintenance {
+            background: linear-gradient(135deg, #0c5460, #062a30);
+            color: #d1ecf1;
+        }
+        .room-reserved {
+            background: linear-gradient(135deg, #383d41, #212529);
+            color: #e2e3e5;
+        }
     </style>
 </head>
 <body>
@@ -255,6 +284,47 @@ $stats = $conn->query("
                     <small class="text-muted d-block">Low Stock</small>
                     <span class="fw-bold text-info"><?php echo $stats['low_stock_items']; ?></span>
                 </div>
+            </div>
+        </div>
+
+        <!-- Maintenance Rooms -->
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Rooms Requiring Maintenance</h5>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-sm btn-outline-primary" onclick="openCreateHousekeeperModal()">
+                        <i class="cil-plus me-1"></i>Add Cleaner
+                    </button>
+                    <button class="btn btn-sm btn-outline-info" onclick="window.location.href='?page=cleaners'">
+                        <i class="cil-user me-1"></i>View Cleaners
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="row" id="maintenanceContainer">
+                    <?php
+                    $maintenanceRooms = $conn->query("SELECT * FROM rooms WHERE room_status = 'Maintenance' ORDER BY room_number")->fetchAll(PDO::FETCH_ASSOC);
+                    foreach ($maintenanceRooms as $room): ?>
+                    <div class="col-md-6 col-lg-4 mb-3">
+                        <div class="card h-100 room-card room-maintenance text-white" onclick="openHousekeepingModal(<?php echo $room['id']; ?>, '<?php echo htmlspecialchars($room['room_number']); ?>')">
+                            <div class="card-body text-center position-relative">
+                                <div class="position-absolute top-0 end-0" style="margin-top: -8px; margin-right: -8px;">
+                                    <button class="btn btn-warning btn-sm rounded-circle shadow" onclick="event.stopPropagation(); openHousekeepingModal(<?php echo $room['id']; ?>, '<?php echo htmlspecialchars($room['room_number']); ?>')" title="Assign Housekeeper">
+                                        <i class="cil-settings text-dark"></i>
+                                    </button>
+                                </div>
+                                <h5 class="card-title mb-1"><?php echo htmlspecialchars($room['room_number']); ?></h5>
+                                <p class="card-text mb-2"><?php echo htmlspecialchars($room['room_type']); ?></p>
+                                <span class="badge bg-light text-dark"><?php echo htmlspecialchars($room['room_status']); ?></span>
+                                <br><small class="mt-2 d-block"><?php echo htmlspecialchars($room['room_max_guests']); ?> guests max</small>
+                            </div>
+                        </div>
+                    </div>
+                    <?php endforeach; ?>
+                </div>
+                <?php if (empty($maintenanceRooms)): ?>
+                <p class="text-muted mb-0">No rooms currently require maintenance.</p>
+                <?php endif; ?>
             </div>
         </div>
 
