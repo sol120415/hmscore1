@@ -90,6 +90,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </style>
 </head>
 <body>
+<div class="toast-container position-fixed top-0 end-0 p-3" id="toast-container"></div>
 <header>
     <?php //include 'header.php'; ?>
 </header>
@@ -117,7 +118,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 <p class="text-muted">Enter the 6-digit code sent to your email</p>
                             </div>
 
-                            <form action="verify_2fa.php" method="post" class="needs-validation" novalidate>
+                            <form action="verify_2fa.php" method="post" class="needs-validation" novalidate hx-post="verify_2fa.php" hx-target="#toast-container" hx-swap="beforeend">
                                 <!-- Code Input Group -->
                                 <div class="mb-3">
                                     <div class="input-group">
@@ -128,10 +129,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                                 <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
                                             </svg>
                                         </span>
-                                        <input type="text" class="form-control text-center" id="code" name="code" placeholder="000000" maxlength="6" pattern="[0-9]{6}" required>
-                                        <div class="invalid-feedback">
-                                            Please enter a valid 6-digit code.
-                                        </div>
+                                        <input type="text" class="form-control text-center" id="code" name="code" placeholder="000000" maxlength="6" pattern="[0-9]{6}" autocomplete="off" required>
+                                        
                                     </div>
                                 </div>
 
@@ -177,17 +176,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </svg>
 
     <?php if (isset($error)) { ?>
-    <div class="alert alert-danger d-flex align-items-center mb-3 animate__animated animate__shakeX" role="alert" style="border-radius: 12px; background: linear-gradient(135deg, #dc3545 0%, #c82333 100%); border: none; color: white; box-shadow: 0 4px 15px rgba(220, 53, 69, 0.3);">
-        <svg class="icon me-2 flex-shrink-0" style="width: 1.2rem; height: 1.2rem;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="12" cy="12" r="10"></circle>
-            <line x1="15" y1="9" x2="9" y2="15"></line>
-            <line x1="9" y1="9" x2="15" y2="15"></line>
-        </svg>
-        <div class="flex-grow-1">
-            <strong>Verification Failed</strong><br>
-            <small class="error-details"><?php echo htmlspecialchars($error); ?></small>
+    <div class="toast-container position-fixed top-0 end-0 p-3">
+        <div class="toast align-items-center text-white bg-danger border-0" role="alert" aria-live="assertive" aria-atomic="true" data-bs-autohide="true" data-bs-delay="2000">
+            <div class="d-flex">
+                <div class="toast-body"><?php echo htmlspecialchars($error); ?></div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
         </div>
-        <button type="button" class="btn-close btn-close-white ms-2" data-bs-dismiss="alert" aria-label="Close"></button>
     </div>
     <?php } ?>
 
@@ -197,6 +192,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            // Initialize toasts on page load
+            const toasts = document.querySelectorAll('.toast');
+            toasts.forEach(toastEl => {
+                const toast = new bootstrap.Toast(toastEl);
+                toast.show();
+            });
+
+            // Initialize toasts after HTMX swap
+            document.body.addEventListener('htmx:afterSwap', function(evt) {
+                const toasts = evt.detail.target.querySelectorAll('.toast');
+                toasts.forEach(toastEl => {
+                    const toast = new bootstrap.Toast(toastEl);
+                    toast.show();
+                });
+            });
+
             const codeInput = document.getElementById('code');
 
             // Auto-focus on code input
@@ -208,56 +219,37 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 if (code === '') {
                     this.classList.remove('is-valid', 'is-invalid');
+                    hideValidationMessage('code');
                 } else if (/^\d{6}$/.test(code)) {
                     this.classList.remove('is-invalid');
                     this.classList.add('is-valid');
+                    showValidationMessage('code', 'Looks good!', 'valid');
                 } else {
                     this.classList.remove('is-valid');
                     this.classList.add('is-invalid');
+                    showValidationMessage('code', 'Please enter a valid 6-digit verification code.', 'invalid');
                 }
             });
 
-            // Form submission validation
-            document.querySelector('form').addEventListener('submit', function(e) {
-                const code = codeInput.value.trim();
 
-                if (code === '' || !/^\d{6}$/.test(code)) {
-                    e.preventDefault();
-                    codeInput.classList.add('is-invalid');
-                    showErrorAlert('Please enter a valid 6-digit verification code.');
-                }
-            });
-
-            function showErrorAlert(message) {
-                // Remove existing error alert
-                const existingAlert = document.querySelector('.error-alert');
-                if (existingAlert) {
-                    existingAlert.remove();
+            function showValidationMessage(field, message, type) {
+                let feedbackElement = document.querySelector(`#${field}-feedback`);
+                if (!feedbackElement) {
+                    feedbackElement = document.createElement('div');
+                    feedbackElement.id = `${field}-feedback`;
+                    feedbackElement.className = 'validation-feedback';
+                    document.querySelector(`#${field}`).parentNode.appendChild(feedbackElement);
                 }
 
-                // Create new error alert
-                const alertDiv = document.createElement('div');
-                alertDiv.className = 'alert alert-danger error-alert animate__animated animate__shakeX';
-                alertDiv.innerHTML = `
-                    <svg class="icon me-2" style="width: 1.2rem; height: 1.2rem;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <circle cx="12" cy="12" r="10"></circle>
-                        <line x1="15" y1="9" x2="9" y2="15"></line>
-                        <line x1="9" y1="9" x2="15" y2="15"></line>
-                    </svg>
-                    <strong>Validation Error</strong><br>
-                    <small>${message}</small>
-                `;
+                feedbackElement.textContent = message;
+                feedbackElement.className = `validation-feedback ${type}-feedback`;
+            }
 
-                // Insert before the form
-                const form = document.querySelector('form');
-                form.parentNode.insertBefore(alertDiv, form);
-
-                // Auto-hide after 5 seconds
-                setTimeout(() => {
-                    if (alertDiv.parentNode) {
-                        alertDiv.remove();
-                    }
-                }, 5000);
+            function hideValidationMessage(field) {
+                const feedbackElement = document.querySelector(`#${field}-feedback`);
+                if (feedbackElement) {
+                    feedbackElement.textContent = '';
+                }
             }
         });
     </script>
