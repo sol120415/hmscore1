@@ -244,6 +244,115 @@ switch ($page) {
         </body></html>';
         break;
 
+    case 'events':
+        // Event Management Report
+        $stmt = $conn->query("SELECT * FROM event_venues ORDER BY created_at DESC");
+        $venues = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        $stmt = $conn->query("
+            SELECT er.*, ev.venue_name, ev.venue_capacity
+            FROM event_reservation er
+            LEFT JOIN event_venues ev ON er.event_venue_id = ev.id
+            ORDER BY er.created_at DESC
+        ");
+        $reservations = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        $stats = $conn->query("
+            SELECT
+                (SELECT COUNT(*) FROM event_venues) as total_venues,
+                (SELECT COUNT(*) FROM event_venues WHERE venue_status = 'Available') as available_venues,
+                (SELECT COUNT(*) FROM event_reservation) as total_reservations,
+                (SELECT COUNT(*) FROM event_reservation WHERE event_status = 'Checked In') as active_events,
+                (SELECT COUNT(*) FROM event_reservation WHERE event_status = 'Archived') as archived_events
+        ")->fetch(PDO::FETCH_ASSOC);
+
+        $html = '
+        <html>
+        <head>
+            <style>
+                body { font-family: Arial, sans-serif; margin: 20px; }
+                h1 { color: #0dcaf0; text-align: center; }
+                h2 { color: #495057; border-bottom: 2px solid #0dcaf0; padding-bottom: 5px; }
+                table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+                th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+                th { background-color: #f8f9fa; font-weight: bold; }
+                .stats { background-color: #e9ecef; padding: 15px; border-radius: 5px; margin-bottom: 20px; }
+                .stat-item { display: inline-block; margin-right: 20px; }
+            </style>
+        </head>
+        <body>
+            <h1>Event Management Report</h1>
+            <p><strong>Generated on:</strong> ' . date('F d, Y H:i:s') . '</p>
+
+            <h2>Event Statistics</h2>
+            <div class="stats">
+                <div class="stat-item"><strong>Total Venues:</strong> ' . $stats['total_venues'] . '</div>
+                <div class="stat-item"><strong>Available Venues:</strong> ' . $stats['available_venues'] . '</div>
+                <div class="stat-item"><strong>Total Reservations:</strong> ' . $stats['total_reservations'] . '</div>
+                <div class="stat-item"><strong>Active Events:</strong> ' . $stats['active_events'] . '</div>
+                <div class="stat-item"><strong>Archived Events:</strong> ' . $stats['archived_events'] . '</div>
+            </div>
+
+            <h2>Venues List</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Venue Name</th>
+                        <th>Address</th>
+                        <th>Capacity</th>
+                        <th>Rate (per hour)</th>
+                        <th>Status</th>
+                        <th>Created Date</th>
+                    </tr>
+                </thead>
+                <tbody>';
+
+        foreach ($venues as $venue) {
+            $html .= '<tr>
+                <td>' . htmlspecialchars($venue['venue_name']) . '</td>
+                <td>' . htmlspecialchars($venue['venue_address']) . '</td>
+                <td>' . htmlspecialchars($venue['venue_capacity']) . '</td>
+                <td>$' . number_format($venue['venue_rate'] ?: 0, 2) . '</td>
+                <td>' . htmlspecialchars($venue['venue_status']) . '</td>
+                <td>' . date('M d, Y', strtotime($venue['created_at'])) . '</td>
+            </tr>';
+        }
+
+        $html .= '</tbody></table>
+
+            <h2>Event Reservations</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Event Title</th>
+                        <th>Organizer</th>
+                        <th>Venue</th>
+                        <th>Check-in</th>
+                        <th>Check-out</th>
+                        <th>Attendees</th>
+                        <th>Status</th>
+                        <th>Created Date</th>
+                    </tr>
+                </thead>
+                <tbody>';
+
+        foreach ($reservations as $reservation) {
+            $html .= '<tr>
+                <td>' . htmlspecialchars($reservation['event_title']) . '</td>
+                <td>' . htmlspecialchars($reservation['event_organizer']) . '</td>
+                <td>' . htmlspecialchars($reservation['venue_name'] ?: 'No venue') . '</td>
+                <td>' . date('M d, Y H:i', strtotime($reservation['event_checkin'])) . '</td>
+                <td>' . date('M d, Y H:i', strtotime($reservation['event_checkout'])) . '</td>
+                <td>' . htmlspecialchars($reservation['event_expected_attendees']) . '</td>
+                <td>' . htmlspecialchars($reservation['event_status']) . '</td>
+                <td>' . date('M d, Y', strtotime($reservation['created_at'])) . '</td>
+            </tr>';
+        }
+
+        $html .= '</tbody></table>
+        </body></html>';
+        break;
+
     default:
         $html = '<html><body><h1>Report Not Available</h1><p>The requested report type is not available.</p></body></html>';
 }

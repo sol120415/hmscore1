@@ -393,6 +393,27 @@ $stats = $conn->query("
         .event-card:hover .event-actions {
             display: flex;
         }
+        .venue-card {
+            transition: all 0.2s ease;
+            cursor: pointer;
+            border: 2px solid transparent;
+        }
+        .venue-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .venue-available {
+            background: linear-gradient(135deg, #2d5016, #1a3326);
+            color: #d4edda;
+        }
+        .venue-booked {
+            background: linear-gradient(135deg, #721c24, #4a0f14);
+            color: #f8d7da;
+        }
+        .venue-maintenance {
+            background: linear-gradient(135deg, #0c5460, #062a30);
+            color: #d1ecf1;
+        }
     </style>
 </head>
 <body>
@@ -435,6 +456,9 @@ $stats = $conn->query("
                     </button>
                     <button class="btn btn-sm btn-outline-primary" onclick="openCreateReservationModal()">
                         <i class="cil-plus me-1"></i>New Reservation
+                    </button>
+                    <button class="btn btn-sm btn-outline-info" onclick="openViewVenuesModal()">
+                        <i class="cil-building me-1"></i>View Venues
                     </button>
                 </div>
             </div>
@@ -548,8 +572,107 @@ $stats = $conn->query("
         </div>
     </div>
 
+    <!-- Housekeeping Modal -->
+    <div class="modal fade" id="housekeepingModal" tabindex="-1" style="--cui-modal-border-radius: 16px; --cui-modal-box-shadow: 0 10px 40px rgba(0,0,0,0.3); --cui-modal-bg: #2d3748; --cui-modal-border-color: #4a5568;">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="housekeepingModalTitle">Assign Housekeeper</h5>
+                    <button type="button" class="btn-close" data-coreui-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="housekeepingForm">
+                        <input type="hidden" name="action" value="create_housekeeping">
+                        <input type="hidden" name="room_id" id="housekeepingRoomId">
+
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label for="housekeepingVenueNumber" class="form-label fw-bold">Venue Name</label>
+                                <div class="input-group input-group-sm">
+                                    <span class="input-group-text"><i class="cil-building"></i></span>
+                                    <input type="text" class="form-control" id="housekeepingVenueNumber" readonly>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="housekeeper_id" class="form-label fw-bold">Housekeeper</label>
+                                <div class="input-group input-group-sm">
+                                    <span class="input-group-text"><i class="cil-user"></i></span>
+                                    <select class="form-select" id="housekeeper_id" name="housekeeper_id">
+                                        <option value="">Select Housekeeper</option>
+                                        <?php
+                                        $housekeepers = $conn->query("SELECT id, first_name, last_name, employee_id FROM housekeepers WHERE status = 'Active' ORDER BY first_name, last_name")->fetchAll(PDO::FETCH_ASSOC);
+                                        foreach ($housekeepers as $housekeeper): ?>
+                                        <option value="<?php echo $housekeeper['id']; ?>"><?php echo htmlspecialchars($housekeeper['first_name'] . ' ' . $housekeeper['last_name'] . ' (' . $housekeeper['employee_id'] . ')'); ?></option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="task_type" class="form-label fw-bold">Task Type</label>
+                                <div class="input-group input-group-sm">
+                                    <span class="input-group-text"><i class="cil-task"></i></span>
+                                    <select class="form-select" id="task_type" name="task_type">
+                                        <option value="Regular Cleaning">Regular Cleaning</option>
+                                        <option value="Deep Cleaning">Deep Cleaning</option>
+                                        <option value="Maintenance">Maintenance</option>
+                                        <option value="Inspection">Inspection</option>
+                                        <option value="Emergency">Emergency</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="priority" class="form-label fw-bold">Priority</label>
+                                <div class="input-group input-group-sm">
+                                    <span class="input-group-text"><i class="cil-bell"></i></span>
+                                    <select class="form-select" id="priority" name="priority">
+                                        <option value="Low">Low</option>
+                                        <option value="Normal">Normal</option>
+                                        <option value="High">High</option>
+                                        <option value="Urgent">Urgent</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="scheduled_date" class="form-label fw-bold">Scheduled Date</label>
+                                <div class="input-group input-group-sm">
+                                    <span class="input-group-text"><i class="cil-calendar"></i></span>
+                                    <input type="date" class="form-control" id="scheduled_date" name="scheduled_date" value="<?php echo date('Y-m-d'); ?>" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="scheduled_time" class="form-label fw-bold">Scheduled Time</label>
+                                <div class="input-group input-group-sm">
+                                    <span class="input-group-text"><i class="cil-clock"></i></span>
+                                    <input type="time" class="form-control" id="scheduled_time" name="scheduled_time" value="09:00" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="estimated_duration_minutes" class="form-label fw-bold">Estimated Duration (minutes)</label>
+                                <div class="input-group input-group-sm">
+                                    <span class="input-group-text"><i class="cil-timer"></i></span>
+                                    <input type="number" class="form-control" id="estimated_duration_minutes" name="estimated_duration_minutes" min="15" max="480" value="60" placeholder="Minutes">
+                                </div>
+                            </div>
+                            <div class="col-12">
+                                <label for="supervisor_notes" class="form-label fw-bold">Supervisor Notes</label>
+                                <div class="input-group input-group-sm">
+                                    <span class="input-group-text"><i class="cil-notes"></i></span>
+                                    <textarea class="form-control" id="supervisor_notes" name="supervisor_notes" rows="2" placeholder="Supervisor notes or special instructions"></textarea>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-coreui-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Assign Task</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Venue Modal -->
-    <div class="modal fade" id="venueModal" tabindex="-1">
+    <div class="modal fade" id="venueModal" tabindex="-1" style="z-index: 1060;">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
@@ -601,6 +724,54 @@ $stats = $conn->query("
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-coreui-dismiss="modal">Cancel</button>
                     <button type="button" class="btn btn-primary" onclick="submitVenueForm()">Save</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- View Venues Modal -->
+    <div class="modal fade" id="viewVenuesModal" tabindex="-1" style="--cui-modal-border-radius: 16px; --cui-modal-box-shadow: 0 10px 40px rgba(0,0,0,0.3); --cui-modal-bg: #2d3748; --cui-modal-border-color: #4a5568;">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Venue Management</h5>
+                    <button type="button" class="btn-close" data-coreui-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row" id="venuesContainer">
+                        <?php foreach ($venues as $venue): ?>
+                        <div class="col-md-6 col-lg-4 mb-3">
+                            <div class="card venue-card venue-<?php echo strtolower($venue['venue_status']); ?> text-white h-100" onclick="editVenue(<?php echo $venue['id']; ?>)">
+                                <div class="card-body text-center position-relative">
+                                    <?php
+                                    // Check if venue has an assigned housekeeper
+                                    $hasHousekeeper = $conn->query("SELECT COUNT(*) as count FROM housekeeping WHERE room_id = {$venue['id']} AND status IN ('Pending', 'In Progress')")->fetch(PDO::FETCH_ASSOC)['count'] > 0;
+                                    ?>
+                                    <?php if ($venue['venue_status'] === 'Maintenance'): ?>
+                                    <div class="position-absolute top-0 end-0" style="margin-top: -8px; margin-right: -8px;">
+                                        <button class="btn btn-warning btn-sm rounded-circle shadow" onclick="event.stopPropagation(); openHousekeepingModal(<?php echo $venue['id']; ?>, '<?php echo htmlspecialchars($venue['venue_name']); ?>')" title="Assign Housekeeper">
+                                            <i class="cil-settings text-dark"></i>
+                                        </button>
+                                    </div>
+                                    <?php elseif ($hasHousekeeper): ?>
+                                    <div class="position-absolute top-0 end-0" style="margin-top: -8px; margin-right: -8px;">
+                                        <button class="btn btn-info btn-sm rounded-circle shadow" onclick="event.stopPropagation(); openHousekeepingModal(<?php echo $venue['id']; ?>, '<?php echo htmlspecialchars($venue['venue_name']); ?>')" title="View Housekeeping Task">
+                                            <i class="cil-broom text-white"></i>
+                                        </button>
+                                    </div>
+                                    <?php endif; ?>
+                                    <h5 class="card-title mb-1"><?php echo htmlspecialchars($venue['venue_name']); ?></h5>
+                                    <p class="card-text mb-2"><?php echo htmlspecialchars($venue['venue_address']); ?></p>
+                                    <span class="badge bg-light text-dark"><?php echo htmlspecialchars($venue['venue_status']); ?></span>
+                                    <br><small class="mt-2 d-block"><?php echo htmlspecialchars($venue['venue_capacity']); ?> capacity</small>
+                                </div>
+                            </div>
+                        </div>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-coreui-dismiss="modal">Close</button>
                 </div>
             </div>
         </div>
@@ -751,6 +922,9 @@ $stats = $conn->query("
         }
 
         function editVenue(id) {
+            // Close the view venues modal first
+            new coreui.Modal(document.getElementById('viewVenuesModal')).hide();
+
             document.getElementById('venueModalTitle').textContent = 'Edit Venue';
             document.getElementById('venueFormAction').value = 'update_venue';
 
@@ -952,6 +1126,89 @@ $stats = $conn->query("
             }
         }
 
+        function openViewVenuesModal() {
+            new coreui.Modal(document.getElementById('viewVenuesModal')).show();
+        }
+
+        function openHousekeepingModal(venueId, venueName) {
+            document.getElementById('housekeepingModalTitle').textContent = 'Assign Housekeeper - Venue ' + venueName;
+            document.getElementById('housekeepingRoomId').value = venueId;
+            document.getElementById('housekeepingVenueNumber').value = venueName;
+            new coreui.Modal(document.getElementById('housekeepingModal')).show();
+        }
+
+        function submitHousekeepingForm(event) {
+            event.preventDefault();
+
+            const form = document.getElementById('housekeepingForm');
+            const formData = new FormData(form);
+            const submitBtn = form.querySelector('button[type="submit"]');
+            const originalText = submitBtn.innerHTML;
+
+            // Show loading state
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="cil-spinner cil-spin me-2"></i>Assigning...';
+
+            fetch('events.php', {
+                method: 'POST',
+                headers: {
+                    'HX-Request': 'true'
+                },
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showAlert('Housekeeping task assigned successfully!', 'success');
+                    new coreui.Modal(document.getElementById('housekeepingModal')).hide();
+                    setTimeout(() => location.reload(), 1000);
+                } else {
+                    showAlert(data.message || 'An error occurred while assigning the task.', 'danger');
+                }
+            })
+            .catch(error => {
+                showAlert('Network error. Please try again.', 'danger');
+                console.error('Error:', error);
+            })
+            .finally(() => {
+                // Reset button state
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalText;
+            });
+        }
+
+        function showAlert(message, type = 'danger') {
+            const alertContainer = document.getElementById('alertContainer') || createAlertContainer();
+            const alertId = 'alert-' + Date.now();
+
+            const alertHTML = `
+                <div id="${alertId}" class="alert alert-${type} alert-dismissible fade show" role="alert">
+                    <i class="cil-${type === 'success' ? 'check-circle' : 'exclamation-circle'} me-2"></i>
+                    ${message}
+                    <button type="button" class="btn-close" data-coreui-dismiss="alert" aria-label="Close"></button>
+                </div>
+            `;
+
+            alertContainer.insertAdjacentHTML('beforeend', alertHTML);
+
+            // Auto-dismiss after 5 seconds
+            setTimeout(() => {
+                const alert = document.getElementById(alertId);
+                if (alert) {
+                    alert.remove();
+                }
+            }, 5000);
+        }
+
+        function createAlertContainer() {
+            const container = document.createElement('div');
+            container.id = 'alertContainer';
+            container.className = 'position-fixed top-0 end-0 p-3';
+            container.style.zIndex = '9999';
+            document.body.appendChild(container);
+            return container;
+        }
+
         function submitReservationForm() {
             const form = document.getElementById('reservationForm');
             const formData = new FormData(form);
@@ -972,6 +1229,10 @@ $stats = $conn->query("
                     alert('Error: ' + data.message);
                 }
             });
+        }
+
+        function generateReport() {
+            window.open('generate_report.php?page=events&type=pdf', '_blank');
         }
 
     </script>
