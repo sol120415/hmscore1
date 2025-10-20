@@ -16,31 +16,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_HX_REQUEST']))
 
             switch ($action) {
                 case 'create':
-                    // Dynamic Pricing: Get adjusted rate if room charge
-                    $dynamicRate = null;
-                    if ($_POST['transaction_type'] === 'Room Charge' && !empty($_POST['room_id'])) {
-                        $stmt = $conn->prepare("
-                            SELECT r.rate * (1 + IFNULL(mp.rate_modifier, 0)) AS dynamic_rate
-                            FROM rooms r
-                            LEFT JOIN marketing_promotion mp ON CURRENT_DATE BETWEEN mp.start_date AND mp.end_date
-                            WHERE r.id = ? AND (mp.promotion_type = 'Seasonal' OR mp.promotion_type IS NULL)
-                        ");
-                        $stmt->execute([$_POST['room_id']]);
-                        $rateResult = $stmt->fetch(PDO::FETCH_ASSOC);
-                        $dynamicRate = $rateResult['dynamic_rate'];
-                    }
-
                     // Create new billing transaction
-                    $stmt = $conn->prepare("INSERT INTO room_billing (transaction_type, reservation_id, room_id, guest_id, item_description, quantity, unit_price, total_amount, payment_amount, balance, payment_method, billing_status, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+                    $stmt = $conn->prepare("INSERT INTO room_billing (transaction_type, reservation_id, room_id, payment_amount, balance, payment_method, billing_status, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
                     $stmt->execute([
                         $_POST['transaction_type'],
                         $_POST['reservation_id'] ?: null,
                         $_POST['room_id'] ?: null,
-                        $_POST['guest_id'] ?: null,
-                        $_POST['item_description'] ?: null,
-                        $_POST['quantity'] ?: 1,
-                        $dynamicRate ?: ($_POST['unit_price'] ?: 0.00),
-                        $_POST['total_amount'] ?: 0.00,
                         $_POST['payment_amount'] ?: 0.00,
                         $_POST['balance'] ?: 0.00,
                         $_POST['payment_method'],
@@ -52,16 +33,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_HX_REQUEST']))
 
                 case 'update':
                     // Update billing transaction
-                    $stmt = $conn->prepare("UPDATE room_billing SET transaction_type=?, reservation_id=?, room_id=?, guest_id=?, item_description=?, quantity=?, unit_price=?, total_amount=?, payment_amount=?, balance=?, payment_method=?, billing_status=?, notes=? WHERE id=?");
+                    $stmt = $conn->prepare("UPDATE room_billing SET transaction_type=?, reservation_id=?, room_id=?, payment_amount=?, balance=?, payment_method=?, billing_status=?, notes=? WHERE id=?");
                     $stmt->execute([
                         $_POST['transaction_type'],
                         $_POST['reservation_id'] ?: null,
                         $_POST['room_id'] ?: null,
-                        $_POST['guest_id'] ?: null,
-                        $_POST['item_description'] ?: null,
-                        $_POST['quantity'] ?: 1,
-                        $_POST['unit_price'] ?: 0.00,
-                        $_POST['total_amount'] ?: 0.00,
                         $_POST['payment_amount'] ?: 0.00,
                         $_POST['balance'] ?: 0.00,
                         $_POST['payment_method'],
@@ -79,18 +55,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_HX_REQUEST']))
                     echo json_encode(['success' => true, 'message' => 'Billing transaction deleted successfully']);
                     break;
 
-                case 'get_dynamic_rate':
-                    // Get dynamic rate for a room
-                    $stmt = $conn->prepare("
-                        SELECT r.rate * (1 + IFNULL(mp.rate_modifier, 0)) AS dynamic_rate
-                        FROM rooms r
-                        LEFT JOIN marketing_promotion mp ON CURRENT_DATE BETWEEN mp.start_date AND mp.end_date
-                        WHERE r.id = ? AND (mp.promotion_type = 'Seasonal' OR mp.promotion_type IS NULL)
-                    ");
-                    $stmt->execute([$_POST['room_id']]);
-                    $rateResult = $stmt->fetch(PDO::FETCH_ASSOC);
-                    echo json_encode(['dynamic_rate' => $rateResult['dynamic_rate'] ?: 0]);
-                    break;
 
                 case 'get':
                     // Get billing data for editing
@@ -98,6 +62,34 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_HX_REQUEST']))
                     $stmt->execute([$_POST['id']]);
                     $billing = $stmt->fetch(PDO::FETCH_ASSOC);
                     echo json_encode($billing);
+                    break;
+
+                case 'filter':
+                    // Filter billing history by date
+                    $date = $_POST['date'];
+                    $stmt = $conn->prepare("SELECT * FROM room_billing WHERE DATE(transaction_date) = ? ORDER BY transaction_date DESC");
+                    $stmt->execute([$date]);
+                    $filteredBillings = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+                    foreach ($filteredBillings as $billing): ?>
+                        <tr>
+                            <td><?php echo htmlspecialchars($billing['id']); ?></td>
+                            <td><?php echo htmlspecialchars($billing['transaction_type']); ?></td>
+                            <td>$<?php echo number_format($billing['payment_amount'], 2); ?></td>
+                            <td>$<?php echo number_format($billing['balance'], 2); ?></td>
+                            <td><?php echo htmlspecialchars($billing['payment_method']); ?></td>
+                            <td>
+                                <span class="badge bg-<?php
+                                    echo $billing['billing_status'] === 'Paid' ? 'success' :
+                                         ($billing['billing_status'] === 'Pending' ? 'warning' :
+                                         ($billing['billing_status'] === 'Failed' ? 'danger' : 'secondary'));
+                                ?>">
+                                    <?php echo htmlspecialchars($billing['billing_status']); ?>
+                                </span>
+                            </td>
+                            <td><?php echo htmlspecialchars(date('Y-m-d H:i', strtotime($billing['transaction_date']))); ?></td>
+                        </tr>
+                    <?php endforeach;
                     break;
             }
         }
@@ -107,20 +99,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_HX_REQUEST']))
     exit;
 }
 
-// Dynamic Pricing: Adjust room rates based on demand/season
-$dynamicPricingQuery = "
-    SELECT r.room_id, r.rate * (1 + IFNULL(mp.rate_modifier, 0)) AS dynamic_rate
-    FROM rooms r
-    LEFT JOIN marketing_promotion mp ON CURRENT_DATE BETWEEN mp.start_date AND mp.end_date
-    WHERE mp.promotion_type = 'Seasonal' OR mp.promotion_type IS NULL
-";
 
-// Get pending billings from reservations
+// Get pending billings from reservations (exclude those with paid billing)
 $billings = $conn->query("
-    SELECT r.*, rm.room_number, rm.room_rate, g.first_name, g.last_name, (r.reservation_hour_count / 8 * rm.room_rate) as calculated_balance
+    SELECT r.*, rm.id as room_id, rm.room_number, rm.room_rate, g.first_name, g.last_name, (r.reservation_hour_count / 8 * rm.room_rate) as calculated_balance
     FROM reservations r
     LEFT JOIN rooms rm ON r.room_id = rm.id
     LEFT JOIN guests g ON r.guest_id = g.id
+    WHERE NOT EXISTS (
+        SELECT 1
+        FROM room_billing rb
+        WHERE rb.reservation_id = r.id AND rb.billing_status = 'Paid'
+    )
     ORDER BY r.id DESC
 ")->fetchAll(PDO::FETCH_ASSOC);
 
@@ -131,11 +121,8 @@ $rooms = $conn->query("SELECT id, room_number, room_type FROM rooms ORDER BY roo
 // Get statistics
 $stats = $conn->query("
     SELECT
-        COUNT(*) as total_transactions,
         COUNT(CASE WHEN billing_status = 'Paid' THEN 1 END) as paid_transactions,
         COUNT(CASE WHEN billing_status = 'Pending' THEN 1 END) as pending_transactions,
-        SUM(payment_amount) as total_payments,
-        SUM(balance) as total_outstanding,
         COUNT(CASE WHEN transaction_type = 'Room Charge' THEN 1 END) as room_charges,
         COUNT(CASE WHEN transaction_type = 'Event Charge' THEN 1 END) as event_charges
     FROM room_billing
@@ -211,24 +198,12 @@ $recentTransactions = array_slice($billings, 0, 10);
                 <?php include 'billingtitle.html'; ?>
                 </div>
                 <div>
-                    <small class="text-muted d-block">Total Transactions</small>
-                    <span class="fw-bold text-primary"><?php echo $stats['total_transactions']; ?></span>
-                </div>
-                <div>
                     <small class="text-muted d-block">Paid</small>
                     <span class="fw-bold text-success"><?php echo $stats['paid_transactions']; ?></span>
                 </div>
                 <div>
                     <small class="text-muted d-block">Pending</small>
                     <span class="fw-bold text-warning"><?php echo $stats['pending_transactions']; ?></span>
-                </div>
-                <div>
-                    <small class="text-muted d-block">Total Payments</small>
-                    <span class="fw-bold text-info">$<?php echo number_format($stats['total_payments'] ?: 0, 2); ?></span>
-                </div>
-                <div>
-                    <small class="text-muted d-block">Outstanding</small>
-                    <span class="fw-bold text-danger">$<?php echo number_format($stats['total_outstanding'] ?: 0, 2); ?></span>
                 </div>
             </div>
         </div>
@@ -267,7 +242,7 @@ $recentTransactions = array_slice($billings, 0, 10);
                                     </div>
                                 </div>
                                 <div class="billing-actions justify-content-center">
-                                    <button class="btn btn-sm btn-outline-primary" onclick="openBillingModal(<?php echo $billing['id']; ?>, <?php echo $billing['calculated_balance']; ?>, '<?php echo htmlspecialchars($billing['room_number']); ?>', '<?php echo htmlspecialchars($billing['first_name'] . ' ' . $billing['last_name']); ?>')" title="Create Billing">
+                                    <button class="btn btn-sm btn-outline-primary" data-coreui-toggle="modal" data-coreui-target="#billingModal" onclick="openBillingModal(<?php echo $billing['id']; ?>, <?php echo $billing['calculated_balance']; ?>, '<?php echo htmlspecialchars($billing['room_number']); ?>', '<?php echo htmlspecialchars($billing['first_name'] . ' ' . $billing['last_name']); ?>', <?php echo $billing['room_id']; ?>)" title="Create Billing">
                                         <i class="cil-plus me-1"></i>Create Billing
                                     </button>
                                 </div>
@@ -278,11 +253,63 @@ $recentTransactions = array_slice($billings, 0, 10);
                 </div>
             </div>
         </div>
+
+        <!-- Billing Transaction History -->
+        <div class="card mt-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Billing Transaction History</h5>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-sm btn-outline-secondary" onclick="filterToday()">Today</button>
+                    <input type="date" class="form-control form-control-sm" id="dateFilter" style="width: 150px;">
+                    <button class="btn btn-sm btn-primary" onclick="filterByDate()">Filter</button>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped" id="billingHistoryTable">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Transaction Type</th>
+                                <th>Payment Amount</th>
+                                <th>Balance</th>
+                                <th>Payment Method</th>
+                                <th>Status</th>
+                                <th>Date</th>
+                            </tr>
+                        </thead>
+                        <tbody id="billingHistoryBody">
+                            <?php
+                            $billingHistory = $conn->query("SELECT * FROM room_billing ORDER BY transaction_date DESC")->fetchAll(PDO::FETCH_ASSOC);
+                            foreach ($billingHistory as $billing): ?>
+                            <tr>
+                                <td><?php echo htmlspecialchars($billing['id']); ?></td>
+                                <td><?php echo htmlspecialchars($billing['transaction_type']); ?></td>
+                                <td>$<?php echo number_format($billing['payment_amount'], 2); ?></td>
+                                <td>$<?php echo number_format($billing['balance'], 2); ?></td>
+                                <td><?php echo htmlspecialchars($billing['payment_method']); ?></td>
+                                <td>
+                                    <span class="badge bg-<?php
+                                        echo $billing['billing_status'] === 'Paid' ? 'success' :
+                                             ($billing['billing_status'] === 'Pending' ? 'warning' :
+                                             ($billing['billing_status'] === 'Failed' ? 'danger' : 'secondary'));
+                                    ?>">
+                                        <?php echo htmlspecialchars($billing['billing_status']); ?>
+                                    </span>
+                                </td>
+                                <td><?php echo htmlspecialchars(date('Y-m-d H:i', strtotime($billing['transaction_date']))); ?></td>
+                            </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Billing Modal -->
     <div class="modal fade" id="billingModal" tabindex="-1">
-        <div class="modal-dialog modal-xl">
+        <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="modalTitle">Add Billing Transaction</h5>
@@ -293,95 +320,35 @@ $recentTransactions = array_slice($billings, 0, 10);
                         <input type="hidden" name="action" id="formAction" value="create">
                         <input type="hidden" name="id" id="billingId">
 
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label for="transaction_type" class="form-label">Transaction Type *</label>
-                                <select class="form-select" id="transaction_type" name="transaction_type" required>
-                                    <option value="Room Charge">Room Charge</option>
-                                    <option value="Event Charge">Event Charge</option>
-                                    <option value="Refund">Refund</option>
-                                </select>
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label for="billing_status" class="form-label">Status *</label>
-                                <select class="form-select" id="billing_status" name="billing_status" required>
-                                    <option value="Pending">Pending</option>
-                                    <option value="Paid">Paid</option>
-                                    <option value="Failed">Failed</option>
-                                    <option value="Refunded">Refunded</option>
-                                </select>
-                            </div>
-                        </div>
+                        <input type="hidden" name="transaction_type" value="Room Charge">
+                        <input type="hidden" name="billing_status" value="Paid">
 
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label for="reservation_id" class="form-label">Reservation</label>
-                                <select class="form-select" id="reservation_id" name="reservation_id">
-                                    <option value="">Select Reservation</option>
-                                    <?php foreach ($reservations as $reservation): ?>
-                                    <option value="<?php echo $reservation['id']; ?>"><?php echo htmlspecialchars($reservation['id'] . ' (' . $reservation['reservation_type'] . ')'); ?></option>
-                                    <?php endforeach; ?>
-                                </select>
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label for="guest_id" class="form-label">Guest</label>
-                                <select class="form-select" id="guest_id" name="guest_id">
-                                    <option value="">Select Guest</option>
-                                    <?php foreach ($guests as $guest): ?>
-                                    <option value="<?php echo $guest['id']; ?>"><?php echo htmlspecialchars($guest['first_name'] . ' ' . $guest['last_name']); ?></option>
-                                    <?php endforeach; ?>
-                                </select>
-                            </div>
-                        </div>
-
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label for="room_id" class="form-label">Room</label>
-                                <select class="form-select" id="room_id" name="room_id">
-                                    <option value="">Select Room</option>
-                                    <?php foreach ($rooms as $room): ?>
-                                    <option value="<?php echo $room['id']; ?>"><?php echo htmlspecialchars($room['room_number'] . ' - ' . $room['room_type']); ?></option>
-                                    <?php endforeach; ?>
-                                </select>
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label for="payment_method" class="form-label">Payment Method *</label>
-                                <select class="form-select" id="payment_method" name="payment_method" required>
-                                    <option value="Cash">Cash</option>
-                                    <option value="Card">Card</option>
-                                    <option value="GCash">GCash</option>
-                                    <option value="Bank Transfer">Bank Transfer</option>
-                                </select>
-                            </div>
+                        <div class="mb-3">
+                            <label class="form-label">Description: <span id="billing_description_display"></span></label>
                         </div>
 
                         <div class="mb-3">
-                            <label for="item_description" class="form-label">Item Description</label>
-                            <input type="text" class="form-control" id="item_description" name="item_description" placeholder="e.g., Room service, Mini bar, etc.">
+                            <label for="payment_method" class="form-label">Payment Method *</label>
+                            <select class="form-select" id="payment_method" name="payment_method" required>
+                                <option value="Cash">Cash</option>
+                                <option value="Card">Card</option>
+                                <option value="GCash">GCash</option>
+                                <option value="Bank Transfer">Bank Transfer</option>
+                            </select>
                         </div>
 
-                        <div class="row">
-                            <div class="col-md-3 mb-3">
-                                <label for="quantity" class="form-label">Quantity</label>
-                                <input type="number" class="form-control" id="quantity" name="quantity" min="1" value="1">
-                            </div>
-                            <div class="col-md-3 mb-3">
-                                <label for="unit_price" class="form-label">Unit Price</label>
-                                <input type="number" class="form-control" id="unit_price" name="unit_price" min="0" step="0.01">
-                            </div>
-                            <div class="col-md-3 mb-3">
-                                <label for="total_amount" class="form-label">Total Amount *</label>
-                                <input type="number" class="form-control" id="total_amount" name="total_amount" min="0" step="0.01" required>
-                            </div>
-                            <div class="col-md-3 mb-3">
-                                <label for="payment_amount" class="form-label">Payment Amount</label>
-                                <input type="number" class="form-control" id="payment_amount" name="payment_amount" min="0" step="0.01">
-                            </div>
+                        <input type="hidden" id="reservation_id" name="reservation_id">
+                        <input type="hidden" id="room_id" name="room_id">
+
+                        <div class="mb-3">
+                            <label for="payment_amount" class="form-label">Payment Amount *</label>
+                            <input type="number" class="form-control" id="payment_amount" name="payment_amount" min="0" step="0.01" required>
                         </div>
 
                         <div class="mb-3">
-                            <label for="balance" class="form-label">Balance</label>
-                            <input type="number" class="form-control" id="balance" name="balance" step="0.01" readonly>
+                            <label class="form-label">Balance: <span id="balance_display">$0.00</span> | Change: <span id="change_display">$0.00</span></label>
+                            <input type="hidden" id="balance" name="balance" step="0.01" readonly>
+                            <input type="hidden" id="change" name="change" step="0.01" readonly>
                         </div>
 
                         <div class="mb-3">
@@ -404,35 +371,27 @@ $recentTransactions = array_slice($billings, 0, 10);
     <script>
         // Auto-calculate balance
         function calculateBalance() {
-            const totalAmount = parseFloat(document.getElementById('total_amount').value) || 0;
+            const balanceAmount = parseFloat(document.getElementById('balance').value) || 0;
             const paymentAmount = parseFloat(document.getElementById('payment_amount').value) || 0;
-            const balance = totalAmount - paymentAmount;
-            document.getElementById('balance').value = balance.toFixed(2);
+            const newBalance = balanceAmount - paymentAmount;
+            document.getElementById('balance').value = newBalance.toFixed(2);
+            document.getElementById('balance_display').textContent = '$' + newBalance.toFixed(2);
         }
 
-        // Dynamic pricing: Update rate when room is selected
-        function updateDynamicRate() {
-            const roomId = document.getElementById('room_id').value;
-            const transactionType = document.getElementById('transaction_type').value;
-
-            if (roomId && transactionType === 'Room Charge') {
-                fetch('room_billing.php', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded',
-                        'HX-Request': 'true'
-                    },
-                    body: 'action=get_dynamic_rate&room_id=' + roomId
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.dynamic_rate > 0) {
-                        document.getElementById('unit_price').value = data.dynamic_rate;
-                        calculateTotal();
-                    }
-                });
+        // Calculate change
+        function calculateChange() {
+            const paymentAmount = parseFloat(document.getElementById('payment_amount').value) || 0;
+            const balance = parseFloat(document.getElementById('balance').value) || 0;
+            if (paymentAmount > balance) {
+                const change = paymentAmount - balance;
+                document.getElementById('change').value = change.toFixed(2);
+                document.getElementById('change_display').textContent = '$' + change.toFixed(2);
+            } else {
+                document.getElementById('change').value = '0.00';
+                document.getElementById('change_display').textContent = '$0.00';
             }
         }
+
 
         // Auto-calculate total amount
         function calculateTotal() {
@@ -453,12 +412,9 @@ $recentTransactions = array_slice($billings, 0, 10);
 
         // Add event listeners for auto-calculation
         document.addEventListener('DOMContentLoaded', function() {
-            document.getElementById('room_id').addEventListener('change', updateDynamicRate);
-            document.getElementById('transaction_type').addEventListener('change', updateDynamicRate);
-            document.getElementById('quantity').addEventListener('input', calculateTotal);
-            document.getElementById('unit_price').addEventListener('input', calculateTotal);
-            document.getElementById('total_amount').addEventListener('input', calculateBalance);
-            document.getElementById('payment_amount').addEventListener('input', calculateBalance);
+            document.getElementById('payment_amount').addEventListener('input', function() {
+                calculateChange();
+            });
         });
 
         function openCreateModal() {
@@ -470,7 +426,7 @@ $recentTransactions = array_slice($billings, 0, 10);
             new coreui.Modal(document.getElementById('billingModal')).show();
         }
 
-        function openBillingModal(reservationId, calculatedBalance, roomNumber, guestName) {
+        function openBillingModal(reservationId, calculatedBalance, roomNumber, guestName, roomId) {
             document.getElementById('modalTitle').textContent = 'Create Room Billing';
             document.getElementById('formAction').value = 'create';
             document.getElementById('billingId').value = '';
@@ -478,11 +434,12 @@ $recentTransactions = array_slice($billings, 0, 10);
 
             // Pre-fill form with reservation data
             document.getElementById('reservation_id').value = reservationId;
-            document.getElementById('transaction_type').value = 'Room Charge';
-            document.getElementById('billing_status').value = 'Pending';
-            document.getElementById('total_amount').value = calculatedBalance.toFixed(2);
+            document.getElementById('room_id').value = roomId;
             document.getElementById('balance').value = calculatedBalance.toFixed(2);
-            document.getElementById('item_description').value = 'Room charge for ' + roomNumber + ' - ' + guestName;
+            document.getElementById('balance_display').textContent = '$' + calculatedBalance.toFixed(2);
+            document.getElementById('billing_description_display').textContent = 'Room charge for ' + roomNumber + ' - ' + guestName;
+            // document.getElementById('payment_amount').value = '';
+            calculateChange();
 
             new coreui.Modal(document.getElementById('billingModal')).show();
         }
@@ -503,14 +460,8 @@ $recentTransactions = array_slice($billings, 0, 10);
             .then(response => response.json())
             .then(data => {
                 document.getElementById('billingId').value = data.id;
-                document.getElementById('transaction_type').value = data.transaction_type;
                 document.getElementById('reservation_id').value = data.reservation_id || '';
                 document.getElementById('room_id').value = data.room_id || '';
-                document.getElementById('guest_id').value = data.guest_id || '';
-                document.getElementById('item_description').value = data.item_description || '';
-                document.getElementById('quantity').value = data.quantity;
-                document.getElementById('unit_price').value = data.unit_price;
-                document.getElementById('total_amount').value = data.total_amount;
                 document.getElementById('payment_amount').value = data.payment_amount;
                 document.getElementById('balance').value = data.balance;
                 document.getElementById('payment_method').value = data.payment_method;
@@ -543,6 +494,14 @@ $recentTransactions = array_slice($billings, 0, 10);
         }
 
         function submitBillingForm() {
+            const paymentAmount = parseFloat(document.getElementById('payment_amount').value) || 0;
+            const balance = parseFloat(document.getElementById('balance').value) || 0;
+
+            if (paymentAmount < balance) {
+                alert('Payment amount cannot be less than balance');
+                return;
+            }
+
             const form = document.getElementById('billingForm');
             const formData = new FormData(form);
 
@@ -561,6 +520,33 @@ $recentTransactions = array_slice($billings, 0, 10);
                 } else {
                     alert('Error: ' + data.message);
                 }
+            });
+        }
+
+        function filterToday() {
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('dateFilter').value = today;
+            filterByDate();
+        }
+
+        function filterByDate() {
+            const selectedDate = document.getElementById('dateFilter').value;
+            if (!selectedDate) {
+                alert('Please select a date');
+                return;
+            }
+
+            fetch('room_billing.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'HX-Request': 'true'
+                },
+                body: 'action=filter&date=' + selectedDate
+            })
+            .then(response => response.text())
+            .then(html => {
+                document.getElementById('billingHistoryBody').innerHTML = html;
             });
         }
     </script>
