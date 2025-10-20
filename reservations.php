@@ -420,27 +420,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_HX_REQUEST']))
     exit;
 }
 
-// Handle filter requests
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'filter') {
-    $filter = $_POST['filter'] ?? '';
-    $whereClause = '';
+// Handle HTMX filter requests (GET requests)
+if (isset($_GET['status']) || isset($_GET['sort'])) {
+    $status = $_GET['status'] ?? '';
+    $sort = $_GET['sort'] ?? '';
 
-    switch ($filter) {
-        case 'day':
-            $whereClause = "WHERE r.created_at >= DATE_SUB(NOW(), INTERVAL 1 DAY)";
-            break;
-        case 'week':
-            $whereClause = "WHERE r.created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)";
-            break;
-        case 'month':
-            $whereClause = "WHERE r.created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)";
-            break;
-        case 'year':
-            $whereClause = "WHERE r.created_at >= DATE_SUB(NOW(), INTERVAL 1 YEAR)";
-            break;
-        default:
-            $whereClause = '';
+    $whereClause = '';
+    $conditions = [];
+
+    if (!empty($status)) {
+        $conditions[] = "r.reservation_status = '$status'";
     }
+
+    if (!empty($conditions)) {
+        $whereClause = "WHERE " . implode(" AND ", $conditions);
+    }
+
+    // Determine sort order
+    $orderBy = (!empty($sort) && $sort === 'asc') ? 'ASC' : 'DESC';
 
     $reservations = $conn->query("
         SELECT r.*, g.first_name, g.last_name, rm.room_number, rm.room_type
@@ -448,13 +445,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         LEFT JOIN guests g ON r.guest_id = g.id
         LEFT JOIN rooms rm ON r.room_id = rm.id
         $whereClause
-        ORDER BY r.created_at DESC
+        ORDER BY r.created_at $orderBy
     ")->fetchAll(PDO::FETCH_ASSOC);
 
     // Output just the cards HTML for HTMX
-    foreach ($reservations as $reservation): ?>
+    ?>
+    <div class="row">
+        <?php foreach ($reservations as $reservation): ?>
         <div class="col-md-6 col-lg-4 mb-3">
-            <div class="card h-100 reservation-card">
+            <div class="card h-100 reservation-card" style="border-left: 4px solid <?php
+                echo $reservation['reservation_status'] === 'Checked In' ? '#198754' :
+                      ($reservation['reservation_status'] === 'Checked Out' ? '#0d6efd' :
+                      ($reservation['reservation_status'] === 'Pending' ? '#fd7e14' :
+                      ($reservation['reservation_status'] === 'Cancelled' ? '#dc3545' : '#6c757d')));
+            ?>;">
                 <div class="card-body">
                     <div class="reservation-content">
                         <div class="d-flex justify-content-between align-items-start mb-2">
@@ -462,9 +466,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                                 <h6 class="mb-1"><?php echo htmlspecialchars(($reservation['first_name'] ?: '') . ' ' . ($reservation['last_name'] ?: 'Walk-in')); ?></h6>
                                 <small class="text-muted">
                                     <?php if ($reservation['room_number']): ?>
-                                        <?php echo htmlspecialchars($reservation['room_number']); ?> • <?php echo date('M-d', strtotime($reservation['check_in_date'])); ?> • <?php echo date('M-d', strtotime($reservation['check_out_date'])); ?>
+                                        <?php echo htmlspecialchars($reservation['room_number']); ?> • <?php echo date('M-d H:i', strtotime($reservation['check_in_date'])); ?> to <?php echo date('M-d H:i', strtotime($reservation['check_out_date'])); ?>
                                     <?php else: ?>
-                                        No room • <?php echo date('M-d', strtotime($reservation['check_in_date'])); ?> • <?php echo date('M-d', strtotime($reservation['check_out_date'])); ?>
+                                        No room • <?php echo date('M-d H:i', strtotime($reservation['check_in_date'])); ?> to <?php echo date('M-d H:i', strtotime($reservation['check_out_date'])); ?>
                                     <?php endif; ?>
                                 </small>
                             </div>
@@ -474,9 +478,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                                 </span>
                                 <span class="badge bg-<?php
                                     echo $reservation['reservation_status'] === 'Checked In' ? 'success' :
-                                         ($reservation['reservation_status'] === 'Checked Out' ? 'primary' :
-                                         ($reservation['reservation_status'] === 'Pending' ? 'warning' :
-                                         ($reservation['reservation_status'] === 'Cancelled' ? 'danger' : 'secondary')));
+                                          ($reservation['reservation_status'] === 'Checked Out' ? 'primary' :
+                                          ($reservation['reservation_status'] === 'Pending' ? 'warning' :
+                                          ($reservation['reservation_status'] === 'Cancelled' ? 'danger' : 'secondary')));
                                 ?>">
                                     <?php echo htmlspecialchars($reservation['reservation_status']); ?>
                                 </span>
@@ -493,36 +497,39 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                                 <i class="cil-arrow-right me-1"></i>Check Out
                             </button>
                         <?php endif; ?>
-                        <button class="btn btn-sm btn-outline-secondary" onclick="archiveReservation('<?php echo $reservation['id']; ?>')" title="Archive">
+                        <button class="btn btn-sm btn-outline-secondary me-2" onclick="archiveReservation('<?php echo $reservation['id']; ?>')" title="Archive">
                             <i class="cil-archive me-1"></i>Archive
+                        </button>
+                        <button class="btn btn-sm btn-outline-danger" onclick="deleteReservation('<?php echo $reservation['id']; ?>')" title="Remove">
+                            <i class="cil-trash me-1"></i>Remove
                         </button>
                     </div>
                 </div>
             </div>
         </div>
-    <?php endforeach;
+        <?php endforeach; ?>
+    </div>
+    <?php
     exit;
 }
 
 // Get data for display (filtered if applicable)
-$whereClause = '';
+$status = $_GET['status'] ?? '';
+$sort = $_GET['sort'] ?? '';
 
-switch ($_GET['filter'] ?? '') {
-    case 'day':
-        $whereClause = "WHERE r.created_at >= DATE_SUB(NOW(), INTERVAL 1 DAY)";
-        break;
-    case 'week':
-        $whereClause = "WHERE r.created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)";
-        break;
-    case 'month':
-        $whereClause = "WHERE r.created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)";
-        break;
-    case 'year':
-        $whereClause = "WHERE r.created_at >= DATE_SUB(NOW(), INTERVAL 1 YEAR)";
-        break;
-    default:
-        $whereClause = '';
+$whereClause = '';
+$conditions = [];
+
+if (!empty($status)) {
+    $conditions[] = "r.reservation_status = '$status'";
 }
+
+if (!empty($conditions)) {
+    $whereClause = "WHERE " . implode(" AND ", $conditions);
+}
+
+// Determine sort order
+$orderBy = (!empty($sort) && $sort === 'asc') ? 'ASC' : 'DESC';
 
 $reservations = $conn->query("
     SELECT r.*, g.first_name, g.last_name, rm.room_number, rm.room_type
@@ -530,31 +537,25 @@ $reservations = $conn->query("
     LEFT JOIN guests g ON r.guest_id = g.id
     LEFT JOIN rooms rm ON r.room_id = rm.id
     $whereClause
-    ORDER BY r.created_at DESC
+    ORDER BY r.created_at $orderBy
 ")->fetchAll(PDO::FETCH_ASSOC);
 
 $guests = $conn->query("SELECT id, first_name, last_name, email FROM guests ORDER BY first_name, last_name")->fetchAll(PDO::FETCH_ASSOC);
 $rooms = $conn->query("SELECT id, room_number, room_type, room_status FROM rooms ORDER BY room_number")->fetchAll(PDO::FETCH_ASSOC);
 
-// Get filter parameter
-$filter = $_GET['filter'] ?? '';
-$whereClause = '';
+// Get filter parameters
+$status = $_GET['status'] ?? '';
+$sort = $_GET['sort'] ?? '';
 
-switch ($filter) {
-    case 'day':
-        $whereClause = "WHERE r.created_at >= DATE_SUB(NOW(), INTERVAL 1 DAY)";
-        break;
-    case 'week':
-        $whereClause = "WHERE r.created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)";
-        break;
-    case 'month':
-        $whereClause = "WHERE r.created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)";
-        break;
-    case 'year':
-        $whereClause = "WHERE r.created_at >= DATE_SUB(NOW(), INTERVAL 1 YEAR)";
-        break;
-    default:
-        $whereClause = '';
+$whereClause = '';
+$conditions = [];
+
+if (!empty($status)) {
+    $conditions[] = "r.reservation_status = '$status'";
+}
+
+if (!empty($conditions)) {
+    $whereClause = "WHERE " . implode(" AND ", $conditions);
 }
 
 // Get statistics (filtered if applicable)
@@ -677,25 +678,32 @@ $todayCheckOuts = $conn->query("SELECT COUNT(*) as checkouts_today FROM reservat
                        <i class="cil-plus me-1"></i>New Reservation
                    </button>
                     <div class="btn-group" role="group">
-                        <input type="radio" class="btn-check" id="filter_all" name="filter_period" autocomplete="off" checked
-                               hx-get="reservations.php?filter=" hx-target="#reservationsContainer" hx-swap="innerHTML">
-                        <label class="btn btn-outline-secondary btn-sm" for="filter_all">All</label>
-
-                        <input type="radio" class="btn-check" id="filter_day" name="filter_period" autocomplete="off"
-                               hx-get="reservations.php?filter=day" hx-target="#reservationsContainer" hx-swap="innerHTML">
-                        <label class="btn btn-outline-secondary btn-sm" for="filter_day">Day</label>
-
-                        <input type="radio" class="btn-check" id="filter_week" name="filter_period" autocomplete="off"
-                               hx-get="reservations.php?filter=week" hx-target="#reservationsContainer" hx-swap="innerHTML">
-                        <label class="btn btn-outline-secondary btn-sm" for="filter_week">Week</label>
-
-                        <input type="radio" class="btn-check" id="filter_month" name="filter_period" autocomplete="off"
-                               hx-get="reservations.php?filter=month" hx-target="#reservationsContainer" hx-swap="innerHTML">
-                        <label class="btn btn-outline-secondary btn-sm" for="filter_month">Month</label>
-
-                        <input type="radio" class="btn-check" id="filter_year" name="filter_period" autocomplete="off"
-                               hx-get="reservations.php?filter=year" hx-target="#reservationsContainer" hx-swap="innerHTML">
-                        <label class="btn btn-outline-secondary btn-sm" for="filter_year">Year</label>
+                        <button type="button" class="btn btn-outline-secondary btn-sm active"
+                                hx-get="reservations.php" hx-target="#reservationsContainer" hx-swap="innerHTML"
+                                onclick="setActive(this)">All Status</button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm"
+                                hx-get="reservations.php?status=Pending" hx-target="#reservationsContainer" hx-swap="innerHTML"
+                                onclick="setActive(this)">Pending</button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm"
+                                hx-get="reservations.php?status=Checked In" hx-target="#reservationsContainer" hx-swap="innerHTML"
+                                onclick="setActive(this)">Checked In</button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm"
+                                hx-get="reservations.php?status=Checked Out" hx-target="#reservationsContainer" hx-swap="innerHTML"
+                                onclick="setActive(this)">Checked Out</button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm"
+                                hx-get="reservations.php?status=Cancelled" hx-target="#reservationsContainer" hx-swap="innerHTML"
+                                onclick="setActive(this)">Cancelled</button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm"
+                                hx-get="reservations.php?status=Archived" hx-target="#reservationsContainer" hx-swap="innerHTML"
+                                onclick="setActive(this)">Archived</button>
+                    </div>
+                    <div class="btn-group" role="group">
+                        <button type="button" class="btn btn-outline-secondary btn-sm active"
+                                hx-get="reservations.php" hx-target="#reservationsContainer" hx-swap="innerHTML"
+                                onclick="setActive(this)">Newest First</button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm"
+                                hx-get="reservations.php?sort=asc" hx-target="#reservationsContainer" hx-swap="innerHTML"
+                                onclick="setActive(this)">Oldest First</button>
                     </div>
                 </div>
             </div>
@@ -747,8 +755,11 @@ $todayCheckOuts = $conn->query("SELECT COUNT(*) as checkouts_today FROM reservat
                                             <i class="cil-arrow-right me-1"></i>Check Out
                                         </button>
                                     <?php endif; ?>
-                                    <button class="btn btn-sm btn-outline-secondary" onclick="archiveReservation('<?php echo $reservation['id']; ?>')" title="Archive">
+                                    <button class="btn btn-sm btn-outline-secondary me-2" onclick="archiveReservation('<?php echo $reservation['id']; ?>')" title="Archive">
                                         <i class="cil-archive me-1"></i>Archive
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-danger" onclick="deleteReservation('<?php echo $reservation['id']; ?>')" title="Remove">
+                                        <i class="cil-trash me-1"></i>Remove
                                     </button>
                                 </div>
                             </div>
@@ -991,6 +1002,13 @@ $todayCheckOuts = $conn->query("SELECT COUNT(*) as checkouts_today FROM reservat
                     btn.innerHTML = originalHTML;
                 });
             }
+        }
+
+        function setActive(button) {
+            // Remove active class from all buttons in the same group
+            button.closest('.btn-group').querySelectorAll('button').forEach(btn => btn.classList.remove('active'));
+            // Add active class to clicked button
+            button.classList.add('active');
         }
 
         function checkInReservation(id) {
