@@ -651,7 +651,7 @@ $stats = $conn->query("
                                     <?php endforeach; ?>
                                 </select>
                             </div>
-                            <div class="col-md-6 mb-3">
+                            <div class="col-md-6 mb-3" id="hoursInputContainer">
                                 <label for="event_hour_count" class="form-label">Hours *</label>
                                 <input type="number" class="form-control" id="event_hour_count" name="event_hour_count" min="1" required>
                             </div>
@@ -825,6 +825,7 @@ $stats = $conn->query("
             document.getElementById('reservationFormAction').value = 'create_reservation';
             document.getElementById('reservationId').value = '';
             document.getElementById('reservationForm').reset();
+            document.getElementById('hoursInputContainer').style.display = 'none';
             new coreui.Modal(document.getElementById('reservationModal')).show();
         }
 
@@ -859,6 +860,9 @@ $stats = $conn->query("
                 document.getElementById('event_hours').value = hours;
                 document.getElementById('event_days').value = days * 24;
                 document.getElementById('event_status').value = data.event_status || 'Pending';
+
+                // Show hours input for editing
+                document.getElementById('hoursInputContainer').style.display = 'block';
 
                 new coreui.Modal(document.getElementById('reservationModal')).show();
             });
