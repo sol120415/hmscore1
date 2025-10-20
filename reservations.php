@@ -61,7 +61,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_HX_REQUEST']))
 
                      // Check for time conflicts if a room is selected
                      if (!empty($_POST['room_id'])) {
-                         $stmt = $conn->prepare("SELECT COUNT(*) as conflict_count FROM reservations WHERE room_id = ? AND reservation_status IN ('Pending', 'Checked In') AND (
+                         $stmt = $conn->prepare("SELECT COUNT(*) as conflict_count FROM reservations WHERE room_id = ? AND reservation_status IN ('Pending', 'Checked In', 'Checked Out') AND reservation_status != 'Archived' AND (
                              (check_in_date < ? AND check_out_date > ?) OR
                              (check_in_date < ? AND check_out_date > ?) OR
                              (check_in_date >= ? AND check_out_date <= ?)
@@ -153,7 +153,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_HX_REQUEST']))
 
                     // Check for time conflicts if room changed or dates changed
                     if (!empty($_POST['room_id']) && (!empty($_POST['room_id']) || $check_in_date !== $current['check_in_date'] || $check_out_date !== $current['check_out_date'])) {
-                        $stmt = $conn->prepare("SELECT COUNT(*) as conflict_count FROM reservations WHERE room_id = ? AND id != ? AND reservation_status IN ('Pending', 'Checked In') AND (
+                        $stmt = $conn->prepare("SELECT COUNT(*) as conflict_count FROM reservations WHERE room_id = ? AND id != ? AND reservation_status IN ('Pending', 'Checked In', 'Checked Out') AND reservation_status != 'Archived' AND (
                             (check_in_date < ? AND check_out_date > ?) OR
                             (check_in_date < ? AND check_out_date > ?) OR
                             (check_in_date >= ? AND check_out_date <= ?)
@@ -325,6 +325,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_HX_REQUEST']))
                     }
                     break;
 
+                case 'archive':
+                    // Archive reservation
+                    $stmt = $conn->prepare("UPDATE reservations SET reservation_status = 'Archived' WHERE id = ?");
+                    $result = $stmt->execute([$_POST['id']]);
+
+                    if ($result && $stmt->rowCount() > 0) {
+                        // Set room back to Vacant if it was reserved or occupied
+                        $stmt = $conn->prepare("SELECT room_id, reservation_status FROM reservations WHERE id = ?");
+                        $stmt->execute([$_POST['id']]);
+                        $reservation = $stmt->fetch(PDO::FETCH_ASSOC);
+                        if (!empty($reservation['room_id']) && in_array($reservation['reservation_status'], ['Pending', 'Checked In'])) {
+                            $stmt = $conn->prepare("UPDATE rooms SET room_status = 'Vacant' WHERE id = ?");
+                            $stmt->execute([$reservation['room_id']]);
+                        }
+                        echo json_encode(['success' => true, 'message' => 'Reservation archived successfully']);
+                    } else {
+                        echo json_encode(['success' => false, 'message' => 'Archive failed or reservation not found']);
+                    }
+                    break;
+
                 case 'get_available_rooms':
                     // Get available rooms for a specific date/time range - rooms where the check-in/check-out time range doesn't conflict with existing reservations
                     $check_in_date = $_POST['check_in_date'];
@@ -351,14 +371,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_HX_REQUEST']))
                                    SELECT MIN(res.check_out_date)
                                    FROM reservations res
                                    WHERE res.room_id = r.id
-                                   AND res.reservation_status IN ('Pending', 'Checked In')
+                                   AND res.reservation_status IN ('Pending', 'Checked In', 'Checked Out')
+                                   AND res.reservation_status != 'Archived'
                                    AND res.check_out_date > ?
                                ) as next_available
                         FROM rooms r
                         WHERE NOT EXISTS (
                             SELECT 1 FROM reservations res
                             WHERE res.room_id = r.id
-                            AND res.reservation_status IN ('Pending', 'Checked In')
+                            AND res.reservation_status IN ('Pending', 'Checked In', 'Checked Out')
+                            AND res.reservation_status != 'Archived'
                             AND (
                                 (res.check_in_date <= ? AND res.check_out_date > ?) OR
                                 (res.check_in_date < ? AND res.check_out_date >= ?) OR
@@ -461,7 +483,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                             </div>
                         </div>
                     </div>
-                    <div class="reservation-actions d-none justify-content-center">
+                    <div class="reservation-actions justify-content-center">
                         <?php if ($reservation['reservation_status'] === 'Pending'): ?>
                             <button class="btn btn-sm btn-success me-2" onclick="checkInReservation('<?php echo $reservation['id']; ?>')" title="Check In">
                                 <i class="cil-check me-1"></i>Check In
@@ -471,8 +493,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                                 <i class="cil-arrow-right me-1"></i>Check Out
                             </button>
                         <?php endif; ?>
-                        <button class="btn btn-sm btn-outline-danger" onclick="deleteReservation('<?php echo $reservation['id']; ?>')" title="Delete">
-                            <i class="cil-trash me-1"></i>Delete
+                        <button class="btn btn-sm btn-outline-secondary" onclick="archiveReservation('<?php echo $reservation['id']; ?>')" title="Archive">
+                            <i class="cil-archive me-1"></i>Archive
                         </button>
                     </div>
                 </div>
@@ -597,21 +619,16 @@ $todayCheckOuts = $conn->query("SELECT COUNT(*) as checkouts_today FROM reservat
             box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
         }
         .reservation-card {
-            transition: all 0.2s ease;
             cursor: pointer;
         }
         .reservation-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
         .reservation-actions {
+            display: none;
+        }
+        .reservation-card:hover .reservation-actions {
             display: flex;
-        }
-        .reservation-actions {
-            min-height: 32px;
-            opacity: 0;
-            transform: translateY(10px);
-            transition: all 0.3s ease;
         }
     </style>
 </head>
@@ -730,8 +747,8 @@ $todayCheckOuts = $conn->query("SELECT COUNT(*) as checkouts_today FROM reservat
                                             <i class="cil-arrow-right me-1"></i>Check Out
                                         </button>
                                     <?php endif; ?>
-                                    <button class="btn btn-sm btn-outline-danger" onclick="deleteReservation('<?php echo $reservation['id']; ?>')" title="Delete">
-                                        <i class="cil-trash me-1"></i>Delete
+                                    <button class="btn btn-sm btn-outline-secondary" onclick="archiveReservation('<?php echo $reservation['id']; ?>')" title="Archive">
+                                        <i class="cil-archive me-1"></i>Archive
                                     </button>
                                 </div>
                             </div>
@@ -1032,6 +1049,40 @@ $todayCheckOuts = $conn->query("SELECT COUNT(*) as checkouts_today FROM reservat
                         setTimeout(() => location.reload(), 1000);
                     } else {
                         showAlert(data.message || 'Check-out failed.', 'danger');
+                        btn.disabled = false;
+                        btn.innerHTML = originalHTML;
+                    }
+                })
+                .catch(error => {
+                    showAlert('Network error. Please try again.', 'danger');
+                    btn.disabled = false;
+                    btn.innerHTML = originalHTML;
+                });
+            }
+        }
+
+        function archiveReservation(id) {
+            if (confirm('Are you sure you want to archive this reservation? This will remove it from active reservations.')) {
+                const btn = event.target.closest('button');
+                const originalHTML = btn.innerHTML;
+                btn.disabled = true;
+                btn.innerHTML = '<i class="cil-spinner cil-spin"></i>';
+
+                fetch('reservations.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'HX-Request': 'true'
+                    },
+                    body: 'action=archive&id=' + id
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showAlert('Reservation archived successfully!', 'success');
+                        setTimeout(() => location.reload(), 1000);
+                    } else {
+                        showAlert(data.message || 'Archive failed.', 'danger');
                         btn.disabled = false;
                         btn.innerHTML = originalHTML;
                     }

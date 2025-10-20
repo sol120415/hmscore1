@@ -10,7 +10,7 @@ CREATE TABLE IF NOT EXISTS reservations (
     reservation_hour_count INT NOT NULL,
     check_in_date DATETIME NOT NULL,
     check_out_date DATETIME NOT NULL,
-    reservation_status ENUM('Pending', 'Checked In', 'Checked Out', 'Cancelled') DEFAULT 'Pending',
+    reservation_status ENUM('Pending', 'Checked In', 'Checked Out', 'Cancelled', 'Archived') DEFAULT 'Pending',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 
