@@ -71,6 +71,54 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_HX_REQUEST']))
                          }
                      }
 
+                     // Check for time conflicts if a venue is selected
+                     if (!empty($_POST['event_venue_id'])) {
+                         $stmt = $conn->prepare("SELECT COUNT(*) as conflict_count FROM event_reservation WHERE event_venue_id = ? AND event_status IN ('Pending', 'Checked In', 'Checked Out') AND event_status != 'Archived' AND (
+                             (event_checkin < ? AND event_checkout > ?) OR
+                             (event_checkin < ? AND event_checkout > ?) OR
+                             (event_checkin >= ? AND event_checkout <= ?)
+                         )");
+                         $stmt->execute([
+                             $_POST['event_venue_id'],
+                             $_POST['event_checkout'], $_POST['event_checkin'],  // overlap start
+                             $_POST['event_checkin'], $_POST['event_checkout'],  // overlap end
+                             $_POST['event_checkin'], $_POST['event_checkout']   // contained within
+                         ]);
+                         $conflict = $stmt->fetch(PDO::FETCH_ASSOC);
+                         if ($conflict['conflict_count'] > 0) {
+                             // Find next available time for the venue
+                             $stmt = $conn->prepare("SELECT event_checkout FROM event_reservation WHERE event_venue_id = ? AND event_status IN ('Pending', 'Checked In') AND event_checkout > ? ORDER BY event_checkout ASC LIMIT 1");
+                             $stmt->execute([$_POST['event_venue_id'], $_POST['event_checkin']]);
+                             $nextAvailable = $stmt->fetch(PDO::FETCH_ASSOC);
+
+                             $message = 'Time conflict: The selected venue is already reserved for this time period.';
+                             if ($nextAvailable) {
+                                 $nextTime = strtotime($nextAvailable['event_checkout']);
+
+                                 // Calculate requested duration based on hours value
+                                 $hours = (int)$_POST['event_hour_count'];
+                                 if ($hours <= 16) {
+                                     $requestedDuration = $hours * 3600; // hours
+                                     $minGap = 8 * 3600; // 8 hours minimum gap
+                                 } else {
+                                     $requestedDuration = $hours * 24 * 3600; // days
+                                     $minGap = 24 * 3600; // 24 hours minimum gap
+                                 }
+
+                                 if (($nextTime - strtotime($_POST['event_checkin'])) < $minGap) {
+                                     // Not enough time, suggest time after the next reservation
+                                     $suggestedTime = date('Y-m-d H:i:s', $nextTime);
+                                     $message .= ' Venue will be available after ' . date('M-d H:i', $nextTime) . '.';
+                                 } else {
+                                     // There might be a gap, but we don't allow reservations in small gaps
+                                     $message .= ' Venue will be available after ' . date('M-d H:i', $nextTime) . '.';
+                                 }
+                             }
+                             echo json_encode(['success' => false, 'message' => $message]);
+                             break;
+                         }
+                     }
+
                      // Create new reservation
                      $stmt = $conn->prepare("INSERT INTO event_reservation (event_title, event_organizer, event_organizer_contact, event_expected_attendees, event_description, event_venue_id, event_checkin, event_checkout, event_hour_count, event_status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
                      $stmt->execute([
@@ -89,6 +137,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_HX_REQUEST']))
                      break;
 
                 case 'update_reservation':
+                     // Get current reservation data to handle venue status changes
+                     $stmt = $conn->prepare("SELECT event_venue_id, event_status, event_checkin, event_checkout FROM event_reservation WHERE id=?");
+                     $stmt->execute([$_POST['id']]);
+                     $current = $stmt->fetch(PDO::FETCH_ASSOC);
+
                      // Validate expected attendees against venue capacity
                      if (!empty($_POST['event_venue_id'])) {
                          $venueStmt = $conn->prepare("SELECT venue_capacity FROM event_venues WHERE id = ?");
@@ -97,6 +150,55 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_HX_REQUEST']))
                          if ($venue && $_POST['event_expected_attendees'] > $venue['venue_capacity']) {
                              echo json_encode(['success' => false, 'message' => 'Expected attendees (' . $_POST['event_expected_attendees'] . ') cannot exceed venue capacity (' . $venue['venue_capacity'] . ')']);
                              exit;
+                         }
+                     }
+
+                     // Check for time conflicts if venue changed or dates changed
+                     if (!empty($_POST['event_venue_id']) && (!empty($_POST['event_venue_id']) || $_POST['event_checkin'] !== $current['event_checkin'] || $_POST['event_checkout'] !== $current['event_checkout'])) {
+                         $stmt = $conn->prepare("SELECT COUNT(*) as conflict_count FROM event_reservation WHERE event_venue_id = ? AND id != ? AND event_status IN ('Pending', 'Checked In', 'Checked Out') AND event_status != 'Archived' AND (
+                             (event_checkin < ? AND event_checkout > ?) OR
+                             (event_checkin < ? AND event_checkout > ?) OR
+                             (event_checkin >= ? AND event_checkout <= ?)
+                         )");
+                         $stmt->execute([
+                             $_POST['event_venue_id'],
+                             $_POST['id'],  // Exclude current reservation
+                             $_POST['event_checkout'], $_POST['event_checkin'],  // overlap start
+                             $_POST['event_checkin'], $_POST['event_checkout'],  // overlap end
+                             $_POST['event_checkin'], $_POST['event_checkout']   // contained within
+                         ]);
+                         $conflict = $stmt->fetch(PDO::FETCH_ASSOC);
+                         if ($conflict['conflict_count'] > 0) {
+                             // Find next available time for the venue
+                             $stmt = $conn->prepare("SELECT event_checkout FROM event_reservation WHERE event_venue_id = ? AND id != ? AND event_status IN ('Pending', 'Checked In') AND event_checkout > ? ORDER BY event_checkout ASC LIMIT 1");
+                             $stmt->execute([$_POST['event_venue_id'], $_POST['id'], $_POST['event_checkin']]);
+                             $nextAvailable = $stmt->fetch(PDO::FETCH_ASSOC);
+
+                             $message = 'Time conflict: The selected venue is already reserved for this time period.';
+                             if ($nextAvailable) {
+                                 $nextTime = strtotime($nextAvailable['event_checkout']);
+
+                                 // Calculate requested duration based on hours value
+                                 $hours = (int)$_POST['event_hour_count'];
+                                 if ($hours <= 16) {
+                                     $requestedDuration = $hours * 3600; // hours
+                                     $minGap = 8 * 3600; // 8 hours minimum gap
+                                 } else {
+                                     $requestedDuration = $hours * 24 * 3600; // days
+                                     $minGap = 24 * 3600; // 24 hours minimum gap
+                                 }
+
+                                 if (($nextTime - strtotime($_POST['event_checkin'])) < $minGap) {
+                                     // Not enough time, suggest time after the next reservation
+                                     $suggestedTime = date('Y-m-d H:i:s', $nextTime);
+                                     $message .= ' Venue will be available after ' . date('M-d H:i', $nextTime) . '.';
+                                 } else {
+                                     // There might be a gap, but we don't allow reservations in small gaps
+                                     $message .= ' Venue will be available after ' . date('M-d H:i', $nextTime) . '.';
+                                 }
+                             }
+                             echo json_encode(['success' => false, 'message' => $message]);
+                             break;
                          }
                      }
 
