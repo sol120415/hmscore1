@@ -130,11 +130,11 @@ if(!isset($_SESSION['email'])){
   }
 
   // Handle logout
- if ($_GET['page'] == 'logout') {
+  if (isset($_GET['page']) && $_GET['page'] == 'logout') {
    session_destroy();
    header('Location: login.php');
    exit;
- }
+  }
   ?>
 
   <script>
