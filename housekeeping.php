@@ -70,21 +70,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_HX_REQUEST']))
 
                 case 'create_task':
                     // Create new housekeeping task
-                    $stmt = $conn->prepare("INSERT INTO housekeeping (room_id, housekeeper_id, task_type, priority, scheduled_date, scheduled_time, estimated_duration_minutes, issues_found, maintenance_required, guest_feedback, supervisor_notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-                    $stmt->execute([
-                        $_POST['room_id'],
-                        $_POST['housekeeper_id'] ?: null,
-                        $_POST['task_type'],
-                        $_POST['priority'],
-                        $_POST['scheduled_date'],
-                        $_POST['scheduled_time'] ?: null,
-                        $_POST['estimated_duration_minutes'] ?: 60,
-                        $_POST['issues_found'] ?: null,
-                        isset($_POST['maintenance_required']) ? 1 : 0,
-                        $_POST['guest_feedback'] ?: null,
-                        $_POST['supervisor_notes'] ?: null
-                    ]);
-                    echo json_encode(['success' => true, 'message' => 'Task created successfully']);
+                    $conn->beginTransaction();
+                    try {
+                        $stmt = $conn->prepare("INSERT INTO housekeeping (room_id, housekeeper_id, task_type, priority, status, scheduled_date, scheduled_time, estimated_duration_minutes, issues_found, maintenance_required, guest_feedback, supervisor_notes) VALUES (?, ?, ?, ?, 'In Progress', ?, ?, ?, ?, ?, ?, ?)");
+                        $stmt->execute([
+                            $_POST['room_id'],
+                            $_POST['housekeeper_id'] ?: null,
+                            $_POST['task_type'],
+                            $_POST['priority'],
+                            $_POST['scheduled_date'],
+                            $_POST['scheduled_time'] ?: null,
+                            $_POST['estimated_duration_minutes'] ?: 60,
+                            $_POST['issues_found'] ?: null,
+                            isset($_POST['maintenance_required']) ? 1 : 0,
+                            $_POST['guest_feedback'] ?: null,
+                            $_POST['supervisor_notes'] ?: null
+                        ]);
+
+                        // Update room status to Cleaning if housekeeper is assigned
+                        if (!empty($_POST['housekeeper_id'])) {
+                            $stmt = $conn->prepare("UPDATE rooms SET room_status='Cleaning' WHERE id=?");
+                            $stmt->execute([$_POST['room_id']]);
+                        }
+
+                        $conn->commit();
+                        echo json_encode(['success' => true, 'message' => 'Task created successfully']);
+                    } catch (Exception $e) {
+                        $conn->rollBack();
+                        echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+                    }
                     break;
 
                 case 'update_task':
@@ -138,6 +152,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_HX_REQUEST']))
                     ]);
                     echo json_encode(['success' => true, 'message' => 'Supplies updated successfully']);
                     break;
+
+                case 'complete_task':
+                    // Complete housekeeping task and set room to vacant
+                    $conn->beginTransaction();
+                    try {
+                        // Update housekeeping task status to completed
+                        $stmt = $conn->prepare("UPDATE housekeeping SET status='Completed', actual_end_time=NOW() WHERE id=?");
+                        $stmt->execute([$_POST['id']]);
+
+                        // Get room_id from the task
+                        $stmt = $conn->prepare("SELECT room_id FROM housekeeping WHERE id=?");
+                        $stmt->execute([$_POST['id']]);
+                        $task = $stmt->fetch(PDO::FETCH_ASSOC);
+
+                        if ($task) {
+                            // Update room status to vacant
+                            $stmt = $conn->prepare("UPDATE rooms SET room_status='Vacant', room_last_cleaned=NOW() WHERE id=?");
+                            $stmt->execute([$task['room_id']]);
+                        }
+
+                        $conn->commit();
+                        echo json_encode(['success' => true, 'message' => 'Task completed and room set to vacant']);
+                    } catch (Exception $e) {
+                        $conn->rollBack();
+                        echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+                    }
+                    break;
             }
         }
     } catch (Exception $e) {
@@ -153,7 +194,16 @@ $tasks = $conn->query("
     FROM housekeeping h
     LEFT JOIN housekeepers hk ON h.housekeeper_id = hk.id
     LEFT JOIN rooms r ON h.room_id = r.id
+    WHERE h.status = 'In Progress'
     ORDER BY h.scheduled_date DESC, h.scheduled_time DESC
+")->fetchAll(PDO::FETCH_ASSOC);
+$completedTasks = $conn->query("
+    SELECT h.*, hk.first_name, hk.last_name, r.room_number, r.room_type
+    FROM housekeeping h
+    LEFT JOIN housekeepers hk ON h.housekeeper_id = hk.id
+    LEFT JOIN rooms r ON h.room_id = r.id
+    WHERE h.status = 'Completed'
+    ORDER BY h.actual_end_time DESC, h.scheduled_date DESC
 ")->fetchAll(PDO::FETCH_ASSOC);
 $supplies = $conn->query("SELECT * FROM housekeeping_supplies ORDER BY current_stock / minimum_stock_level ASC")->fetchAll(PDO::FETCH_ASSOC);
 $rooms = $conn->query("SELECT id, room_number, room_type, room_status FROM rooms ORDER BY room_number")->fetchAll(PDO::FETCH_ASSOC);
@@ -163,8 +213,7 @@ $stats = $conn->query("
     SELECT
         (SELECT COUNT(*) FROM housekeepers WHERE status = 'Active') as active_housekeepers,
         (SELECT COUNT(*) FROM housekeeping WHERE status = 'Pending') as pending_tasks,
-        (SELECT COUNT(*) FROM housekeeping WHERE status = 'Completed' AND DATE(scheduled_date) = CURDATE()) as completed_today,
-        (SELECT COUNT(*) FROM housekeeping WHERE maintenance_required = 1) as maintenance_required,
+        (SELECT COUNT(*) FROM rooms WHERE room_status = 'Maintenance') as maintenance_required,
         (SELECT COUNT(*) FROM housekeeping_supplies WHERE current_stock <= minimum_stock_level) as low_stock_items
     FROM dual
 ")->fetch(PDO::FETCH_ASSOC);
@@ -273,10 +322,6 @@ $stats = $conn->query("
                     <span class="fw-bold text-warning"><?php echo $stats['pending_tasks']; ?></span>
                 </div>
                 <div>
-                    <small class="text-muted d-block">Completed Today</small>
-                    <span class="fw-bold text-success"><?php echo $stats['completed_today']; ?></span>
-                </div>
-                <div>
                     <small class="text-muted d-block">Maintenance Req.</small>
                     <span class="fw-bold text-danger"><?php echo $stats['maintenance_required']; ?></span>
                 </div>
@@ -292,9 +337,6 @@ $stats = $conn->query("
             <div class="card-header d-flex justify-content-between align-items-center">
                 <h5 class="mb-0">Rooms Requiring Maintenance</h5>
                 <div class="d-flex gap-2">
-                    <button class="btn btn-sm btn-outline-primary" onclick="openCreateHousekeeperModal()">
-                        <i class="cil-plus me-1"></i>Add Cleaner
-                    </button>
                     <button class="btn btn-sm btn-outline-info" onclick="window.location.href='?page=cleaners'">
                         <i class="cil-user me-1"></i>View Cleaners
                     </button>
@@ -303,10 +345,18 @@ $stats = $conn->query("
             <div class="card-body">
                 <div class="row" id="maintenanceContainer">
                     <?php
-                    $maintenanceRooms = $conn->query("SELECT * FROM rooms WHERE room_status = 'Maintenance' ORDER BY room_number")->fetchAll(PDO::FETCH_ASSOC);
+                    $maintenanceRooms = $conn->query("
+                        SELECT * FROM rooms
+                        WHERE room_status = 'Maintenance'
+                        AND id NOT IN (
+                            SELECT room_id FROM housekeeping
+                            WHERE status IN ('Pending', 'In Progress')
+                        )
+                        ORDER BY room_number
+                    ")->fetchAll(PDO::FETCH_ASSOC);
                     foreach ($maintenanceRooms as $room): ?>
-                    <div class="col-md-6 col-lg-4 mb-3">
-                        <div class="card h-100 room-card room-maintenance text-white" onclick="openHousekeepingModal(<?php echo $room['id']; ?>, '<?php echo htmlspecialchars($room['room_number']); ?>')">
+                    <div class="col-md-3 col-lg-2 mb-3">
+                        <div class="card h-100 room-card room-maintenance text-white" onclick="openHousekeepingModal(<?php echo $room['id']; ?>, '<?php echo htmlspecialchars($room['room_number']); ?>')" title="Click to assign housekeeper">
                             <div class="card-body text-center position-relative">
                                 <div class="position-absolute top-0 end-0" style="margin-top: -8px; margin-right: -8px;">
                                     <button class="btn btn-warning btn-sm rounded-circle shadow" onclick="event.stopPropagation(); openHousekeepingModal(<?php echo $room['id']; ?>, '<?php echo htmlspecialchars($room['room_number']); ?>')" title="Assign Housekeeper">
@@ -329,23 +379,17 @@ $stats = $conn->query("
         </div>
 
         <!-- Housekeeping -->
-        <div class="card">
+        <div class="card mb-4">
             <div class="card-header d-flex justify-content-between align-items-center">
-                <h5 class="mb-0">Housekeeping</h5>
+                <h5 class="mb-0">Active Housekeeping Tasks</h5>
                 <div class="d-flex gap-2">
-                    <button class="btn btn-success btn-sm" onclick="generateReport()">
-                        <i class="cil-file-pdf me-1"></i>Report
-                    </button>
-                    <button class="btn btn-sm btn-outline-primary" onclick="openCreateTaskModal()">
-                        <i class="cil-plus me-1"></i>Add Task
-                    </button>
                 </div>
             </div>
             <div class="card-body">
                 <div class="row" id="housekeepingContainer">
                     <?php foreach ($tasks as $task): ?>
                     <div class="col-md-6 col-lg-4 mb-3">
-                        <div class="card h-100 housekeeping-card" style="border-left: 4px solid <?php
+                        <div class="card h-100 housekeeping-card position-relative" style="border-left: 4px solid <?php
                             echo $task['status'] === 'Completed' ? '#198754' :
                                  ($task['status'] === 'In Progress' ? '#0d6efd' :
                                  ($task['status'] === 'Pending' ? '#fd7e14' :
@@ -383,6 +427,11 @@ $stats = $conn->query("
                                     <button class="btn btn-sm btn-outline-primary me-2" onclick="editTask(<?php echo $task['id']; ?>)" title="Edit">
                                         <i class="cil-pencil me-1"></i>Edit
                                     </button>
+                                    <?php if ($task['status'] === 'In Progress'): ?>
+                                    <button class="btn btn-sm btn-outline-success me-2" onclick="completeTask(<?php echo $task['id']; ?>)" title="Mark as Complete">
+                                        <i class="cil-check me-1"></i>Complete
+                                    </button>
+                                    <?php endif; ?>
                                     <button class="btn btn-sm btn-outline-danger" onclick="deleteTask(<?php echo $task['id']; ?>)" title="Remove">
                                         <i class="cil-trash me-1"></i>Remove
                                     </button>
@@ -392,6 +441,69 @@ $stats = $conn->query("
                     </div>
                     <?php endforeach; ?>
                 </div>
+                <?php if (empty($tasks)): ?>
+                <p class="text-muted mb-0">No active housekeeping tasks.</p>
+                <?php endif; ?>
+            </div>
+        </div>
+
+        <!-- Completed Tasks -->
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Completed Tasks</h5>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-info btn-sm" onclick="generateCompletedReport()">
+                        <i class="cil-file-pdf me-1"></i>Completed Report
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="row" id="completedContainer">
+                    <?php foreach ($completedTasks as $task): ?>
+                    <div class="col-md-6 col-lg-4 mb-3">
+                        <div class="card h-100 completed-card" style="border-left: 4px solid #198754;">
+                            <div class="card-body">
+                                <div class="completed-content">
+                                    <div class="d-flex justify-content-between align-items-start mb-2">
+                                        <div class="flex-grow-1">
+                                            <h6 class="mb-1"><?php echo htmlspecialchars($task['room_number'] . ' - ' . $task['room_type']); ?></h6>
+                                            <small class="text-muted">
+                                                <?php echo htmlspecialchars($task['task_type']); ?> • <?php echo htmlspecialchars(($task['first_name'] ?: '') . ' ' . ($task['last_name'] ?: 'Unassigned')); ?>
+                                            </small>
+                                            <br><small class="text-success">
+                                                Completed: <?php echo $task['actual_end_time'] ? date('M j, Y g:i A', strtotime($task['actual_end_time'])) : 'N/A'; ?>
+                                            </small>
+                                        </div>
+                                        <div class="d-flex flex-column gap-1">
+                                            <span class="badge bg-<?php
+                                                echo $task['priority'] === 'Urgent' ? 'danger' :
+                                                     ($task['priority'] === 'High' ? 'warning' :
+                                                     ($task['priority'] === 'Normal' ? 'primary' : 'secondary'));
+                                            ?>">
+                                                <?php echo htmlspecialchars($task['priority']); ?>
+                                            </span>
+                                            <span class="badge bg-success">
+                                                <?php echo htmlspecialchars($task['status']); ?>
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="completed-actions justify-content-center">
+                                    <button class="btn btn-sm btn-outline-info me-2" onclick="viewTaskDetails(<?php echo $task['id']; ?>)" title="View Details">
+                                        <i class="cil-info me-1"></i>Details
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-danger" onclick="deleteTask(<?php echo $task['id']; ?>)" title="Remove">
+                                        <i class="cil-trash me-1"></i>Remove
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <?php endforeach; ?>
+                </div>
+                <?php if (empty($completedTasks)): ?>
+                <p class="text-muted mb-0">No completed tasks yet.</p>
+                <?php endif; ?>
             </div>
         </div>
     </div>
@@ -488,118 +600,135 @@ $stats = $conn->query("
         </div>
     </div>
 
-    <!-- Task Modal -->
-    <div class="modal fade" id="taskModal" tabindex="-1">
-        <div class="modal-dialog modal-xl">
+    <!-- Housekeeping Task Modal -->
+    <div class="modal fade" id="housekeepingModal" tabindex="-1" style="--cui-modal-border-radius: 16px; --cui-modal-box-shadow: 0 10px 40px rgba(0,0,0,0.3); --cui-modal-bg: #2d3748; --cui-modal-border-color: #4a5568;">
+        <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="taskModalTitle">Add Task</h5>
+                    <h5 class="modal-title" id="housekeepingModalTitle">Create Housekeeping Task</h5>
                     <button type="button" class="btn-close" data-coreui-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <form id="taskForm">
-                        <input type="hidden" name="action" id="taskFormAction" value="create_task">
-                        <input type="hidden" name="id" id="taskId">
+                    <form id="housekeepingForm">
+                        <input type="hidden" name="action" value="create_task">
+                        <input type="hidden" name="room_id" id="housekeepingRoomId">
 
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label for="room_id" class="form-label">Room *</label>
-                                <select class="form-select" id="room_id" name="room_id" required>
-                                    <option value="">Select Room</option>
-                                    <?php foreach ($rooms as $room): ?>
-                                    <option value="<?php echo $room['id']; ?>"><?php echo htmlspecialchars($room['room_number'] . ' - ' . $room['room_type'] . ' (' . $room['room_status'] . ')'); ?></option>
-                                    <?php endforeach; ?>
-                                </select>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label for="housekeepingRoomNumber" class="form-label fw-bold">Room Number</label>
+                                <div class="input-group input-group-sm">
+                                    <span class="input-group-text"><i class="cil-home"></i></span>
+                                    <input type="text" class="form-control" id="housekeepingRoomNumber" readonly disabled>
+                                </div>
                             </div>
-                            <div class="col-md-6 mb-3">
-                                <label for="housekeeper_id" class="form-label">Housekeeper</label>
-                                <select class="form-select" id="housekeeper_id" name="housekeeper_id">
-                                    <option value="">Unassigned</option>
-                                    <?php foreach ($housekeepers as $housekeeper): ?>
-                                    <option value="<?php echo $housekeeper['id']; ?>"><?php echo htmlspecialchars($housekeeper['first_name'] . ' ' . $housekeeper['last_name']); ?></option>
-                                    <?php endforeach; ?>
-                                </select>
+                            <div class="col-md-6">
+                                <label for="housekeeper_id" class="form-label fw-bold">Housekeeper</label>
+                                <div class="input-group input-group-sm">
+                                    <span class="input-group-text"><i class="cil-user"></i></span>
+                                    <select class="form-select" id="housekeeper_id" name="housekeeper_id">
+                                        <option value="">Select Housekeeper</option>
+                                        <?php
+                                        $housekeepers = $conn->query("SELECT id, first_name, last_name, employee_id FROM housekeepers WHERE status = 'Active' ORDER BY first_name, last_name")->fetchAll(PDO::FETCH_ASSOC);
+                                        foreach ($housekeepers as $housekeeper): ?>
+                                        <option value="<?php echo $housekeeper['id']; ?>"><?php echo htmlspecialchars($housekeeper['first_name'] . ' ' . $housekeeper['last_name'] . ' (' . $housekeeper['employee_id'] . ')'); ?></option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                </div>
                             </div>
-                        </div>
-
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label for="task_type" class="form-label">Task Type *</label>
-                                <select class="form-select" id="task_type" name="task_type" required>
-                                    <option value="Regular Cleaning">Regular Cleaning</option>
-                                    <option value="Deep Cleaning">Deep Cleaning</option>
-                                    <option value="Maintenance">Maintenance</option>
-                                    <option value="Inspection">Inspection</option>
-                                    <option value="Emergency">Emergency</option>
-                                </select>
+                            <div class="col-md-6">
+                                <label for="task_type" class="form-label fw-bold">Task Type</label>
+                                <div class="input-group input-group-sm">
+                                    <span class="input-group-text"><i class="cil-task"></i></span>
+                                    <select class="form-select" id="task_type" name="task_type">
+                                        <option value="Regular Cleaning">Regular Cleaning</option>
+                                        <option value="Deep Cleaning">Deep Cleaning</option>
+                                        <option value="Maintenance">Maintenance</option>
+                                        <option value="Inspection">Inspection</option>
+                                        <option value="Emergency">Emergency</option>
+                                    </select>
+                                </div>
                             </div>
-                            <div class="col-md-6 mb-3">
-                                <label for="priority" class="form-label">Priority *</label>
-                                <select class="form-select" id="priority" name="priority" required>
-                                    <option value="Low">Low</option>
-                                    <option value="Normal">Normal</option>
-                                    <option value="High">High</option>
-                                    <option value="Urgent">Urgent</option>
-                                </select>
+                            <div class="col-md-6">
+                                <label for="priority" class="form-label fw-bold">Priority</label>
+                                <div class="input-group input-group-sm">
+                                    <span class="input-group-text"><i class="cil-bell"></i></span>
+                                    <select class="form-select" id="priority" name="priority">
+                                        <option value="Low">Low</option>
+                                        <option value="Normal">Normal</option>
+                                        <option value="High">High</option>
+                                        <option value="Urgent">Urgent</option>
+                                    </select>
+                                </div>
                             </div>
-                        </div>
-
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label for="scheduled_date" class="form-label">Scheduled Date *</label>
-                                <input type="date" class="form-control" id="scheduled_date" name="scheduled_date" required>
+                            <div class="col-md-6">
+                                <label for="scheduled_date" class="form-label fw-bold">Scheduled Date</label>
+                                <div class="input-group input-group-sm">
+                                    <span class="input-group-text"><i class="cil-calendar"></i></span>
+                                    <input type="date" class="form-control" id="scheduled_date" name="scheduled_date" value="<?php echo date('Y-m-d'); ?>" required>
+                                </div>
                             </div>
-                            <div class="col-md-6 mb-3">
-                                <label for="scheduled_time" class="form-label">Scheduled Time</label>
-                                <input type="time" class="form-control" id="scheduled_time" name="scheduled_time">
+                            <div class="col-md-6">
+                                <label for="scheduled_time" class="form-label fw-bold">Scheduled Time</label>
+                                <div class="input-group input-group-sm">
+                                    <span class="input-group-text"><i class="cil-clock"></i></span>
+                                    <input type="time" class="form-control" id="scheduled_time" name="scheduled_time" value="09:00" required>
+                                </div>
                             </div>
-                        </div>
-
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label for="estimated_duration_minutes" class="form-label">Estimated Duration (minutes)</label>
-                                <input type="number" class="form-control" id="estimated_duration_minutes" name="estimated_duration_minutes" min="1" value="60">
+                            <div class="col-md-6">
+                                <label for="estimated_duration_minutes" class="form-label fw-bold">Estimated Duration (minutes)</label>
+                                <div class="input-group input-group-sm">
+                                    <span class="input-group-text"><i class="cil-timer"></i></span>
+                                    <input type="number" class="form-control" id="estimated_duration_minutes" name="estimated_duration_minutes" min="15" max="480" value="60" placeholder="Minutes">
+                                </div>
                             </div>
-                            <div class="col-md-6 mb-3">
-                                <label for="status" class="form-label">Status *</label>
-                                <select class="form-select" id="task_status" name="status" required>
-                                    <option value="Pending">Pending</option>
-                                    <option value="In Progress">In Progress</option>
-                                    <option value="Completed">Completed</option>
-                                    <option value="Cancelled">Cancelled</option>
-                                    <option value="Skipped">Skipped</option>
-                                </select>
+                            <div class="col-md-6">
+                                <label for="status" class="form-label fw-bold">Status</label>
+                                <div class="input-group input-group-sm">
+                                    <span class="input-group-text"><i class="cil-check-circle"></i></span>
+                                    <select class="form-select" id="task_status" name="status" disabled>
+                                        <option value="In Progress" selected>In Progress</option>
+                                        <option value="Pending">Pending</option>
+                                        <option value="Completed">Completed</option>
+                                        <option value="Cancelled">Cancelled</option>
+                                        <option value="Skipped">Skipped</option>
+                                    </select>
+                                </div>
                             </div>
-                        </div>
-
-                        <div class="mb-3">
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" id="maintenance_required" name="maintenance_required">
-                                <label class="form-check-label" for="maintenance_required">
-                                    Maintenance Required
-                                </label>
+                            <div class="col-md-6">
+                                <label for="issues_found" class="form-label fw-bold">Issues Found</label>
+                                <div class="input-group input-group-sm">
+                                    <span class="input-group-text"><i class="cil-warning"></i></span>
+                                    <textarea class="form-control" id="issues_found" name="issues_found" rows="2"></textarea>
+                                </div>
                             </div>
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="issues_found" class="form-label">Issues Found</label>
-                            <textarea class="form-control" id="issues_found" name="issues_found" rows="2"></textarea>
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="guest_feedback" class="form-label">Guest Feedback</label>
-                            <textarea class="form-control" id="guest_feedback" name="guest_feedback" rows="2"></textarea>
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="supervisor_notes" class="form-label">Supervisor Notes</label>
-                            <textarea class="form-control" id="supervisor_notes" name="supervisor_notes" rows="2"></textarea>
+                            <div class="col-md-6">
+                                <label for="guest_feedback" class="form-label fw-bold">Guest Feedback</label>
+                                <div class="input-group input-group-sm">
+                                    <span class="input-group-text"><i class="cil-comment-square"></i></span>
+                                    <textarea class="form-control" id="guest_feedback" name="guest_feedback" rows="2"></textarea>
+                                </div>
+                            </div>
+                            <div class="col-12">
+                                <label for="supervisor_notes" class="form-label fw-bold">Supervisor Notes</label>
+                                <div class="input-group input-group-sm">
+                                    <span class="input-group-text"><i class="cil-notes"></i></span>
+                                    <textarea class="form-control" id="supervisor_notes" name="supervisor_notes" rows="2" placeholder="Supervisor notes or special instructions"></textarea>
+                                </div>
+                            </div>
+                            <div class="col-12">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="maintenance_required" name="maintenance_required">
+                                    <label class="form-check-label fw-bold" for="maintenance_required">
+                                        <i class="cil-settings me-1"></i>Maintenance Required
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-coreui-dismiss="modal">Cancel</button>
+                                <button type="submit" class="btn btn-primary">Create Task</button>
+                            </div>
                         </div>
                     </form>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-coreui-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-primary" onclick="submitTaskForm()">Save</button>
                 </div>
             </div>
         </div>
@@ -757,6 +886,7 @@ $stats = $conn->query("
             document.getElementById('taskFormAction').value = 'create_task';
             document.getElementById('taskId').value = '';
             document.getElementById('taskForm').reset();
+            new coreui.Modal(document.getElementById('taskModal')).show();
         }
 
         function editTask(id) {
@@ -812,9 +942,17 @@ $stats = $conn->query("
             }
         }
 
-        function submitTaskForm() {
-            const form = document.getElementById('taskForm');
+        function submitHousekeepingForm(event) {
+            event.preventDefault();
+
+            const form = document.getElementById('housekeepingForm');
             const formData = new FormData(form);
+            const submitBtn = form.querySelector('button[type="submit"]');
+            const originalText = submitBtn.innerHTML;
+
+            // Show loading state
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="cil-spinner cil-spin me-2"></i>Assigning...';
 
             fetch('housekeeping.php', {
                 method: 'POST',
@@ -826,12 +964,69 @@ $stats = $conn->query("
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    new coreui.Modal(document.getElementById('taskModal')).hide();
-                    location.reload();
+                    showAlert('Housekeeping task assigned successfully!', 'success');
+                    new coreui.Modal(document.getElementById('housekeepingModal')).hide();
+                    setTimeout(() => location.reload(), 1000);
                 } else {
-                    alert('Error: ' + data.message);
+                    showAlert(data.message || 'An error occurred while assigning the task.', 'danger');
                 }
+            })
+            .catch(error => {
+                showAlert('Network error. Please try again.', 'danger');
+                console.error('Error:', error);
+            })
+            .finally(() => {
+                // Reset button state
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalText;
             });
+        }
+
+        // Add form submit event listener
+        document.addEventListener('DOMContentLoaded', function() {
+            const housekeepingForm = document.getElementById('housekeepingForm');
+            if (housekeepingForm) {
+                housekeepingForm.addEventListener('submit', submitHousekeepingForm);
+            }
+        });
+
+        function showAlert(message, type = 'danger') {
+            const alertContainer = document.getElementById('alertContainer') || createAlertContainer();
+            const alertId = 'alert-' + Date.now();
+
+            const alertHTML = `
+                <div id="${alertId}" class="alert alert-${type} alert-dismissible fade show" role="alert">
+                    <i class="cil-${type === 'success' ? 'check-circle' : 'exclamation-circle'} me-2"></i>
+                    ${message}
+                    <button type="button" class="btn-close" data-coreui-dismiss="alert" aria-label="Close"></button>
+                </div>
+            `;
+
+            alertContainer.insertAdjacentHTML('beforeend', alertHTML);
+
+            // Auto-dismiss after 5 seconds
+            setTimeout(() => {
+                const alert = document.getElementById(alertId);
+                if (alert) {
+                    alert.remove();
+                }
+            }, 5000);
+        }
+
+        function createAlertContainer() {
+            const container = document.createElement('div');
+            container.id = 'alertContainer';
+            container.className = 'position-fixed top-0 end-0 p-3';
+            container.style.zIndex = '9999';
+            document.body.appendChild(container);
+            return container;
+        }
+
+        // Housekeeping modal function
+        function openHousekeepingModal(roomId, roomNumber) {
+            document.getElementById('housekeepingRoomId').value = roomId;
+            document.getElementById('housekeepingRoomNumber').value = roomNumber;
+            new coreui.Modal(document.getElementById('housekeepingModal')).show();
         }
 
         // Supply functions
@@ -867,6 +1062,69 @@ $stats = $conn->query("
                 } else {
                     alert('Error: ' + data.message);
                 }
+            });
+        }
+
+        function completeTask(id) {
+            if (confirm('Are you sure you want to mark this task as completed? This will set the room status to vacant.')) {
+                fetch('housekeeping.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'HX-Request': 'true'
+                    },
+                    body: 'action=complete_task&id=' + id
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showAlert('Task completed and room set to vacant!', 'success');
+                        setTimeout(() => location.reload(), 1000);
+                    } else {
+                        showAlert(data.message || 'An error occurred while completing the task.', 'danger');
+                    }
+                })
+                .catch(error => {
+                    showAlert('Network error. Please try again.', 'danger');
+                    console.error('Error:', error);
+                });
+            }
+        }
+
+        function viewTaskDetails(id) {
+            fetch('housekeeping.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'HX-Request': 'true'
+                },
+                body: 'action=get_task&id=' + id
+            })
+            .then(response => response.json())
+            .then(data => {
+                let details = `Room: ${data.room_number}\n`;
+                details += `Task Type: ${data.task_type}\n`;
+                details += `Priority: ${data.priority}\n`;
+                details += `Status: ${data.status}\n`;
+                details += `Scheduled: ${data.scheduled_date} ${data.scheduled_time || ''}\n`;
+                details += `Duration: ${data.estimated_duration_minutes} minutes\n`;
+                if (data.actual_duration_minutes) {
+                    details += `Actual Duration: ${data.actual_duration_minutes} minutes\n`;
+                }
+                if (data.issues_found) {
+                    details += `Issues Found: ${data.issues_found}\n`;
+                }
+                if (data.guest_feedback) {
+                    details += `Guest Feedback: ${data.guest_feedback}\n`;
+                }
+                if (data.supervisor_notes) {
+                    details += `Supervisor Notes: ${data.supervisor_notes}\n`;
+                }
+                alert(details);
+            })
+            .catch(error => {
+                alert('Error loading task details');
+                console.error('Error:', error);
             });
         }
     </script>
