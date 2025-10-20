@@ -180,202 +180,110 @@ $recentTransactions = array_slice($billings, 0, 10);
             border-radius: 8px;
             overflow: hidden;
         }
-        .modal-content {
-            background: #2d3748;
-            border: 1px solid #4a5568;
+        .input-group-text {
+            background: #4a5568;
+            border-color: #4a5568;
+            color: #e2e8f0;
+        }
+        .form-control:focus, .form-select:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
         }
         .billing-card {
-            transition: transform 0.2s;
+            cursor: pointer;
         }
         .billing-card:hover {
-            transform: translateY(-2px);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .billing-actions {
+            display: none;
+        }
+        .billing-card:hover .billing-actions {
+            display: flex;
         }
     </style>
 </head>
 <body>
     <div class="container-fluid p-4">
-        <!-- Header -->
-        <div class="d-flex justify-content-between align-items-center mb-4">
-        <div class="text-center flex-grow-1">
+        <!-- Header with Stats -->
+        <div class="mb-4">
+            <div class="d-flex justify-content-between gap-3 text-center">
+                <div class="text-center flex-grow-1">
                 <?php include 'billingtitle.html'; ?>
-            </div>
-            <button class="btn btn-primary" data-coreui-toggle="modal" data-coreui-target="#billingModal" onclick="openCreateModal()">
-                <i class="cil-plus me-2"></i>Add Transaction
-            </button>
-        </div>
-
-        <!-- Statistics Cards -->
-        <div class="row mb-4">
-            <div class="col-md-2">
-                <div class="card stats-card text-white">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <h6 class="card-title mb-1">Total Transactions</h6>
-                                <h3 class="mb-0"><?php echo $stats['total_transactions']; ?></h3>
-                            </div>
-                            <i class="cil-dollar fs-1 opacity-75"></i>
-                        </div>
-                    </div>
                 </div>
-            </div>
-            <div class="col-md-2">
-                <div class="card stats-card text-white">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <h6 class="card-title mb-1">Paid</h6>
-                                <h3 class="mb-0"><?php echo $stats['paid_transactions']; ?></h3>
-                            </div>
-                            <i class="cil-check-circle fs-1 opacity-75"></i>
-                        </div>
-                    </div>
+                <div>
+                    <small class="text-muted d-block">Total Transactions</small>
+                    <span class="fw-bold text-primary"><?php echo $stats['total_transactions']; ?></span>
                 </div>
-            </div>
-            <div class="col-md-2">
-                <div class="card stats-card text-white">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <h6 class="card-title mb-1">Pending</h6>
-                                <h3 class="mb-0"><?php echo $stats['pending_transactions']; ?></h3>
-                            </div>
-                            <i class="cil-clock fs-1 opacity-75"></i>
-                        </div>
-                    </div>
+                <div>
+                    <small class="text-muted d-block">Paid</small>
+                    <span class="fw-bold text-success"><?php echo $stats['paid_transactions']; ?></span>
                 </div>
-            </div>
-            <div class="col-md-3">
-                <div class="card stats-card text-white">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <h6 class="card-title mb-1">Total Payments</h6>
-                                <h3 class="mb-0">$<?php echo number_format($stats['total_payments'] ?: 0, 2); ?></h3>
-                            </div>
-                            <i class="cil-money fs-1 opacity-75"></i>
-                        </div>
-                    </div>
+                <div>
+                    <small class="text-muted d-block">Pending</small>
+                    <span class="fw-bold text-warning"><?php echo $stats['pending_transactions']; ?></span>
                 </div>
-            </div>
-            <div class="col-md-3">
-                <div class="card stats-card text-white">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <h6 class="card-title mb-1">Outstanding Balance</h6>
-                                <h3 class="mb-0">$<?php echo number_format($stats['total_outstanding'] ?: 0, 2); ?></h3>
-                            </div>
-                            <i class="cil-balance-scale fs-1 opacity-75"></i>
-                        </div>
-                    </div>
+                <div>
+                    <small class="text-muted d-block">Total Payments</small>
+                    <span class="fw-bold text-info">$<?php echo number_format($stats['total_payments'] ?: 0, 2); ?></span>
+                </div>
+                <div>
+                    <small class="text-muted d-block">Outstanding</small>
+                    <span class="fw-bold text-danger">$<?php echo number_format($stats['total_outstanding'] ?: 0, 2); ?></span>
                 </div>
             </div>
         </div>
 
-        <!-- Billing Transactions Table -->
+        <!-- Room Billing -->
         <div class="card">
-            <div class="card-header">
-                <h5 class="mb-0">Billing Transactions</h5>
-            </div>
-            <div class="card-body">
-                <div class="table-responsive">
-                    <table class="table table-hover mb-0">
-                        <thead class="table-dark">
-                            <tr>
-                                <th>Transaction ID</th>
-                                <th>Type</th>
-                                <th>Guest</th>
-                                <th>Room</th>
-                                <th>Description</th>
-                                <th>Amount</th>
-                                <th>Payment</th>
-                                <th>Balance</th>
-                                <th>Method</th>
-                                <th>Status</th>
-                                <th>Date</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php foreach ($billings as $billing): ?>
-                            <tr>
-                                <td><?php echo htmlspecialchars($billing['id']); ?></td>
-                                <td>
-                                    <span class="badge bg-<?php echo $billing['transaction_type'] === 'Room Charge' ? 'primary' : 'info'; ?>">
-                                        <?php echo htmlspecialchars($billing['transaction_type']); ?>
-                                    </span>
-                                </td>
-                                <td><?php echo htmlspecialchars(($billing['first_name'] ?: '') . ' ' . ($billing['last_name'] ?: 'N/A')); ?></td>
-                                <td><?php echo htmlspecialchars($billing['room_number'] ?: 'N/A'); ?></td>
-                                <td><?php echo htmlspecialchars($billing['item_description'] ?: 'N/A'); ?></td>
-                                <td>$<?php echo number_format($billing['total_amount'], 2); ?></td>
-                                <td>$<?php echo number_format($billing['payment_amount'], 2); ?></td>
-                                <td>$<?php echo number_format($billing['balance'], 2); ?></td>
-                                <td><?php echo htmlspecialchars($billing['payment_method']); ?></td>
-                                <td>
-                                    <span class="badge bg-<?php
-                                        echo $billing['billing_status'] === 'Paid' ? 'success' :
-                                             ($billing['billing_status'] === 'Pending' ? 'warning' :
-                                             ($billing['billing_status'] === 'Failed' ? 'danger' : 'secondary'));
-                                    ?>">
-                                        <?php echo htmlspecialchars($billing['billing_status']); ?>
-                                    </span>
-                                </td>
-                                <td><?php echo date('M d, Y', strtotime($billing['transaction_date'])); ?></td>
-                                <td>
-                                    <button class="btn btn-sm btn-outline-primary me-1" onclick="editBilling(<?php echo $billing['id']; ?>)">
-                                        <i class="cil-pencil"></i>
-                                    </button>
-                                    <button class="btn btn-sm btn-outline-danger" onclick="deleteBilling(<?php echo $billing['id']; ?>)">
-                                        <i class="cil-trash"></i>
-                                    </button>
-                                </td>
-                            </tr>
-                            <?php endforeach; ?>
-                        </tbody>
-                    </table>
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Room Billing</h5>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-success btn-sm" onclick="generateReport()">
+                        <i class="cil-file-pdf me-1"></i>Report
+                    </button>
+                    <button class="btn btn-sm btn-outline-primary" onclick="openCreateModal()">
+                        <i class="cil-plus me-1"></i>Add Transaction
+                    </button>
                 </div>
             </div>
-        </div>
-
-        <!-- Recent Transactions -->
-        <div class="card mt-4">
-            <div class="card-header">
-                <h5 class="mb-0">Recent Transactions</h5>
-            </div>
             <div class="card-body">
-                <div class="row">
-                    <?php foreach ($recentTransactions as $billing): ?>
+                <div class="row" id="billingContainer">
+                    <?php foreach ($billings as $billing): ?>
                     <div class="col-md-6 col-lg-4 mb-3">
-                        <div class="card billing-card h-100">
+                        <div class="card h-100 billing-card" style="border-left: 4px solid <?php
+                            echo $billing['billing_status'] === 'Paid' ? '#198754' :
+                                 ($billing['billing_status'] === 'Pending' ? '#fd7e14' :
+                                 ($billing['billing_status'] === 'Failed' ? '#dc3545' : '#6c757d'));
+                        ?>;">
                             <div class="card-body">
-                                <div class="d-flex justify-content-between align-items-start mb-2">
-                                    <h6 class="card-title mb-0">#<?php echo $billing['id']; ?></h6>
-                                    <span class="badge bg-<?php
-                                        echo $billing['billing_status'] === 'Paid' ? 'success' :
-                                             ($billing['billing_status'] === 'Pending' ? 'warning' : 'danger');
-                                    ?>">
-                                        <?php echo htmlspecialchars($billing['billing_status']); ?>
-                                    </span>
-                                </div>
-                                <p class="text-muted small mb-2"><?php echo htmlspecialchars($billing['transaction_type']); ?></p>
-                                <div class="row text-center">
-                                    <div class="col-6">
-                                        <small class="text-muted d-block">Amount</small>
-                                        <span class="fw-bold">$<?php echo number_format($billing['total_amount'], 2); ?></span>
+                                <div class="billing-content">
+                                    <div class="d-flex justify-content-between align-items-start mb-2">
+                                        <div class="flex-grow-1">
+                                            <h6 class="mb-1">#<?php echo htmlspecialchars($billing['id']); ?> - <?php echo htmlspecialchars($billing['transaction_type']); ?></h6>
+                                            <small class="text-muted">
+                                                <?php echo htmlspecialchars(($billing['first_name'] ?: '') . ' ' . ($billing['last_name'] ?: 'N/A')); ?> • Room <?php echo htmlspecialchars($billing['room_number'] ?: 'N/A'); ?>
+                                            </small>
+                                        </div>
+                                        <div class="d-flex flex-column gap-1">
+                                            <span class="badge bg-<?php
+                                                echo $billing['billing_status'] === 'Paid' ? 'success' :
+                                                     ($billing['billing_status'] === 'Pending' ? 'warning' :
+                                                     ($billing['billing_status'] === 'Failed' ? 'danger' : 'secondary'));
+                                            ?>">
+                                                <?php echo htmlspecialchars($billing['billing_status']); ?>
+                                            </span>
+                                        </div>
                                     </div>
-                                    <div class="col-6">
-                                        <small class="text-muted d-block">Payment</small>
-                                        <span class="fw-bold">$<?php echo number_format($billing['payment_amount'], 2); ?></span>
-                                    </div>
                                 </div>
-                                <hr>
-                                <small class="text-muted">
-                                    <?php echo htmlspecialchars(($billing['first_name'] ?: '') . ' ' . ($billing['last_name'] ?: '')); ?>
-                                    • Room <?php echo htmlspecialchars($billing['room_number'] ?: 'N/A'); ?>
-                                    • <?php echo date('M d, Y', strtotime($billing['transaction_date'])); ?>
-                                </small>
+                                <div class="billing-actions justify-content-center">
+                                    <button class="btn btn-sm btn-outline-primary me-2" onclick="editBilling(<?php echo $billing['id']; ?>)" title="Edit">
+                                        <i class="cil-pencil me-1"></i>Edit
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-danger" onclick="deleteBilling(<?php echo $billing['id']; ?>)" title="Remove">
+                                        <i class="cil-trash me-1"></i>Remove
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>

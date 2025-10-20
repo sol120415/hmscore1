@@ -223,197 +223,92 @@ $stats = $conn->query("
             border-radius: 8px;
             overflow: hidden;
         }
-        .modal-content {
-            background: #2d3748;
-            border: 1px solid #4a5568;
+        .input-group-text {
+            background: #4a5568;
+            border-color: #4a5568;
+            color: #e2e8f0;
         }
-        .nav-tabs .nav-link {
-            border: none;
-            color: #718096;
+        .form-control:focus, .form-select:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
         }
-        .nav-tabs .nav-link.active {
-            background: #0dcaf0;
-            color: white;
+        .event-card {
+            cursor: pointer;
+        }
+        .event-card:hover {
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .event-actions {
+            display: none;
+        }
+        .event-card:hover .event-actions {
+            display: flex;
         }
     </style>
 </head>
 <body>
     <div class="container-fluid p-4">
-        <!-- Header -->
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <div>
+        <!-- Header with Stats -->
+        <div class="mb-4">
+            <div class="d-flex justify-content-between gap-3 text-center">
                 <div class="text-center flex-grow-1">
-                    <?php include 'eventstitle.html'; ?>
+                <?php include 'eventstitle.html'; ?>
+                </div>
+                <div>
+                    <small class="text-muted d-block">Venues</small>
+                    <span class="fw-bold text-primary"><?php echo $stats['total_venues']; ?></span>
+                </div>
+                <div>
+                    <small class="text-muted d-block">Available</small>
+                    <span class="fw-bold text-success"><?php echo $stats['available_venues']; ?></span>
+                </div>
+                <div>
+                    <small class="text-muted d-block">Reservations</small>
+                    <span class="fw-bold text-warning"><?php echo $stats['total_reservations']; ?></span>
+                </div>
+                <div>
+                    <small class="text-muted d-block">Active Events</small>
+                    <span class="fw-bold text-info"><?php echo $stats['active_events']; ?></span>
+                </div>
+                <div>
+                    <small class="text-muted d-block">Revenue</small>
+                    <span class="fw-bold text-danger">$<?php echo number_format($stats['total_revenue'] ?: 0, 2); ?></span>
                 </div>
             </div>
         </div>
 
-        <!-- Statistics Cards -->
-        <div class="row mb-4">
-            <div class="col-md-2">
-                <div class="card stats-card text-white">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <h6 class="card-title mb-1">Venues</h6>
-                                <h3 class="mb-0"><?php echo $stats['total_venues']; ?></h3>
-                            </div>
-                            <i class="cil-building fs-1 opacity-75"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-2">
-                <div class="card stats-card text-white">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <h6 class="card-title mb-1">Available</h6>
-                                <h3 class="mb-0"><?php echo $stats['available_venues']; ?></h3>
-                            </div>
-                            <i class="cil-check-circle fs-1 opacity-75"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-2">
-                <div class="card stats-card text-white">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <h6 class="card-title mb-1">Reservations</h6>
-                                <h3 class="mb-0"><?php echo $stats['total_reservations']; ?></h3>
-                            </div>
-                            <i class="cil-calendar fs-1 opacity-75"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-2">
-                <div class="card stats-card text-white">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <h6 class="card-title mb-1">Active Events</h6>
-                                <h3 class="mb-0"><?php echo $stats['active_events']; ?></h3>
-                            </div>
-                            <i class="cil-play-circle fs-1 opacity-75"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-4">
-                <div class="card stats-card text-white">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <h6 class="card-title mb-1">Total Revenue</h6>
-                                <h3 class="mb-0">$<?php echo number_format($stats['total_revenue'] ?: 0, 2); ?></h3>
-                            </div>
-                            <i class="cil-dollar fs-1 opacity-75"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Tabs -->
-        <ul class="nav nav-tabs mb-4" id="eventTabs" role="tablist">
-            <li class="nav-item" role="presentation">
-                <button class="nav-link active" id="venues-tab" data-coreui-toggle="tab" data-coreui-target="#venues" type="button" role="tab">Venues</button>
-            </li>
-            <li class="nav-item" role="presentation">
-                <button class="nav-link" id="reservations-tab" data-coreui-toggle="tab" data-coreui-target="#reservations" type="button" role="tab">Reservations</button>
-            </li>
-            <li class="nav-item" role="presentation">
-                <button class="nav-link" id="billing-tab" data-coreui-toggle="tab" data-coreui-target="#billing" type="button" role="tab">Billing</button>
-            </li>
-        </ul>
-
-        <div class="tab-content">
-            <!-- Venues Tab -->
-            <div class="tab-pane fade show active" id="venues" role="tabpanel">
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h4>Event Venues</h4>
-                    <button class="btn btn-primary" data-coreui-toggle="modal" data-coreui-target="#venueModal" onclick="openCreateVenueModal()">
-                        <i class="cil-plus me-2"></i>Add Venue
+        <!-- Events -->
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Events</h5>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-success btn-sm" onclick="generateReport()">
+                        <i class="cil-file-pdf me-1"></i>Report
+                    </button>
+                    <button class="btn btn-sm btn-outline-primary" onclick="openCreateReservationModal()">
+                        <i class="cil-plus me-1"></i>Add Event
                     </button>
                 </div>
-                <div class="card">
-                    <div class="card-body">
-                        <div class="table-responsive">
-                            <table class="table table-hover mb-0">
-                                <thead class="table-dark">
-                                    <tr>
-                                        <th>Venue Name</th>
-                                        <th>Address</th>
-                                        <th>Capacity</th>
-                                        <th>Rate</th>
-                                        <th>Status</th>
-                                        <th>Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <?php foreach ($venues as $venue): ?>
-                                    <tr>
-                                        <td><?php echo htmlspecialchars($venue['venue_name']); ?></td>
-                                        <td><?php echo htmlspecialchars($venue['venue_address']); ?></td>
-                                        <td><?php echo htmlspecialchars($venue['venue_capacity']); ?></td>
-                                        <td>$<?php echo number_format($venue['venue_rate'], 2); ?></td>
-                                        <td>
-                                            <span class="badge bg-<?php echo $venue['venue_status'] === 'Available' ? 'success' : ($venue['venue_status'] === 'Booked' ? 'warning' : 'danger'); ?>">
-                                                <?php echo htmlspecialchars($venue['venue_status']); ?>
-                                            </span>
-                                        </td>
-                                        <td>
-                                            <button class="btn btn-sm btn-outline-primary me-1" onclick="editVenue(<?php echo $venue['id']; ?>)">
-                                                <i class="cil-pencil"></i>
-                                            </button>
-                                            <button class="btn btn-sm btn-outline-danger" onclick="deleteVenue(<?php echo $venue['id']; ?>, '<?php echo htmlspecialchars($venue['venue_name']); ?>')">
-                                                <i class="cil-trash"></i>
-                                            </button>
-                                        </td>
-                                    </tr>
-                                    <?php endforeach; ?>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
             </div>
-
-            <!-- Reservations Tab -->
-            <div class="tab-pane fade" id="reservations" role="tabpanel">
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h4>Event Reservations</h4>
-                    <button class="btn btn-primary" data-coreui-toggle="modal" data-coreui-target="#reservationModal" onclick="openCreateReservationModal()">
-                        <i class="cil-plus me-2"></i>Add Reservation
-                    </button>
-                </div>
-                <div class="card">
-                    <div class="card-body">
-                        <div class="table-responsive">
-                            <table class="table table-hover mb-0">
-                                <thead class="table-dark">
-                                    <tr>
-                                        <th>Event Title</th>
-                                        <th>Organizer</th>
-                                        <th>Venue</th>
-                                        <th>Attendees</th>
-                                        <th>Check-in</th>
-                                        <th>Status</th>
-                                        <th>Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <?php foreach ($reservations as $reservation): ?>
-                                    <tr>
-                                        <td><?php echo htmlspecialchars($reservation['event_title']); ?></td>
-                                        <td><?php echo htmlspecialchars($reservation['event_organizer']); ?></td>
-                                        <td><?php echo htmlspecialchars($reservation['venue_name'] ?: 'Not assigned'); ?></td>
-                                        <td><?php echo htmlspecialchars($reservation['event_expected_attendees']); ?></td>
-                                        <td><?php echo date('M d, Y H:i', strtotime($reservation['event_checkin'])); ?></td>
-                                        <td>
+            <div class="card-body">
+                <div class="row" id="eventsContainer">
+                    <?php foreach ($reservations as $reservation): ?>
+                    <div class="col-md-6 col-lg-4 mb-3">
+                        <div class="card h-100 event-card" style="border-left: 4px solid <?php
+                            echo $reservation['event_status'] === 'Checked In' ? '#198754' :
+                                 ($reservation['event_status'] === 'Pending' ? '#fd7e14' :
+                                 ($reservation['event_status'] === 'Checked Out' ? '#0d6efd' : '#dc3545'));
+                        ?>;">
+                            <div class="card-body">
+                                <div class="event-content">
+                                    <div class="d-flex justify-content-between align-items-start mb-2">
+                                        <div class="flex-grow-1">
+                                            <h6 class="mb-1"><?php echo htmlspecialchars($reservation['event_title']); ?></h6>
+                                            <small class="text-muted">
+                                                <?php echo htmlspecialchars($reservation['event_organizer']); ?> • <?php echo htmlspecialchars($reservation['venue_name'] ?: 'No venue'); ?>
+                                            </small>
+                                        </div>
+                                        <div class="d-flex flex-column gap-1">
                                             <span class="badge bg-<?php
                                                 echo $reservation['event_status'] === 'Checked In' ? 'success' :
                                                      ($reservation['event_status'] === 'Pending' ? 'warning' :
@@ -421,80 +316,21 @@ $stats = $conn->query("
                                             ?>">
                                                 <?php echo htmlspecialchars($reservation['event_status']); ?>
                                             </span>
-                                        </td>
-                                        <td>
-                                            <button class="btn btn-sm btn-outline-primary me-1" onclick="editReservation(<?php echo $reservation['id']; ?>)">
-                                                <i class="cil-pencil"></i>
-                                            </button>
-                                            <button class="btn btn-sm btn-outline-danger" onclick="deleteReservation(<?php echo $reservation['id']; ?>, '<?php echo htmlspecialchars($reservation['event_title']); ?>')">
-                                                <i class="cil-trash"></i>
-                                            </button>
-                                        </td>
-                                    </tr>
-                                    <?php endforeach; ?>
-                                </tbody>
-                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="event-actions justify-content-center">
+                                    <button class="btn btn-sm btn-outline-primary me-2" onclick="editReservation(<?php echo $reservation['id']; ?>)" title="Edit">
+                                        <i class="cil-pencil me-1"></i>Edit
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-danger" onclick="deleteReservation(<?php echo $reservation['id']; ?>, '<?php echo htmlspecialchars($reservation['event_title']); ?>')" title="Remove">
+                                        <i class="cil-trash me-1"></i>Remove
+                                    </button>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                </div>
-            </div>
-
-            <!-- Billing Tab -->
-            <div class="tab-pane fade" id="billing" role="tabpanel">
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h4>Billing Transactions</h4>
-                    <button class="btn btn-primary" data-coreui-toggle="modal" data-coreui-target="#billingModal" onclick="openCreateBillingModal()">
-                        <i class="cil-plus me-2"></i>Add Transaction
-                    </button>
-                </div>
-                <div class="card">
-                    <div class="card-body">
-                        <div class="table-responsive">
-                            <table class="table table-hover mb-0">
-                                <thead class="table-dark">
-                                    <tr>
-                                        <th>Event</th>
-                                        <th>Type</th>
-                                        <th>Amount</th>
-                                        <th>Balance</th>
-                                        <th>Method</th>
-                                        <th>Status</th>
-                                        <th>Date</th>
-                                        <th>Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <?php foreach ($billings as $billing): ?>
-                                    <tr>
-                                        <td><?php echo htmlspecialchars($billing['event_title'] ?: 'N/A'); ?></td>
-                                        <td><?php echo htmlspecialchars($billing['transaction_type']); ?></td>
-                                        <td>$<?php echo number_format($billing['payment_amount'], 2); ?></td>
-                                        <td>$<?php echo number_format($billing['balance'], 2); ?></td>
-                                        <td><?php echo htmlspecialchars($billing['payment_method']); ?></td>
-                                        <td>
-                                            <span class="badge bg-<?php
-                                                echo $billing['status'] === 'Paid' ? 'success' :
-                                                     ($billing['status'] === 'Pending' ? 'warning' :
-                                                     ($billing['status'] === 'Failed' ? 'danger' : 'secondary'));
-                                            ?>">
-                                                <?php echo htmlspecialchars($billing['status']); ?>
-                                            </span>
-                                        </td>
-                                        <td><?php echo date('M d, Y', strtotime($billing['transaction_date'])); ?></td>
-                                        <td>
-                                            <button class="btn btn-sm btn-outline-primary me-1" onclick="editBilling(<?php echo $billing['id']; ?>)">
-                                                <i class="cil-pencil"></i>
-                                            </button>
-                                            <button class="btn btn-sm btn-outline-danger" onclick="deleteBilling(<?php echo $billing['id']; ?>)">
-                                                <i class="cil-trash"></i>
-                                            </button>
-                                        </td>
-                                    </tr>
-                                    <?php endforeach; ?>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
+                    <?php endforeach; ?>
                 </div>
             </div>
         </div>

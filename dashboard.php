@@ -114,10 +114,6 @@ if(!isset($_SESSION['email'])){
         <i class="nav-icon cil-exit-to-app"></i>Logout
       </a>
     </li>
-    <li class="nav-item">
-      <a class="nav-link" href="?page=debug">
-        <i class="nav-icon cil-settings"></i>Debug
-      </a>
 
 
   </ul>

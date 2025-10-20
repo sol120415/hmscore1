@@ -168,223 +168,122 @@ $categories = $conn->query("SELECT DISTINCT item_category FROM items WHERE item_
             border-radius: 8px;
             overflow: hidden;
         }
-        .modal-content {
-            background: #2d3748;
-            border: 1px solid #4a5568;
+        .input-group-text {
+            background: #4a5568;
+            border-color: #4a5568;
+            color: #e2e8f0;
         }
-        .low-stock {
-            background-color: #fff3cd;
-            border-left: 4px solid #ffc107;
+        .form-control:focus, .form-select:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
         }
-        .out-of-stock {
-            background-color: #f8d7da;
-            border-left: 4px solid #dc3545;
+        .inventory-card {
+            cursor: pointer;
         }
-        .nav-tabs .nav-link {
-            border: none;
-            color: #718096;
+        .inventory-card:hover {
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
-        .nav-tabs .nav-link.active {
-            background: #0dcaf0;
-            color: white;
+        .inventory-actions {
+            display: none;
+        }
+        .inventory-card:hover .inventory-actions {
+            display: flex;
         }
     </style>
 </head>
 <body>
     <div class="container-fluid p-4">
-        <!-- Header -->
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <div class="text-center flex-grow-1">
+        <!-- Header with Stats -->
+        <div class="mb-4">
+            <div class="d-flex justify-content-between gap-3 text-center">
+                <div class="text-center flex-grow-1">
                 <?php include 'inventorytitle.html'; ?>
-            </div>
-            <div>
-                <button class="btn btn-primary me-2" data-coreui-toggle="modal" data-coreui-target="#itemModal" onclick="openCreateModal()">
-                    <i class="cil-plus me-2"></i>Add Item
-                </button>
-                <button class="btn btn-success" data-coreui-toggle="modal" data-coreui-target="#movementModal" onclick="openMovementModal()">
-                    <i class="cil-plus me-2"></i>Record Movement
-                </button>
-            </div>
-        </div>
-
-        <!-- Statistics Cards -->
-        <div class="row mb-4">
-            <div class="col-md-2">
-                <div class="card stats-card text-white">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <h6 class="card-title mb-1">Total Items</h6>
-                                <h3 class="mb-0"><?php echo $stats['total_items']; ?></h3>
-                            </div>
-                            <i class="cil-list fs-1 opacity-75"></i>
-                        </div>
-                    </div>
                 </div>
-            </div>
-            <div class="col-md-2">
-                <div class="card stats-card text-white">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <h6 class="card-title mb-1">Active Items</h6>
-                                <h3 class="mb-0"><?php echo $stats['active_items']; ?></h3>
-                            </div>
-                            <i class="cil-check-circle fs-1 opacity-75"></i>
-                        </div>
-                    </div>
+                <div>
+                    <small class="text-muted d-block">Total Items</small>
+                    <span class="fw-bold text-primary"><?php echo $stats['total_items']; ?></span>
                 </div>
-            </div>
-            <div class="col-md-2">
-                <div class="card stats-card text-white">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <h6 class="card-title mb-1">Low Stock</h6>
-                                <h3 class="mb-0"><?php echo $stats['low_stock_items']; ?></h3>
-                            </div>
-                            <i class="cil-warning fs-1 opacity-75"></i>
-                        </div>
-                    </div>
+                <div>
+                    <small class="text-muted d-block">Active Items</small>
+                    <span class="fw-bold text-success"><?php echo $stats['active_items']; ?></span>
                 </div>
-            </div>
-            <div class="col-md-3">
-                <div class="card stats-card text-white">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <h6 class="card-title mb-1">Total Value</h6>
-                                <h3 class="mb-0">$<?php echo number_format($stats['total_value'] ?: 0, 2); ?></h3>
-                            </div>
-                            <i class="cil-dollar fs-1 opacity-75"></i>
-                        </div>
-                    </div>
+                <div>
+                    <small class="text-muted d-block">Low Stock</small>
+                    <span class="fw-bold text-warning"><?php echo $stats['low_stock_items']; ?></span>
                 </div>
-            </div>
-            <div class="col-md-3">
-                <div class="card stats-card text-white">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <h6 class="card-title mb-1">Recent Movements</h6>
-                                <h3 class="mb-0"><?php echo ($stats['total_in'] ?: 0) + ($stats['total_out'] ?: 0); ?></h3>
-                            </div>
-                            <i class="cil-transfer fs-1 opacity-75"></i>
-                        </div>
-                    </div>
+                <div>
+                    <small class="text-muted d-block">Total Value</small>
+                    <span class="fw-bold text-info">$<?php echo number_format($stats['total_value'] ?: 0, 2); ?></span>
+                </div>
+                <div>
+                    <small class="text-muted d-block">Movements</small>
+                    <span class="fw-bold text-danger"><?php echo ($stats['total_in'] ?: 0) + ($stats['total_out'] ?: 0); ?></span>
                 </div>
             </div>
         </div>
 
-        <!-- Tabs -->
-        <ul class="nav nav-tabs mb-4" id="inventoryTabs" role="tablist">
-            <li class="nav-item" role="presentation">
-                <button class="nav-link active" id="items-tab" data-coreui-toggle="tab" data-coreui-target="#items" type="button" role="tab">Items</button>
-            </li>
-            <li class="nav-item" role="presentation">
-                <button class="nav-link" id="movements-tab" data-coreui-toggle="tab" data-coreui-target="#movements" type="button" role="tab">Movements</button>
-            </li>
-        </ul>
-
-        <div class="tab-content">
-            <!-- Items Tab -->
-            <div class="tab-pane fade show active" id="items" role="tabpanel">
-                <!-- Category Filter -->
-                <div class="mb-3">
-                    <label for="categoryFilter" class="form-label">Filter by Category:</label>
-                    <select class="form-select" id="categoryFilter" style="max-width: 300px;">
-                        <option value="">All Categories</option>
-                        <?php foreach ($categories as $category): ?>
-                        <option value="<?php echo htmlspecialchars($category); ?>"><?php echo htmlspecialchars($category); ?></option>
-                        <?php endforeach; ?>
-                    </select>
+        <!-- Inventory -->
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Inventory</h5>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-success btn-sm" onclick="generateReport()">
+                        <i class="cil-file-pdf me-1"></i>Report
+                    </button>
+                    <button class="btn btn-sm btn-outline-primary" onclick="openCreateModal()">
+                        <i class="cil-plus me-1"></i>Add Item
+                    </button>
                 </div>
-
-                <div class="card">
-                    <div class="card-body">
-                        <div class="table-responsive">
-                            <table class="table table-hover mb-0" id="itemsTable">
-                                <thead class="table-dark">
-                                    <tr>
-                                        <th>Item Name</th>
-                                        <th>Category</th>
-                                        <th>Current Stock</th>
-                                        <th>Min Stock</th>
-                                        <th>Unit Cost</th>
-                                        <th>Unit Price</th>
-                                        <th>Status</th>
-                                        <th>Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <?php foreach ($items as $item): ?>
-                                    <tr class="item-row <?php echo $item['current_stock'] <= $item['minimum_stock'] ? ($item['current_stock'] == 0 ? 'out-of-stock' : 'low-stock') : ''; ?>" data-category="<?php echo htmlspecialchars($item['item_category'] ?: ''); ?>">
-                                        <td><?php echo htmlspecialchars($item['item_name']); ?></td>
-                                        <td><?php echo htmlspecialchars($item['item_category'] ?: 'N/A'); ?></td>
-                                        <td><?php echo htmlspecialchars($item['current_stock']); ?> <?php echo htmlspecialchars($item['unit_of_measure']); ?></td>
-                                        <td><?php echo htmlspecialchars($item['minimum_stock']); ?> <?php echo htmlspecialchars($item['unit_of_measure']); ?></td>
-                                        <td>$<?php echo number_format($item['unit_cost'], 2); ?></td>
-                                        <td>$<?php echo number_format($item['unit_price'], 2); ?></td>
-                                        <td>
-                                            <span class="badge bg-<?php echo $item['item_status'] === 'Active' ? 'success' : ($item['item_status'] === 'Inactive' ? 'secondary' : 'danger'); ?>">
+            </div>
+            <div class="card-body">
+                <div class="row" id="inventoryContainer">
+                    <?php foreach ($items as $item): ?>
+                    <div class="col-md-6 col-lg-4 mb-3">
+                        <div class="card h-100 inventory-card" style="border-left: 4px solid <?php
+                            echo $item['item_status'] === 'Active' ? '#198754' :
+                                 ($item['item_status'] === 'Inactive' ? '#6c757d' :
+                                 ($item['item_status'] === 'Discontinued' ? '#dc3545' : '#fd7e14'));
+                        ?>;">
+                            <div class="card-body">
+                                <div class="inventory-content">
+                                    <div class="d-flex justify-content-between align-items-start mb-2">
+                                        <div class="flex-grow-1">
+                                            <h6 class="mb-1"><?php echo htmlspecialchars($item['item_name']); ?></h6>
+                                            <small class="text-muted">
+                                                <?php echo htmlspecialchars($item['item_category'] ?: 'No category'); ?> • <?php echo htmlspecialchars($item['current_stock']); ?> <?php echo htmlspecialchars($item['unit_of_measure']); ?>
+                                            </small>
+                                        </div>
+                                        <div class="d-flex flex-column gap-1">
+                                            <span class="badge bg-<?php
+                                                echo $item['item_status'] === 'Active' ? 'success' :
+                                                     ($item['item_status'] === 'Inactive' ? 'secondary' :
+                                                     ($item['item_status'] === 'Discontinued' ? 'danger' : 'warning'));
+                                            ?>">
                                                 <?php echo htmlspecialchars($item['item_status']); ?>
                                             </span>
-                                        </td>
-                                        <td>
-                                            <button class="btn btn-sm btn-outline-primary me-1" onclick="editItem(<?php echo $item['id']; ?>)">
-                                                <i class="cil-pencil"></i>
-                                            </button>
-                                            <button class="btn btn-sm btn-outline-info me-1" onclick="viewMovements(<?php echo $item['id']; ?>, '<?php echo htmlspecialchars($item['item_name']); ?>')">
-                                                <i class="cil-history"></i>
-                                            </button>
-                                            <button class="btn btn-sm btn-outline-danger" onclick="deleteItem(<?php echo $item['id']; ?>, '<?php echo htmlspecialchars($item['item_name']); ?>')">
-                                                <i class="cil-trash"></i>
-                                            </button>
-                                        </td>
-                                    </tr>
-                                    <?php endforeach; ?>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Movements Tab -->
-            <div class="tab-pane fade" id="movements" role="tabpanel">
-                <div class="card">
-                    <div class="card-body">
-                        <div class="table-responsive">
-                            <table class="table table-hover mb-0">
-                                <thead class="table-dark">
-                                    <tr>
-                                        <th>Item</th>
-                                        <th>Type</th>
-                                        <th>Quantity</th>
-                                        <th>Reason</th>
-                                        <th>Reference</th>
-                                        <th>Date</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <?php foreach ($movements as $movement): ?>
-                                    <tr>
-                                        <td><?php echo htmlspecialchars($movement['item_name']); ?></td>
-                                        <td>
-                                            <span class="badge bg-<?php echo $movement['movement_type'] === 'IN' ? 'success' : 'danger'; ?>">
-                                                <?php echo htmlspecialchars($movement['movement_type']); ?>
+                                            <?php if ($item['current_stock'] <= $item['minimum_stock']): ?>
+                                            <span class="badge bg-<?php echo $item['current_stock'] == 0 ? 'dark' : 'warning'; ?>">
+                                                <?php echo $item['current_stock'] == 0 ? 'Out of Stock' : 'Low Stock'; ?>
                                             </span>
-                                        </td>
-                                        <td><?php echo htmlspecialchars($movement['quantity']); ?></td>
-                                        <td><?php echo htmlspecialchars($movement['reason'] ?: 'N/A'); ?></td>
-                                        <td><?php echo htmlspecialchars($movement['reference_id'] ?: 'N/A'); ?></td>
-                                        <td><?php echo date('M d, Y H:i', strtotime($movement['movement_date'])); ?></td>
-                                    </tr>
-                                    <?php endforeach; ?>
-                                </tbody>
-                            </table>
+                                            <?php endif; ?>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="inventory-actions justify-content-center">
+                                    <button class="btn btn-sm btn-outline-primary me-2" onclick="editItem(<?php echo $item['id']; ?>)" title="Edit">
+                                        <i class="cil-pencil me-1"></i>Edit
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-info me-2" onclick="viewMovements(<?php echo $item['id']; ?>, '<?php echo htmlspecialchars($item['item_name']); ?>')" title="Movements">
+                                        <i class="cil-history me-1"></i>Movements
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-danger" onclick="deleteItem(<?php echo $item['id']; ?>, '<?php echo htmlspecialchars($item['item_name']); ?>')" title="Remove">
+                                        <i class="cil-trash me-1"></i>Remove
+                                    </button>
+                                </div>
+                            </div>
                         </div>
                     </div>
+                    <?php endforeach; ?>
                 </div>
             </div>
         </div>

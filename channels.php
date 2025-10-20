@@ -132,133 +132,110 @@ $recentBookings = $conn->query("
             border-radius: 8px;
             overflow: hidden;
         }
-        .modal-content {
-            background: #2d3748;
-            border: 1px solid #4a5568;
+        .input-group-text {
+            background: #4a5568;
+            border-color: #4a5568;
+            color: #e2e8f0;
+        }
+        .form-control:focus, .form-select:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+        }
+        .channel-card {
+            cursor: pointer;
+        }
+        .channel-card:hover {
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .channel-actions {
+            display: none;
+        }
+        .channel-card:hover .channel-actions {
+            display: flex;
         }
     </style>
 </head>
 <body>
     <div class="container-fluid p-4">
-        <!-- Header -->
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <div class="text-center flex-grow-1">
+        <!-- Header with Stats -->
+        <div class="mb-4">
+            <div class="d-flex justify-content-between gap-3 text-center">
+                <div class="text-center flex-grow-1">
                 <?php include 'channelstitle.html'; ?>
-            </div>
-            <button class="btn btn-primary" data-coreui-toggle="modal" data-coreui-target="#channelModal" onclick="openCreateModal()">
-                <i class="cil-plus me-2"></i>Add Channel
-            </button>
-        </div>
-
-        <!-- Statistics Cards -->
-        <div class="row mb-4">
-            <div class="col-md-3">
-                <div class="card stats-card text-white">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <h6 class="card-title mb-1">Total Channels</h6>
-                                <h3 class="mb-0"><?php echo $stats['total_channels']; ?></h3>
-                            </div>
-                            <i class="cil-wifi-signal-4 fs-1 opacity-75"></i>
-                        </div>
-                    </div>
                 </div>
-            </div>
-            <div class="col-md-3">
-                <div class="card stats-card text-white">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <h6 class="card-title mb-1">Active Channels</h6>
-                                <h3 class="mb-0"><?php echo $stats['active_channels']; ?></h3>
-                            </div>
-                            <i class="cil-check-circle fs-1 opacity-75"></i>
-                        </div>
-                    </div>
+                <div>
+                    <small class="text-muted d-block">Total</small>
+                    <span class="fw-bold text-primary"><?php echo $stats['total_channels']; ?></span>
                 </div>
-            </div>
-            <div class="col-md-3">
-                <div class="card stats-card text-white">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <h6 class="card-title mb-1">Pending Setup</h6>
-                                <h3 class="mb-0"><?php echo $stats['pending_channels']; ?></h3>
-                            </div>
-                            <i class="cil-clock fs-1 opacity-75"></i>
-                        </div>
-                    </div>
+                <div>
+                    <small class="text-muted d-block">Active</small>
+                    <span class="fw-bold text-success"><?php echo $stats['active_channels']; ?></span>
                 </div>
-            </div>
-            <div class="col-md-3">
-                <div class="card stats-card text-white">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <h6 class="card-title mb-1">Avg Commission</h6>
-                                <h3 class="mb-0"><?php echo number_format($stats['avg_commission'], 1); ?>%</h3>
-                            </div>
-                            <i class="cil-dollar fs-1 opacity-75"></i>
-                        </div>
-                    </div>
+                <div>
+                    <small class="text-muted d-block">Pending</small>
+                    <span class="fw-bold text-warning"><?php echo $stats['pending_channels']; ?></span>
+                </div>
+                <div>
+                    <small class="text-muted d-block">Avg Commission</small>
+                    <span class="fw-bold text-info"><?php echo number_format($stats['avg_commission'], 1); ?>%</span>
                 </div>
             </div>
         </div>
 
-        <!-- Channels Table -->
+        <!-- Channels -->
         <div class="card">
             <div class="card-header d-flex justify-content-between align-items-center">
                 <h5 class="mb-0">Channels</h5>
-                <button class="btn btn-success btn-sm" onclick="generateReport()">
-                    <i class="cil-file-pdf me-2"></i>Generate Report
-                </button>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-success btn-sm" onclick="generateReport()">
+                        <i class="cil-file-pdf me-1"></i>Report
+                    </button>
+                    <button class="btn btn-sm btn-outline-primary" onclick="openCreateModal()">
+                        <i class="cil-plus me-1"></i>Add Channel
+                    </button>
+                </div>
             </div>
             <div class="card-body">
-                <div class="table-responsive">
-                    <table class="table table-hover mb-0">
-                        <thead class="table-dark">
-                            <tr>
-                                <th>Channel Name</th>
-                                <th>Type</th>
-                                <th>Commission</th>
-                                <th>Status</th>
-                                <th>Contact</th>
-                                <th>Created</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php foreach ($channels as $channel): ?>
-                            <tr>
-                                <td><?php echo htmlspecialchars($channel['channel_name']); ?></td>
-                                <td>
-                                    <span class="badge bg-secondary"><?php echo htmlspecialchars($channel['channel_type']); ?></span>
-                                </td>
-                                <td><?php echo number_format($channel['commission_rate'], 2); ?>%</td>
-                                <td>
-                                    <span class="badge bg-<?php
-                                        echo $channel['status'] === 'Active' ? 'success' :
-                                             ($channel['status'] === 'Pending' ? 'warning' :
-                                             ($channel['status'] === 'Inactive' ? 'secondary' : 'danger'));
-                                    ?>">
-                                        <?php echo htmlspecialchars($channel['status']); ?>
-                                    </span>
-                                </td>
-                                <td><?php echo htmlspecialchars($channel['contact_email'] ?: 'N/A'); ?></td>
-                                <td><?php echo date('M d, Y', strtotime($channel['created_at'])); ?></td>
-                                <td>
-                                    <button class="btn btn-sm btn-outline-primary me-1" onclick="editChannel(<?php echo $channel['id']; ?>)">
-                                        <i class="cil-pencil"></i>
+                <div class="row" id="channelsContainer">
+                    <?php foreach ($channels as $channel): ?>
+                    <div class="col-md-6 col-lg-4 mb-3">
+                        <div class="card h-100 channel-card" style="border-left: 4px solid <?php
+                            echo $channel['status'] === 'Active' ? '#198754' :
+                                 ($channel['status'] === 'Pending' ? '#fd7e14' :
+                                 ($channel['status'] === 'Inactive' ? '#6c757d' : '#dc3545'));
+                        ?>;">
+                            <div class="card-body">
+                                <div class="channel-content">
+                                    <div class="d-flex justify-content-between align-items-start mb-2">
+                                        <div class="flex-grow-1">
+                                            <h6 class="mb-1"><?php echo htmlspecialchars($channel['channel_name']); ?></h6>
+                                            <small class="text-muted">
+                                                <?php echo htmlspecialchars($channel['channel_type']); ?> • <?php echo number_format($channel['commission_rate'], 1); ?>% commission
+                                            </small>
+                                        </div>
+                                        <div class="d-flex flex-column gap-1">
+                                            <span class="badge bg-<?php
+                                                echo $channel['status'] === 'Active' ? 'success' :
+                                                     ($channel['status'] === 'Pending' ? 'warning' :
+                                                     ($channel['status'] === 'Inactive' ? 'secondary' : 'danger'));
+                                            ?>">
+                                                <?php echo htmlspecialchars($channel['status']); ?>
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="channel-actions justify-content-center">
+                                    <button class="btn btn-sm btn-outline-primary me-2" onclick="editChannel(<?php echo $channel['id']; ?>)" title="Edit">
+                                        <i class="cil-pencil me-1"></i>Edit
                                     </button>
-                                    <button class="btn btn-sm btn-outline-danger" onclick="deleteChannel(<?php echo $channel['id']; ?>, '<?php echo htmlspecialchars($channel['channel_name']); ?>')">
-                                        <i class="cil-trash"></i>
+                                    <button class="btn btn-sm btn-outline-danger" onclick="deleteChannel(<?php echo $channel['id']; ?>, '<?php echo htmlspecialchars($channel['channel_name']); ?>')" title="Remove">
+                                        <i class="cil-trash me-1"></i>Remove
                                     </button>
-                                </td>
-                            </tr>
-                            <?php endforeach; ?>
-                        </tbody>
-                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <?php endforeach; ?>
                 </div>
             </div>
         </div>

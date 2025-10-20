@@ -155,11 +155,17 @@ $recentGuests = array_slice($guests, 0, 10);
             font-weight: bold;
             font-size: 16px;
         }
-        .reservation-card {
-            transition: transform 0.2s;
+        .guest-card {
+            cursor: pointer;
         }
-        .reservation-card:hover {
-            transform: translateY(-2px);
+        .guest-card:hover {
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .guest-actions {
+            display: none;
+        }
+        .guest-card:hover .guest-actions {
+            display: flex;
         }
 
         /* Custom font for title */
@@ -181,39 +187,40 @@ $recentGuests = array_slice($guests, 0, 10);
 <body>
     <div class="container-fluid p-4">
 
-        <!-- Statistics Card -->
-        <div class="card stats-card text-white mb-4">
-            <div class="card-body">
-                <div class="row text-center">
-                    <div class="col-2">
-                        <h6 class="mb-1">Total</h6>
-                        <h4 class="mb-0"><?php echo $stats['total_guests']; ?></h4>
-                    </div>
-                    <div class="col-2">
-                        <h6 class="mb-1">American</h6>
-                        <h4 class="mb-0"><?php echo $stats['american_guests']; ?></h4>
-                    </div>
-                    <div class="col-2">
-                        <h6 class="mb-1">Passports</h6>
-                        <h4 class="mb-0"><?php echo $stats['passport_guests']; ?></h4>
-                    </div>
-                    <div class="col-2">
-                        <h6 class="mb-1">VIP</h6>
-                        <h4 class="mb-0"><?php echo $stats['vip_guests']; ?></h4>
-                    </div>
-                    <div class="col-2">
-                        <h6 class="mb-1">Canadian</h6>
-                        <h4 class="mb-0"><?php echo $stats['canadian_guests']; ?></h4>
-                    </div>
-                    <div class="col-2">
-                        <h6 class="mb-1">Avg Age</h6>
-                        <h4 class="mb-0"><?php echo round($stats['avg_age'] ?: 0); ?> yrs</h4>
-                    </div>
+        <!-- Header with Stats -->
+        <div class="mb-4">
+            <div class="d-flex justify-content-between gap-3 text-center">
+                <div class="text-center flex-grow-1">
+                <?php include 'gueststitle.html'; ?>
+                </div>
+                <div>
+                    <small class="text-muted d-block">Total</small>
+                    <span class="fw-bold text-primary"><?php echo $stats['total_guests']; ?></span>
+                </div>
+                <div>
+                    <small class="text-muted d-block">VIP</small>
+                    <span class="fw-bold text-warning"><?php echo $stats['vip_guests']; ?></span>
+                </div>
+                <div>
+                    <small class="text-muted d-block">American</small>
+                    <span class="fw-bold text-success"><?php echo $stats['american_guests']; ?></span>
+                </div>
+                <div>
+                    <small class="text-muted d-block">Passports</small>
+                    <span class="fw-bold text-info"><?php echo $stats['passport_guests']; ?></span>
+                </div>
+                <div>
+                    <small class="text-muted d-block">Canadian</small>
+                    <span class="fw-bold text-danger"><?php echo $stats['canadian_guests']; ?></span>
+                </div>
+                <div>
+                    <small class="text-muted d-block">Avg Age</small>
+                    <span class="fw-bold text-secondary"><?php echo round($stats['avg_age'] ?: 0); ?> yrs</span>
                 </div>
             </div>
         </div>
 
-        <!-- Guests Table -->
+        <!-- Guests -->
         <div class="card">
             <div class="card-header d-flex justify-content-between align-items-center">
                 <h5 class="mb-0">Guests</h5>
@@ -226,63 +233,42 @@ $recentGuests = array_slice($guests, 0, 10);
                     </button>
                 </div>
             </div>
-            <div class="card-body p-0">
-                <div class="table-responsive">
-                    <table class="table table-hover mb-0">
-                        <thead class="table-dark">
-                            <tr>
-                                <th>Guest</th>
-                                <th>Contact</th>
-                                <th>ID Info</th>
-                                <th>Nationality</th>
-                                <th>Status</th>
-                                <th>Birth Date</th>
-                                <th>Created</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php foreach ($guests as $guest): ?>
-                            <tr>
-                                <td>
-                                    <div class="d-flex align-items-center">
-                                        <div class="guest-avatar me-3">
-                                            <?php echo strtoupper(substr($guest['first_name'], 0, 1) . substr($guest['last_name'], 0, 1)); ?>
+            <div class="card-body">
+                <div class="row" id="guestsContainer">
+                    <?php foreach ($guests as $guest): ?>
+                    <div class="col-md-6 col-lg-4 mb-3">
+                        <div class="card h-100 guest-card" style="border-left: 4px solid <?php echo ($guest['loyalty_status'] ?? 'Regular') === 'VIP' ? '#fd7e14' : '#6c757d'; ?>;">
+                            <div class="card-body">
+                                <div class="guest-content">
+                                    <div class="d-flex justify-content-between align-items-start mb-2">
+                                        <div class="flex-grow-1">
+                                            <h6 class="mb-1"><?php echo htmlspecialchars($guest['first_name'] . ' ' . $guest['last_name']); ?></h6>
+                                            <small class="text-muted">
+                                                <?php echo htmlspecialchars($guest['email']); ?> • <?php echo htmlspecialchars($guest['nationality'] ?: 'N/A'); ?>
+                                            </small>
                                         </div>
-                                        <div>
-                                            <div class="fw-bold"><?php echo htmlspecialchars($guest['first_name'] . ' ' . $guest['last_name']); ?></div>
-                                            <small class="text-muted"><?php echo htmlspecialchars($guest['email']); ?></small>
+                                        <div class="d-flex flex-column gap-1">
+                                            <span class="badge bg-<?php echo ($guest['loyalty_status'] ?? 'Regular') === 'VIP' ? 'warning' : 'secondary'; ?>">
+                                                <?php echo htmlspecialchars($guest['loyalty_status'] ?? 'Regular'); ?>
+                                            </span>
+                                            <span class="badge bg-info">
+                                                <?php echo htmlspecialchars($guest['id_type']); ?>
+                                            </span>
                                         </div>
                                     </div>
-                                </td>
-                                <td>
-                                    <div><?php echo htmlspecialchars($guest['phone'] ?: 'N/A'); ?></div>
-                                    <small class="text-muted"><?php echo htmlspecialchars(($guest['city'] ?: '') . ', ' . ($guest['country'] ?: '')); ?></small>
-                                </td>
-                                <td>
-                                    <div><?php echo htmlspecialchars($guest['id_type']); ?></div>
-                                    <small class="text-muted"><?php echo htmlspecialchars($guest['id_number']); ?></small>
-                                </td>
-                                <td><?php echo htmlspecialchars($guest['nationality'] ?: 'N/A'); ?></td>
-                                <td>
-                                    <span class="badge bg-<?php echo ($guest['loyalty_status'] ?? 'Regular') === 'VIP' ? 'warning' : 'secondary'; ?>">
-                                        <i class="cil-star me-1"></i><?php echo htmlspecialchars($guest['loyalty_status'] ?? 'Regular'); ?>
-                                    </span>
-                                </td>
-                                <td><?php echo date('M d, Y', strtotime($guest['date_of_birth'])); ?></td>
-                                <td><?php echo date('M d, Y', strtotime($guest['created_at'])); ?></td>
-                                <td>
-                                    <button class="btn btn-sm btn-outline-primary me-1" onclick="editGuest(<?php echo $guest['id']; ?>)">
-                                        <i class="cil-pencil"></i>
+                                </div>
+                                <div class="guest-actions justify-content-center">
+                                    <button class="btn btn-sm btn-outline-primary me-2" onclick="editGuest(<?php echo $guest['id']; ?>)" title="Edit">
+                                        <i class="cil-pencil me-1"></i>Edit
                                     </button>
-                                    <button class="btn btn-sm btn-outline-danger" onclick="deleteGuest(<?php echo $guest['id']; ?>, '<?php echo htmlspecialchars($guest['first_name'] . ' ' . $guest['last_name']); ?>')">
-                                        <i class="cil-trash"></i>
+                                    <button class="btn btn-sm btn-outline-danger" onclick="deleteGuest(<?php echo $guest['id']; ?>, '<?php echo htmlspecialchars($guest['first_name'] . ' ' . $guest['last_name']); ?>')" title="Remove">
+                                        <i class="cil-trash me-1"></i>Remove
                                     </button>
-                                </td>
-                            </tr>
-                            <?php endforeach; ?>
-                        </tbody>
-                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <?php endforeach; ?>
                 </div>
             </div>
         </div>

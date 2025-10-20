@@ -204,212 +204,93 @@ $stats = $conn->query("
             border-radius: 8px;
             overflow: hidden;
         }
-        .modal-content {
-            background: #2d3748;
-            border: 1px solid #4a5568;
+        .input-group-text {
+            background: #4a5568;
+            border-color: #4a5568;
+            color: #e2e8f0;
         }
-        .nav-tabs .nav-link {
-            border: none;
-            color: #718096;
+        .form-control:focus, .form-select:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
         }
-        .nav-tabs .nav-link.active {
-            background: #0dcaf0;
-            color: white;
+        .housekeeping-card {
+            cursor: pointer;
         }
-        .low-stock {
-            background-color: #fff3cd;
-            border-left: 4px solid #ffc107;
+        .housekeeping-card:hover {
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
-        .maintenance-alert {
-            background-color: #f8d7da;
-            border-left: 4px solid #dc3545;
+        .housekeeping-actions {
+            display: none;
+        }
+        .housekeeping-card:hover .housekeeping-actions {
+            display: flex;
         }
     </style>
 </head>
 <body>
     <div class="container-fluid p-4">
-        <!-- Header -->
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <div class="text-center flex-grow-1">
+        <!-- Header with Stats -->
+        <div class="mb-4">
+            <div class="d-flex justify-content-between gap-3 text-center">
+                <div class="text-center flex-grow-1">
                 <?php include 'housekeepingtitle.html'; ?>
-            </div>
-        </div>
-
-        <!-- Statistics Cards -->
-        <div class="row mb-4">
-            <div class="col-md-2">
-                <div class="card stats-card text-white">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <h6 class="card-title mb-1">Active Staff</h6>
-                                <h3 class="mb-0"><?php echo $stats['active_housekeepers']; ?></h3>
-                            </div>
-                            <i class="cil-people fs-1 opacity-75"></i>
-                        </div>
-                    </div>
                 </div>
-            </div>
-            <div class="col-md-2">
-                <div class="card stats-card text-white">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <h6 class="card-title mb-1">Pending Tasks</h6>
-                                <h3 class="mb-0"><?php echo $stats['pending_tasks']; ?></h3>
-                            </div>
-                            <i class="cil-clock fs-1 opacity-75"></i>
-                        </div>
-                    </div>
+                <div>
+                    <small class="text-muted d-block">Active Staff</small>
+                    <span class="fw-bold text-primary"><?php echo $stats['active_housekeepers']; ?></span>
                 </div>
-            </div>
-            <div class="col-md-2">
-                <div class="card stats-card text-white">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <h6 class="card-title mb-1">Completed Today</h6>
-                                <h3 class="mb-0"><?php echo $stats['completed_today']; ?></h3>
-                            </div>
-                            <i class="cil-check-circle fs-1 opacity-75"></i>
-                        </div>
-                    </div>
+                <div>
+                    <small class="text-muted d-block">Pending Tasks</small>
+                    <span class="fw-bold text-warning"><?php echo $stats['pending_tasks']; ?></span>
                 </div>
-            </div>
-            <div class="col-md-3">
-                <div class="card stats-card text-white">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <h6 class="card-title mb-1">Maintenance Required</h6>
-                                <h3 class="mb-0"><?php echo $stats['maintenance_required']; ?></h3>
-                            </div>
-                            <i class="cil-wrench fs-1 opacity-75"></i>
-                        </div>
-                    </div>
+                <div>
+                    <small class="text-muted d-block">Completed Today</small>
+                    <span class="fw-bold text-success"><?php echo $stats['completed_today']; ?></span>
                 </div>
-            </div>
-            <div class="col-md-3">
-                <div class="card stats-card text-white">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <h6 class="card-title mb-1">Low Stock Items</h6>
-                                <h3 class="mb-0"><?php echo $stats['low_stock_items']; ?></h3>
-                            </div>
-                            <i class="cil-warning fs-1 opacity-75"></i>
-                        </div>
-                    </div>
+                <div>
+                    <small class="text-muted d-block">Maintenance Req.</small>
+                    <span class="fw-bold text-danger"><?php echo $stats['maintenance_required']; ?></span>
+                </div>
+                <div>
+                    <small class="text-muted d-block">Low Stock</small>
+                    <span class="fw-bold text-info"><?php echo $stats['low_stock_items']; ?></span>
                 </div>
             </div>
         </div>
 
-        <!-- Tabs -->
-        <ul class="nav nav-tabs mb-4" id="housekeepingTabs" role="tablist">
-            <li class="nav-item" role="presentation">
-                <button class="nav-link active" id="staff-tab" data-coreui-toggle="tab" data-coreui-target="#staff" type="button" role="tab">Staff</button>
-            </li>
-            <li class="nav-item" role="presentation">
-                <button class="nav-link" id="tasks-tab" data-coreui-toggle="tab" data-coreui-target="#tasks" type="button" role="tab">Tasks</button>
-            </li>
-            <li class="nav-item" role="presentation">
-                <button class="nav-link" id="supplies-tab" data-coreui-toggle="tab" data-coreui-target="#supplies" type="button" role="tab">Supplies</button>
-            </li>
-        </ul>
-
-        <div class="tab-content">
-            <!-- Staff Tab -->
-            <div class="tab-pane fade show active" id="staff" role="tabpanel">
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h4>Housekeeping Staff</h4>
-                    <button class="btn btn-primary" data-coreui-toggle="modal" data-coreui-target="#housekeeperModal" onclick="openCreateHousekeeperModal()">
-                        <i class="cil-plus me-2"></i>Add Staff
+        <!-- Housekeeping -->
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Housekeeping</h5>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-success btn-sm" onclick="generateReport()">
+                        <i class="cil-file-pdf me-1"></i>Report
                     </button>
-                </div>
-                <div class="card">
-                    <div class="card-body">
-                        <div class="table-responsive">
-                            <table class="table table-hover mb-0">
-                                <thead class="table-dark">
-                                    <tr>
-                                        <th>Name</th>
-                                        <th>Employee ID</th>
-                                        <th>Contact</th>
-                                        <th>Specialty</th>
-                                        <th>Shift</th>
-                                        <th>Status</th>
-                                        <th>Hire Date</th>
-                                        <th>Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <?php foreach ($housekeepers as $housekeeper): ?>
-                                    <tr>
-                                        <td><?php echo htmlspecialchars($housekeeper['first_name'] . ' ' . $housekeeper['last_name']); ?></td>
-                                        <td><?php echo htmlspecialchars($housekeeper['employee_id']); ?></td>
-                                        <td>
-                                            <div><?php echo htmlspecialchars($housekeeper['phone'] ?: 'N/A'); ?></div>
-                                            <small class="text-muted"><?php echo htmlspecialchars($housekeeper['email'] ?: ''); ?></small>
-                                        </td>
-                                        <td><?php echo htmlspecialchars($housekeeper['specialty'] ?: 'General'); ?></td>
-                                        <td><?php echo htmlspecialchars($housekeeper['shift_preference']); ?></td>
-                                        <td>
-                                            <span class="badge bg-<?php echo $housekeeper['status'] === 'Active' ? 'success' : ($housekeeper['status'] === 'Inactive' ? 'secondary' : 'warning'); ?>">
-                                                <?php echo htmlspecialchars($housekeeper['status']); ?>
-                                            </span>
-                                        </td>
-                                        <td><?php echo date('M d, Y', strtotime($housekeeper['hire_date'])); ?></td>
-                                        <td>
-                                            <button class="btn btn-sm btn-outline-primary me-1" onclick="editHousekeeper(<?php echo $housekeeper['id']; ?>)">
-                                                <i class="cil-pencil"></i>
-                                            </button>
-                                            <button class="btn btn-sm btn-outline-danger" onclick="deleteHousekeeper(<?php echo $housekeeper['id']; ?>, '<?php echo htmlspecialchars($housekeeper['first_name'] . ' ' . $housekeeper['last_name']); ?>')">
-                                                <i class="cil-trash"></i>
-                                            </button>
-                                        </td>
-                                    </tr>
-                                    <?php endforeach; ?>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
+                    <button class="btn btn-sm btn-outline-primary" onclick="openCreateTaskModal()">
+                        <i class="cil-plus me-1"></i>Add Task
+                    </button>
                 </div>
             </div>
-
-            <!-- Tasks Tab -->
-            <div class="tab-pane fade" id="tasks" role="tabpanel">
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h4>Housekeeping Tasks</h4>
-                    <button class="btn btn-primary" data-coreui-toggle="modal" data-coreui-target="#taskModal" onclick="openCreateTaskModal()">
-                        <i class="cil-plus me-2"></i>Add Task
-                    </button>
-                </div>
-                <div class="card">
-                    <div class="card-body">
-                        <div class="table-responsive">
-                            <table class="table table-hover mb-0">
-                                <thead class="table-dark">
-                                    <tr>
-                                        <th>Room</th>
-                                        <th>Housekeeper</th>
-                                        <th>Task Type</th>
-                                        <th>Priority</th>
-                                        <th>Status</th>
-                                        <th>Scheduled</th>
-                                        <th>Maintenance</th>
-                                        <th>Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <?php foreach ($tasks as $task): ?>
-                                    <tr class="<?php echo $task['maintenance_required'] ? 'maintenance-alert' : ''; ?>">
-                                        <td>
-                                            <div><?php echo htmlspecialchars($task['room_number']); ?></div>
-                                            <small class="text-muted"><?php echo htmlspecialchars($task['room_type']); ?></small>
-                                        </td>
-                                        <td><?php echo htmlspecialchars(($task['first_name'] ?: '') . ' ' . ($task['last_name'] ?: 'Unassigned')); ?></td>
-                                        <td><?php echo htmlspecialchars($task['task_type']); ?></td>
-                                        <td>
+            <div class="card-body">
+                <div class="row" id="housekeepingContainer">
+                    <?php foreach ($tasks as $task): ?>
+                    <div class="col-md-6 col-lg-4 mb-3">
+                        <div class="card h-100 housekeeping-card" style="border-left: 4px solid <?php
+                            echo $task['status'] === 'Completed' ? '#198754' :
+                                 ($task['status'] === 'In Progress' ? '#0d6efd' :
+                                 ($task['status'] === 'Pending' ? '#fd7e14' :
+                                 ($task['status'] === 'Cancelled' ? '#6c757d' : '#dc3545')));
+                        ?>;">
+                            <div class="card-body">
+                                <div class="housekeeping-content">
+                                    <div class="d-flex justify-content-between align-items-start mb-2">
+                                        <div class="flex-grow-1">
+                                            <h6 class="mb-1"><?php echo htmlspecialchars($task['room_number'] . ' - ' . $task['room_type']); ?></h6>
+                                            <small class="text-muted">
+                                                <?php echo htmlspecialchars($task['task_type']); ?> • <?php echo htmlspecialchars(($task['first_name'] ?: '') . ' ' . ($task['last_name'] ?: 'Unassigned')); ?>
+                                            </small>
+                                        </div>
+                                        <div class="d-flex flex-column gap-1">
                                             <span class="badge bg-<?php
                                                 echo $task['priority'] === 'Urgent' ? 'danger' :
                                                      ($task['priority'] === 'High' ? 'warning' :
@@ -417,8 +298,6 @@ $stats = $conn->query("
                                             ?>">
                                                 <?php echo htmlspecialchars($task['priority']); ?>
                                             </span>
-                                        </td>
-                                        <td>
                                             <span class="badge bg-<?php
                                                 echo $task['status'] === 'Completed' ? 'success' :
                                                      ($task['status'] === 'In Progress' ? 'primary' :
@@ -427,82 +306,21 @@ $stats = $conn->query("
                                             ?>">
                                                 <?php echo htmlspecialchars($task['status']); ?>
                                             </span>
-                                        </td>
-                                        <td><?php echo date('M d, Y', strtotime($task['scheduled_date'])) . ' ' . ($task['scheduled_time'] ?: ''); ?></td>
-                                        <td>
-                                            <?php if ($task['maintenance_required']): ?>
-                                                <i class="cil-wrench text-danger"></i>
-                                            <?php else: ?>
-                                                <span class="text-muted">-</span>
-                                            <?php endif; ?>
-                                        </td>
-                                        <td>
-                                            <button class="btn btn-sm btn-outline-primary me-1" onclick="editTask(<?php echo $task['id']; ?>)">
-                                                <i class="cil-pencil"></i>
-                                            </button>
-                                            <button class="btn btn-sm btn-outline-danger" onclick="deleteTask(<?php echo $task['id']; ?>)">
-                                                <i class="cil-trash"></i>
-                                            </button>
-                                        </td>
-                                    </tr>
-                                    <?php endforeach; ?>
-                                </tbody>
-                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="housekeeping-actions justify-content-center">
+                                    <button class="btn btn-sm btn-outline-primary me-2" onclick="editTask(<?php echo $task['id']; ?>)" title="Edit">
+                                        <i class="cil-pencil me-1"></i>Edit
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-danger" onclick="deleteTask(<?php echo $task['id']; ?>)" title="Remove">
+                                        <i class="cil-trash me-1"></i>Remove
+                                    </button>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                </div>
-            </div>
-
-            <!-- Supplies Tab -->
-            <div class="tab-pane fade" id="supplies" role="tabpanel">
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h4>Housekeeping Supplies</h4>
-                </div>
-                <div class="card">
-                    <div class="card-body">
-                        <div class="table-responsive">
-                            <table class="table table-hover mb-0">
-                                <thead class="table-dark">
-                                    <tr>
-                                        <th>Supply Name</th>
-                                        <th>Category</th>
-                                        <th>Current Stock</th>
-                                        <th>Min Stock</th>
-                                        <th>Unit</th>
-                                        <th>Cost/Unit</th>
-                                        <th>Status</th>
-                                        <th>Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <?php foreach ($supplies as $supply): ?>
-                                    <tr class="<?php echo ($supply['current_stock'] <= $supply['minimum_stock_level']) ? 'low-stock' : ''; ?>">
-                                        <td><?php echo htmlspecialchars($supply['supply_name']); ?></td>
-                                        <td><?php echo htmlspecialchars($supply['category']); ?></td>
-                                        <td><?php echo htmlspecialchars($supply['current_stock']); ?></td>
-                                        <td><?php echo htmlspecialchars($supply['minimum_stock_level']); ?></td>
-                                        <td><?php echo htmlspecialchars($supply['unit_of_measure']); ?></td>
-                                        <td>$<?php echo number_format($supply['cost_per_unit'], 2); ?></td>
-                                        <td>
-                                            <?php if ($supply['current_stock'] <= $supply['minimum_stock_level']): ?>
-                                                <span class="badge bg-danger">Low Stock</span>
-                                            <?php elseif ($supply['current_stock'] == 0): ?>
-                                                <span class="badge bg-dark">Out of Stock</span>
-                                            <?php else: ?>
-                                                <span class="badge bg-success">In Stock</span>
-                                            <?php endif; ?>
-                                        </td>
-                                        <td>
-                                            <button class="btn btn-sm btn-outline-primary" onclick="editSupply(<?php echo $supply['id']; ?>, '<?php echo htmlspecialchars($supply['supply_name']); ?>', <?php echo $supply['current_stock']; ?>, <?php echo $supply['minimum_stock_level']; ?>, '<?php echo htmlspecialchars($supply['supplier'] ?: ''); ?>', '<?php echo $supply['last_restock_date'] ?: ''; ?>', <?php echo $supply['cost_per_unit']; ?>, '<?php echo htmlspecialchars($supply['notes'] ?: ''); ?>')">
-                                                <i class="cil-pencil"></i>
-                                            </button>
-                                        </td>
-                                    </tr>
-                                    <?php endforeach; ?>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
+                    <?php endforeach; ?>
                 </div>
             </div>
         </div>

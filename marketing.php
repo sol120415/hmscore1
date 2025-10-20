@@ -204,275 +204,116 @@ $stats = $conn->query("
             border-radius: 8px;
             overflow: hidden;
         }
-        .modal-content {
-            background: #2d3748;
-            border: 1px solid #4a5568;
+        .input-group-text {
+            background: #4a5568;
+            border-color: #4a5568;
+            color: #e2e8f0;
         }
-        .nav-tabs .nav-link {
-            border: none;
-            color: #718096;
+        .form-control:focus, .form-select:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
         }
-        .nav-tabs .nav-link.active {
-            background: #0dcaf0;
-            color: white;
+        .marketing-card {
+            cursor: pointer;
         }
-        .campaign-card {
-            transition: transform 0.2s;
+        .marketing-card:hover {
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
-        .campaign-card:hover {
-            transform: translateY(-2px);
+        .marketing-actions {
+            display: none;
+        }
+        .marketing-card:hover .marketing-actions {
+            display: flex;
         }
     </style>
 </head>
 <body>
     <div class="container-fluid p-4">
-        <!-- Header -->
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <div class="text-center flex-grow-1">
+        <!-- Header with Stats -->
+        <div class="mb-4">
+            <div class="d-flex justify-content-between gap-3 text-center">
+                <div class="text-center flex-grow-1">
                 <?php include 'marketingtitle.html'; ?>
-            </div>
-            <div>
-                <button class="btn btn-primary me-2" data-coreui-toggle="modal" data-coreui-target="#campaignModal" onclick="openCreateCampaignModal()">
-                    <i class="cil-plus me-2"></i>Add Campaign
-                </button>
-                <button class="btn btn-success" data-coreui-toggle="modal" data-coreui-target="#offerModal" onclick="openCreateOfferModal()">
-                    <i class="cil-plus me-2"></i>Add Offer
-                </button>
-            </div>
-        </div>
-
-        <!-- Statistics Cards -->
-        <div class="row mb-4">
-            <div class="col-md-2">
-                <div class="card stats-card text-white">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <h6 class="card-title mb-1">Total Campaigns</h6>
-                                <h3 class="mb-0"><?php echo $stats['total_campaigns']; ?></h3>
-                            </div>
-                            <i class="cil-bullhorn fs-1 opacity-75"></i>
-                        </div>
-                    </div>
                 </div>
-            </div>
-            <div class="col-md-2">
-                <div class="card stats-card text-white">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <h6 class="card-title mb-1">Active Campaigns</h6>
-                                <h3 class="mb-0"><?php echo $stats['active_campaigns']; ?></h3>
-                            </div>
-                            <i class="cil-play-circle fs-1 opacity-75"></i>
-                        </div>
-                    </div>
+                <div>
+                    <small class="text-muted d-block">Total Campaigns</small>
+                    <span class="fw-bold text-primary"><?php echo $stats['total_campaigns']; ?></span>
                 </div>
-            </div>
-            <div class="col-md-2">
-                <div class="card stats-card text-white">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <h6 class="card-title mb-1">Active Offers</h6>
-                                <h3 class="mb-0"><?php echo $stats['active_offers']; ?></h3>
-                            </div>
-                            <i class="cil-gift fs-1 opacity-75"></i>
-                        </div>
-                    </div>
+                <div>
+                    <small class="text-muted d-block">Active Campaigns</small>
+                    <span class="fw-bold text-success"><?php echo $stats['active_campaigns']; ?></span>
                 </div>
-            </div>
-            <div class="col-md-3">
-                <div class="card stats-card text-white">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <h6 class="card-title mb-1">Total Revenue</h6>
-                                <h3 class="mb-0">$<?php echo number_format($stats['total_revenue'] ?: 0, 2); ?></h3>
-                            </div>
-                            <i class="cil-dollar fs-1 opacity-75"></i>
-                        </div>
-                    </div>
+                <div>
+                    <small class="text-muted d-block">Active Offers</small>
+                    <span class="fw-bold text-warning"><?php echo $stats['active_offers']; ?></span>
                 </div>
-            </div>
-            <div class="col-md-3">
-                <div class="card stats-card text-white">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <h6 class="card-title mb-1">Avg ROI</h6>
-                                <h3 class="mb-0"><?php echo number_format($stats['avg_roi'] ?: 0, 1); ?>%</h3>
-                            </div>
-                            <i class="cil-chart-line fs-1 opacity-75"></i>
-                        </div>
-                    </div>
+                <div>
+                    <small class="text-muted d-block">Total Revenue</small>
+                    <span class="fw-bold text-info">$<?php echo number_format($stats['total_revenue'] ?: 0, 2); ?></span>
+                </div>
+                <div>
+                    <small class="text-muted d-block">Avg ROI</small>
+                    <span class="fw-bold text-danger"><?php echo number_format($stats['avg_roi'] ?: 0, 1); ?>%</span>
                 </div>
             </div>
         </div>
 
-        <!-- Tabs -->
-        <ul class="nav nav-tabs mb-4" id="marketingTabs" role="tablist">
-            <li class="nav-item" role="presentation">
-                <button class="nav-link active" id="campaigns-tab" data-coreui-toggle="tab" data-coreui-target="#campaigns" type="button" role="tab">Campaigns</button>
-            </li>
-            <li class="nav-item" role="presentation">
-                <button class="nav-link" id="offers-tab" data-coreui-toggle="tab" data-coreui-target="#offers" type="button" role="tab">Promotional Offers</button>
-            </li>
-            <li class="nav-item" role="presentation">
-                <button class="nav-link" id="performance-tab" data-coreui-toggle="tab" data-coreui-target="#performance" type="button" role="tab">Performance</button>
-            </li>
-        </ul>
-
-        <div class="tab-content">
-            <!-- Campaigns Tab -->
-            <div class="tab-pane fade show active" id="campaigns" role="tabpanel">
-                <div class="row">
+        <!-- Marketing -->
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Marketing</h5>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-success btn-sm" onclick="generateReport()">
+                        <i class="cil-file-pdf me-1"></i>Report
+                    </button>
+                    <button class="btn btn-sm btn-outline-primary" onclick="openCreateCampaignModal()">
+                        <i class="cil-plus me-1"></i>Add Campaign
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="row" id="marketingContainer">
                     <?php foreach ($campaigns as $campaign): ?>
-                    <div class="col-md-6 col-lg-4 mb-4">
-                        <div class="card campaign-card h-100">
-                            <div class="card-header d-flex justify-content-between align-items-center">
-                                <h6 class="mb-0"><?php echo htmlspecialchars($campaign['name']); ?></h6>
-                                <span class="badge bg-<?php
-                                    echo $campaign['status'] === 'active' ? 'success' :
-                                         ($campaign['status'] === 'completed' ? 'primary' :
-                                         ($campaign['status'] === 'paused' ? 'warning' : 'secondary'));
-                                ?>">
-                                    <?php echo htmlspecialchars($campaign['status']); ?>
-                                </span>
-                            </div>
+                    <div class="col-md-6 col-lg-4 mb-3">
+                        <div class="card h-100 marketing-card" style="border-left: 4px solid <?php
+                            echo $campaign['status'] === 'active' ? '#198754' :
+                                 ($campaign['status'] === 'completed' ? '#0d6efd' :
+                                 ($campaign['status'] === 'paused' ? '#fd7e14' :
+                                 ($campaign['status'] === 'draft' ? '#6c757d' : '#dc3545')));
+                        ?>;">
                             <div class="card-body">
-                                <p class="text-muted small mb-2"><?php echo htmlspecialchars($campaign['description'] ?: 'No description'); ?></p>
-                                <div class="row text-center mb-3">
-                                    <div class="col-6">
-                                        <small class="text-muted d-block">Type</small>
-                                        <span class="badge bg-info"><?php echo htmlspecialchars($campaign['campaign_type']); ?></span>
-                                    </div>
-                                    <div class="col-6">
-                                        <small class="text-muted d-block">Budget</small>
-                                        <span class="fw-bold">$<?php echo number_format($campaign['budget'] ?: 0, 2); ?></span>
+                                <div class="marketing-content">
+                                    <div class="d-flex justify-content-between align-items-start mb-2">
+                                        <div class="flex-grow-1">
+                                            <h6 class="mb-1"><?php echo htmlspecialchars($campaign['name']); ?></h6>
+                                            <small class="text-muted">
+                                                <?php echo htmlspecialchars($campaign['campaign_type']); ?> • <?php echo htmlspecialchars($campaign['description'] ?: 'No description'); ?>
+                                            </small>
+                                        </div>
+                                        <div class="d-flex flex-column gap-1">
+                                            <span class="badge bg-<?php
+                                                echo $campaign['status'] === 'active' ? 'success' :
+                                                     ($campaign['status'] === 'completed' ? 'primary' :
+                                                     ($campaign['status'] === 'paused' ? 'warning' :
+                                                     ($campaign['status'] === 'draft' ? 'secondary' : 'danger')));
+                                            ?>">
+                                                <?php echo htmlspecialchars($campaign['status']); ?>
+                                            </span>
+                                        </div>
                                     </div>
                                 </div>
-                                <div class="d-flex justify-content-between">
-                                    <small class="text-muted">
-                                        <?php echo date('M d, Y', strtotime($campaign['start_date'])); ?>
-                                        <?php if ($campaign['end_date']): ?> - <?php echo date('M d, Y', strtotime($campaign['end_date'])); ?><?php endif; ?>
-                                    </small>
-                                    <div>
-                                        <button class="btn btn-sm btn-outline-primary me-1" onclick="editCampaign(<?php echo $campaign['id']; ?>)">
-                                            <i class="cil-pencil"></i>
-                                        </button>
-                                        <button class="btn btn-sm btn-outline-danger" onclick="deleteCampaign(<?php echo $campaign['id']; ?>, '<?php echo htmlspecialchars($campaign['name']); ?>')">
-                                            <i class="cil-trash"></i>
-                                        </button>
-                                    </div>
+                                <div class="marketing-actions justify-content-center">
+                                    <button class="btn btn-sm btn-outline-primary me-2" onclick="editCampaign(<?php echo $campaign['id']; ?>)" title="Edit">
+                                        <i class="cil-pencil me-1"></i>Edit
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-danger" onclick="deleteCampaign(<?php echo $campaign['id']; ?>, '<?php echo htmlspecialchars($campaign['name']); ?>')" title="Remove">
+                                        <i class="cil-trash me-1"></i>Remove
+                                    </button>
                                 </div>
                             </div>
                         </div>
                     </div>
                     <?php endforeach; ?>
-                </div>
-            </div>
-
-            <!-- Offers Tab -->
-            <div class="tab-pane fade" id="offers" role="tabpanel">
-                <div class="card">
-                    <div class="card-body">
-                        <div class="table-responsive">
-                            <table class="table table-hover mb-0">
-                                <thead class="table-dark">
-                                    <tr>
-                                        <th>Code</th>
-                                        <th>Name</th>
-                                        <th>Type</th>
-                                        <th>Discount</th>
-                                        <th>Valid Period</th>
-                                        <th>Usage</th>
-                                        <th>Status</th>
-                                        <th>Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <?php foreach ($offers as $offer): ?>
-                                    <tr>
-                                        <td><code><?php echo htmlspecialchars($offer['code']); ?></code></td>
-                                        <td><?php echo htmlspecialchars($offer['name']); ?></td>
-                                        <td><?php echo htmlspecialchars(str_replace('_', ' ', $offer['offer_type'])); ?></td>
-                                        <td>
-                                            <?php if ($offer['discount_percentage']): ?>
-                                                <?php echo $offer['discount_percentage']; ?>%
-                                            <?php elseif ($offer['discount_value']): ?>
-                                                $<?php echo number_format($offer['discount_value'], 2); ?>
-                                            <?php else: ?>
-                                                Special
-                                            <?php endif; ?>
-                                        </td>
-                                        <td><?php echo date('M d, Y', strtotime($offer['valid_from'])); ?> - <?php echo date('M d, Y', strtotime($offer['valid_until'])); ?></td>
-                                        <td><?php echo ($offer['usage_count'] ?: 0); ?>/<?php echo $offer['usage_limit'] ?: '∞'; ?></td>
-                                        <td>
-                                            <span class="badge bg-<?php echo $offer['is_active'] ? 'success' : 'secondary'; ?>">
-                                                <?php echo $offer['is_active'] ? 'Active' : 'Inactive'; ?>
-                                            </span>
-                                        </td>
-                                        <td>
-                                            <button class="btn btn-sm btn-outline-primary me-1" onclick="editOffer(<?php echo $offer['id']; ?>)">
-                                                <i class="cil-pencil"></i>
-                                            </button>
-                                            <button class="btn btn-sm btn-outline-danger" onclick="deleteOffer(<?php echo $offer['id']; ?>, '<?php echo htmlspecialchars($offer['name']); ?>')">
-                                                <i class="cil-trash"></i>
-                                            </button>
-                                        </td>
-                                    </tr>
-                                    <?php endforeach; ?>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Performance Tab -->
-            <div class="tab-pane fade" id="performance" role="tabpanel">
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h4>Campaign Performance</h4>
-                    <button class="btn btn-info" data-coreui-toggle="modal" data-coreui-target="#performanceModal" onclick="openAddPerformanceModal()">
-                        <i class="cil-plus me-2"></i>Add Performance Data
-                    </button>
-                </div>
-                <div class="card">
-                    <div class="card-body">
-                        <div class="table-responsive">
-                            <table class="table table-hover mb-0">
-                                <thead class="table-dark">
-                                    <tr>
-                                        <th>Campaign</th>
-                                        <th>Date</th>
-                                        <th>Impressions</th>
-                                        <th>Clicks</th>
-                                        <th>Leads</th>
-                                        <th>Conversions</th>
-                                        <th>Revenue</th>
-                                        <th>CTR</th>
-                                        <th>ROI</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <?php foreach ($performance as $perf): ?>
-                                    <tr>
-                                        <td><?php echo htmlspecialchars($perf['campaign_name']); ?></td>
-                                        <td><?php echo date('M d, Y', strtotime($perf['performance_date'])); ?></td>
-                                        <td><?php echo number_format($perf['impressions']); ?></td>
-                                        <td><?php echo number_format($perf['clicks']); ?></td>
-                                        <td><?php echo number_format($perf['leads']); ?></td>
-                                        <td><?php echo number_format($perf['conversions']); ?></td>
-                                        <td>$<?php echo number_format($perf['revenue'], 2); ?></td>
-                                        <td><?php echo $perf['impressions'] > 0 ? number_format(($perf['clicks'] / $perf['impressions']) * 100, 2) : 0; ?>%</td>
-                                        <td><?php echo $perf['spend'] > 0 ? number_format(($perf['revenue'] / $perf['spend']) * 100, 1) : 0; ?>%</td>
-                                    </tr>
-                                    <?php endforeach; ?>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
                 </div>
             </div>
         </div>
