@@ -15,7 +15,7 @@ CREATE TABLE IF NOT EXISTS guests (
     nationality VARCHAR(100) NULL,
     notes TEXT NULL,
     guest_status ENUM('Active', 'Archived') DEFAULT 'Active',
-    loyalty_status ENUM('Regular', 'VIP') DEFAULT 'Regular',
+    loyalty_status ENUM('Regular', 'Iron', 'Gold', 'Diamond') DEFAULT 'Regular',
     stay_count INT DEFAULT 0,
     total_spend DECIMAL(10,2) DEFAULT 0.00,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

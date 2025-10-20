@@ -312,13 +312,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_HX_REQUEST']))
 
                     if ($result && $stmt->rowCount() > 0) {
                         // Update room status to Maintenance
-                        $stmt = $conn->prepare("SELECT room_id FROM reservations WHERE id = ?");
+                        $stmt = $conn->prepare("SELECT room_id, guest_id FROM reservations WHERE id = ?");
                         $stmt->execute([$_POST['id']]);
                         $reservation = $stmt->fetch(PDO::FETCH_ASSOC);
                         if (!empty($reservation['room_id'])) {
                             $stmt = $conn->prepare("UPDATE rooms SET room_status = 'Maintenance' WHERE id = ?");
                             $stmt->execute([$reservation['room_id']]);
                         }
+
+                        // Increment guest stay count
+                        if (!empty($reservation['guest_id'])) {
+                            $stmt = $conn->prepare("UPDATE guests SET stay_count = stay_count + 1 WHERE id = ?");
+                            $stmt->execute([$reservation['guest_id']]);
+                        }
+
                         echo json_encode(['success' => true, 'message' => 'Guest checked out successfully']);
                     } else {
                         echo json_encode(['success' => false, 'message' => 'Check-out failed or reservation not found']);

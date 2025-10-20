@@ -6,6 +6,75 @@ if (!isset($_SESSION['email'])) {
     exit;
 }
 
+// Handle GET requests for promotions page
+if (isset($_GET['action']) && $_GET['action'] === 'get_promotions_page') {
+    ?>
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0">Available Promotions</h6>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Code</th>
+                                    <th>Name</th>
+                                    <th>Type</th>
+                                    <th>Discount</th>
+                                    <th>Valid Until</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php
+                                $promotions = $conn->query("SELECT * FROM promotional_offers WHERE is_active = 1 AND valid_until >= CURDATE() ORDER BY valid_until ASC")->fetchAll(PDO::FETCH_ASSOC);
+                                foreach ($promotions as $promo): ?>
+                                <tr>
+                                    <td><code><?php echo htmlspecialchars($promo['code']); ?></code></td>
+                                    <td><?php echo htmlspecialchars($promo['name']); ?></td>
+                                    <td><?php echo htmlspecialchars($promo['offer_type']); ?></td>
+                                    <td>
+                                        <?php if ($promo['discount_percentage']): ?>
+                                            <?php echo $promo['discount_percentage']; ?>%
+                                        <?php elseif ($promo['discount_value']): ?>
+                                            $<?php echo number_format($promo['discount_value'], 2); ?>
+                                        <?php else: ?>
+                                            Special
+                                        <?php endif; ?>
+                                    </td>
+                                    <td><?php echo date('M j, Y', strtotime($promo['valid_until'])); ?></td>
+                                    <td><span class="badge bg-success">Active</span></td>
+                                </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0">Quick Actions</h6>
+                </div>
+                <div class="card-body">
+                    <button class="btn btn-primary w-100 mb-2" onclick="openCreateOfferModal()">
+                        <i class="cil-plus me-1"></i>Create New Offer
+                    </button>
+                    <button class="btn btn-outline-secondary w-100" onclick="refreshPromotions()">
+                        <i class="cil-reload me-1"></i>Refresh List
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <?php
+    exit;
+}
+
 // Handle HTMX requests
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_HX_REQUEST'])) {
     header('Content-Type: application/json');
@@ -258,62 +327,164 @@ $stats = $conn->query("
             </div>
         </div>
 
-        <!-- Marketing -->
-        <div class="card">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <h5 class="mb-0">Marketing</h5>
-                <div class="d-flex gap-2">
-                    <button class="btn btn-success btn-sm" onclick="generateReport()">
-                        <i class="cil-file-pdf me-1"></i>Report
-                    </button>
-                    <button class="btn btn-sm btn-outline-primary" onclick="openCreateCampaignModal()">
-                        <i class="cil-plus me-1"></i>Add Campaign
-                    </button>
-                </div>
-            </div>
-            <div class="card-body">
-                <div class="row" id="marketingContainer">
-                    <?php foreach ($campaigns as $campaign): ?>
-                    <div class="col-md-6 col-lg-4 mb-3">
-                        <div class="card h-100 marketing-card" style="border-left: 4px solid <?php
-                            echo $campaign['status'] === 'active' ? '#198754' :
-                                 ($campaign['status'] === 'completed' ? '#0d6efd' :
-                                 ($campaign['status'] === 'paused' ? '#fd7e14' :
-                                 ($campaign['status'] === 'draft' ? '#6c757d' : '#dc3545')));
-                        ?>;">
-                            <div class="card-body">
-                                <div class="marketing-content">
-                                    <div class="d-flex justify-content-between align-items-start mb-2">
-                                        <div class="flex-grow-1">
-                                            <h6 class="mb-1"><?php echo htmlspecialchars($campaign['name']); ?></h6>
-                                            <small class="text-muted">
-                                                <?php echo htmlspecialchars($campaign['campaign_type']); ?> • <?php echo htmlspecialchars($campaign['description'] ?: 'No description'); ?>
-                                            </small>
+        <!-- Navigation Tabs -->
+        <ul class="nav nav-tabs mb-4" id="marketingTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="campaigns-tab" data-coreui-toggle="tab" data-coreui-target="#campaigns" type="button" role="tab">Campaigns</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="offers-tab" data-coreui-toggle="tab" data-coreui-target="#offers" type="button" role="tab">Offers</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="promotions-tab" data-coreui-toggle="tab" data-coreui-target="#promotions" type="button" role="tab">Promotions</button>
+            </li>
+        </ul>
+
+        <!-- Tab Content -->
+        <div class="tab-content" id="marketingTabContent">
+            <!-- Campaigns Tab -->
+            <div class="tab-pane fade show active" id="campaigns" role="tabpanel">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">Marketing Campaigns</h5>
+                        <div class="d-flex gap-2">
+                            <button class="btn btn-success btn-sm" onclick="generateReport()">
+                                <i class="cil-file-pdf me-1"></i>Report
+                            </button>
+                            <button class="btn btn-sm btn-outline-primary" onclick="openCreateCampaignModal()">
+                                <i class="cil-plus me-1"></i>Add Campaign
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="row" id="campaignsContainer">
+                            <?php foreach ($campaigns as $campaign): ?>
+                            <div class="col-md-6 col-lg-4 mb-3">
+                                <div class="card h-100 marketing-card" style="border-left: 4px solid <?php
+                                    echo $campaign['status'] === 'active' ? '#198754' :
+                                         ($campaign['status'] === 'completed' ? '#0d6efd' :
+                                         ($campaign['status'] === 'paused' ? '#fd7e14' :
+                                         ($campaign['status'] === 'draft' ? '#6c757d' : '#dc3545')));
+                                ?>;">
+                                    <div class="card-body">
+                                        <div class="marketing-content">
+                                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                                <div class="flex-grow-1">
+                                                    <h6 class="mb-1"><?php echo htmlspecialchars($campaign['name']); ?></h6>
+                                                    <small class="text-muted">
+                                                        <?php echo htmlspecialchars($campaign['campaign_type']); ?> • <?php echo htmlspecialchars($campaign['description'] ?: 'No description'); ?>
+                                                    </small>
+                                                </div>
+                                                <div class="d-flex flex-column gap-1">
+                                                    <span class="badge bg-<?php
+                                                        echo $campaign['status'] === 'active' ? 'success' :
+                                                             ($campaign['status'] === 'completed' ? 'primary' :
+                                                             ($campaign['status'] === 'paused' ? 'warning' :
+                                                             ($campaign['status'] === 'draft' ? 'secondary' : 'danger')));
+                                                    ?>">
+                                                        <?php echo htmlspecialchars($campaign['status']); ?>
+                                                    </span>
+                                                </div>
+                                            </div>
                                         </div>
-                                        <div class="d-flex flex-column gap-1">
-                                            <span class="badge bg-<?php
-                                                echo $campaign['status'] === 'active' ? 'success' :
-                                                     ($campaign['status'] === 'completed' ? 'primary' :
-                                                     ($campaign['status'] === 'paused' ? 'warning' :
-                                                     ($campaign['status'] === 'draft' ? 'secondary' : 'danger')));
-                                            ?>">
-                                                <?php echo htmlspecialchars($campaign['status']); ?>
-                                            </span>
+                                        <div class="marketing-actions justify-content-center">
+                                            <button class="btn btn-sm btn-outline-primary me-2" onclick="editCampaign(<?php echo $campaign['id']; ?>)" title="Edit">
+                                                <i class="cil-pencil me-1"></i>Edit
+                                            </button>
+                                            <button class="btn btn-sm btn-outline-danger" onclick="deleteCampaign(<?php echo $campaign['id']; ?>, '<?php echo htmlspecialchars($campaign['name']); ?>')" title="Remove">
+                                                <i class="cil-trash me-1"></i>Remove
+                                            </button>
                                         </div>
                                     </div>
                                 </div>
-                                <div class="marketing-actions justify-content-center">
-                                    <button class="btn btn-sm btn-outline-primary me-2" onclick="editCampaign(<?php echo $campaign['id']; ?>)" title="Edit">
-                                        <i class="cil-pencil me-1"></i>Edit
-                                    </button>
-                                    <button class="btn btn-sm btn-outline-danger" onclick="deleteCampaign(<?php echo $campaign['id']; ?>, '<?php echo htmlspecialchars($campaign['name']); ?>')" title="Remove">
-                                        <i class="cil-trash me-1"></i>Remove
-                                    </button>
+                            </div>
+                            <?php endforeach; ?>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Offers Tab -->
+            <div class="tab-pane fade" id="offers" role="tabpanel">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">Promotional Offers</h5>
+                        <div class="d-flex gap-2">
+                            <button class="btn btn-sm btn-outline-primary" onclick="openCreateOfferModal()">
+                                <i class="cil-plus me-1"></i>Add Offer
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="row" id="offersContainer">
+                            <?php foreach ($offers as $offer): ?>
+                            <div class="col-md-6 col-lg-4 mb-3">
+                                <div class="card h-100 offer-card" style="border-left: 4px solid <?php echo $offer['is_active'] ? '#198754' : '#6c757d'; ?>;">
+                                    <div class="card-body">
+                                        <div class="offer-content">
+                                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                                <div class="flex-grow-1">
+                                                    <h6 class="mb-1"><?php echo htmlspecialchars($offer['name']); ?> (<?php echo htmlspecialchars($offer['code']); ?>)</h6>
+                                                    <small class="text-muted">
+                                                        <?php echo htmlspecialchars($offer['offer_type']); ?> • Valid: <?php echo date('M j', strtotime($offer['valid_from'])); ?> - <?php echo date('M j, Y', strtotime($offer['valid_until'])); ?>
+                                                    </small>
+                                                </div>
+                                                <div class="d-flex flex-column gap-1">
+                                                    <span class="badge bg-<?php echo $offer['is_active'] ? 'success' : 'secondary'; ?>">
+                                                        <?php echo $offer['is_active'] ? 'Active' : 'Inactive'; ?>
+                                                    </span>
+                                                </div>
+                                            </div>
+                                            <div class="mb-2">
+                                                <small class="text-muted">
+                                                    <?php if ($offer['discount_percentage']): ?>
+                                                        <?php echo $offer['discount_percentage']; ?>% off
+                                                    <?php elseif ($offer['discount_value']): ?>
+                                                        $<?php echo $offer['discount_value']; ?> off
+                                                    <?php else: ?>
+                                                        Special offer
+                                                    <?php endif; ?>
+                                                </small>
+                                            </div>
+                                        </div>
+                                        <div class="offer-actions justify-content-center">
+                                            <button class="btn btn-sm btn-outline-primary me-2" onclick="editOffer(<?php echo $offer['id']; ?>)" title="Edit">
+                                                <i class="cil-pencil me-1"></i>Edit
+                                            </button>
+                                            <button class="btn btn-sm btn-outline-danger" onclick="deleteOffer(<?php echo $offer['id']; ?>, '<?php echo htmlspecialchars($offer['name']); ?>')" title="Remove">
+                                                <i class="cil-trash me-1"></i>Remove
+                                            </button>
+                                        </div>
+                                    </div>
                                 </div>
+                            </div>
+                            <?php endforeach; ?>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Promotions Tab -->
+            <div class="tab-pane fade" id="promotions" role="tabpanel">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">Promotions</h5>
+                        <div class="d-flex gap-2">
+                            <button class="btn btn-sm btn-outline-primary" onclick="openCreatePromotionModal()">
+                                <i class="cil-plus me-1"></i>Add Promotion
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div id="promotionsContent">
+                            <!-- Promotions content will be loaded here -->
+                            <div class="text-center text-muted py-5">
+                                <i class="cil-gift display-4 mb-3"></i>
+                                <h5>Promotions Management</h5>
+                                <p>Click "Add Promotion" to create promotional offers that can be applied during billing.</p>
                             </div>
                         </div>
                     </div>
-                    <?php endforeach; ?>
                 </div>
             </div>
         </div>
@@ -647,6 +818,28 @@ $stats = $conn->query("
             document.getElementById('offerFormAction').value = 'create_offer';
             document.getElementById('offerId').value = '';
             document.getElementById('offerForm').reset();
+        }
+
+        function openCreatePromotionModal() {
+            // Load promotions content
+            fetch('marketing.php?action=get_promotions_page', {
+                method: 'GET',
+                headers: {
+                    'HX-Request': 'true'
+                }
+            })
+            .then(response => response.text())
+            .then(html => {
+                document.getElementById('promotionsContent').innerHTML = html;
+            })
+            .catch(error => {
+                console.error('Error loading promotions:', error);
+                document.getElementById('promotionsContent').innerHTML = '<div class="alert alert-danger">Error loading promotions page</div>';
+            });
+        }
+
+        function refreshPromotions() {
+            openCreatePromotionModal();
         }
 
         function editOffer(id) {

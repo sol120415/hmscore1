@@ -737,12 +737,12 @@ $stats = $conn->query("
                                     </label>
                                 </div>
                             </div>
-                            <div class="modal-footer">
-                                <button type="button" class="btn btn-secondary" data-coreui-dismiss="modal">Cancel</button>
-                                <button type="submit" class="btn btn-primary">Create Task</button>
-                            </div>
                         </div>
                     </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-coreui-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Create Task</button>
                 </div>
             </div>
         </div>

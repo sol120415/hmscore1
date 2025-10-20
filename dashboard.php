@@ -33,10 +33,11 @@ if(!isset($_SESSION['email'])){
     <script src="/js/htmx.min.js"></script>
 
     <title>Dashboard</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23ffffff'%3E%3Cpath d='M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z'/%3E%3C/svg%3E">
     <style>
         .main-content {
-            margin-left: 40px;
-            margin-right: 30px;
+            margin-left: 80px;
+            margin-right: 10px;
         }
         .sidebar-nav .nav-link {
             padding: 0.375rem 0.75rem;
@@ -51,7 +52,7 @@ if(!isset($_SESSION['email'])){
 </head>
 <body>
 
-<div class="d-flex">
+<div class="d-flex flex-column min-vh-100">
   <div class="sidebar sidebar-narrow-unfoldable border-end" >
   <ul class="sidebar-nav">
     <li class="nav-item">
@@ -118,16 +119,19 @@ if(!isset($_SESSION['email'])){
 
   </ul>
 </div>
-<div class="main-content" id="main-content">
+<div class="main-content flex-grow-1" id="main-content">
+  <div style=" padding: 1rem;">
+    <?php
+    $page = $_GET['page'] ?? 'frontdesk';
+    $content_file = $page . '.php';
+    if (file_exists($content_file)) {
+      include $content_file;
+    } else {
+      echo '<h1>Welcome to Dashboard</h1>';
+    }
+    ?>
+  </div>
 </div>
-  <?php
-  $page = $_GET['page'] ?? 'frontdesk';
-  $content_file = $page . '.php';
-  if (file_exists($content_file)) {
-    include $content_file;
-  } else {
-    echo '<h1>Welcome to Dashboard</h1>';
-  }
 
   // Handle logout
   if (isset($_GET['page']) && $_GET['page'] == 'logout') {
@@ -159,6 +163,8 @@ if(!isset($_SESSION['email'])){
         return new bootstrap.Popover(popoverTriggerEl)
     })
 </script>
+
+
 </div>
 </body>
 </html>

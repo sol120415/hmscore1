@@ -94,8 +94,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_HX_REQUEST']))
     exit;
 }
 
-// Guest Loyalty Program: Update VIP status based on stay count and spend
-// Removed - VIP status is now manually managed
+// Guest Loyalty Program: Update loyalty status based on stay count
+$loyaltyUpdate = $conn->prepare("
+    UPDATE guests
+    SET loyalty_status = CASE
+        WHEN stay_count >= 50 THEN 'Diamond'
+        WHEN stay_count >= 20 THEN 'Gold'
+        WHEN stay_count >= 5 THEN 'Iron'
+        ELSE 'Regular'
+    END
+    WHERE guest_status = 'Active'
+");
+$loyaltyUpdate->execute();
 
 // Get all active guests for display
 $stmt = $conn->query("SELECT * FROM guests WHERE guest_status = 'Active' ORDER BY created_at DESC");
@@ -249,7 +259,12 @@ $recentGuests = array_slice($guests, 0, 10);
                 <div class="row" id="guestsContainer">
                     <?php foreach ($guests as $guest): ?>
                     <div class="col-md-6 col-lg-4 mb-3">
-                        <div class="card h-100 guest-card" style="border-left: 4px solid <?php echo ($guest['loyalty_status'] ?? 'Regular') === 'VIP' ? '#fd7e14' : '#6c757d'; ?>;">
+                        <div class="card h-100 guest-card" style="border-left: 4px solid <?php
+                            $stayCount = $guest['stay_count'] ?? 0;
+                            echo $stayCount >= 50 ? '#0d6efd' :
+                                 ($stayCount >= 20 ? '#fd7e14' :
+                                 ($stayCount >= 5 ? '#0dcaf0' : '#6c757d'));
+                        ?>;">
                             <div class="card-body">
                                 <div class="guest-content">
                                     <div class="d-flex justify-content-between align-items-start mb-2">
@@ -260,8 +275,18 @@ $recentGuests = array_slice($guests, 0, 10);
                                             </small>
                                         </div>
                                         <div class="d-flex flex-column gap-1">
-                                            <span class="badge bg-<?php echo ($guest['loyalty_status'] ?? 'Regular') === 'VIP' ? 'warning' : 'secondary'; ?>">
-                                                <?php echo htmlspecialchars($guest['loyalty_status'] ?? 'Regular'); ?>
+                                            <span class="badge bg-<?php
+                                                $stayCount = $guest['stay_count'] ?? 0;
+                                                echo $stayCount >= 50 ? 'primary' :
+                                                     ($stayCount >= 20 ? 'warning' :
+                                                     ($stayCount >= 5 ? 'info' : 'secondary'));
+                                            ?>">
+                                                <?php
+                                                $stayCount = $guest['stay_count'] ?? 0;
+                                                echo $stayCount >= 50 ? 'Diamond' :
+                                                     ($stayCount >= 20 ? 'Gold' :
+                                                     ($stayCount >= 5 ? 'Iron' : 'Regular'));
+                                                ?>
                                             </span>
                                             <span class="badge bg-info">
                                                 <?php echo htmlspecialchars($guest['id_type']); ?>
@@ -272,6 +297,9 @@ $recentGuests = array_slice($guests, 0, 10);
                                 <div class="guest-actions justify-content-center">
                                     <button class="btn btn-sm btn-outline-primary me-2" onclick="editGuest(<?php echo $guest['id']; ?>)" title="Edit">
                                         <i class="cil-pencil me-1"></i>Edit
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-info me-2" onclick="viewRewards(<?php echo $guest['id']; ?>, '<?php echo htmlspecialchars($guest['first_name'] . ' ' . $guest['last_name']); ?>', '<?php echo htmlspecialchars($guest['loyalty_status']); ?>')" title="View Rewards">
+                                        <i class="cil-gift me-1"></i>Rewards
                                     </button>
                                     <button class="btn btn-sm btn-outline-warning me-2" onclick="archiveGuest(<?php echo $guest['id']; ?>, '<?php echo htmlspecialchars($guest['first_name'] . ' ' . $guest['last_name']); ?>')" title="Archive">
                                         <i class="cil-archive me-1"></i>Archive
@@ -322,8 +350,18 @@ $recentGuests = array_slice($guests, 0, 10);
                                             <span class="badge bg-secondary">
                                                 <?php echo htmlspecialchars($guest['guest_status']); ?>
                                             </span>
-                                            <span class="badge bg-<?php echo ($guest['loyalty_status'] ?? 'Regular') === 'VIP' ? 'warning' : 'secondary'; ?>">
-                                                <?php echo htmlspecialchars($guest['loyalty_status'] ?? 'Regular'); ?>
+                                            <span class="badge bg-<?php
+                                                $stayCount = $guest['stay_count'] ?? 0;
+                                                echo $stayCount >= 50 ? 'primary' :
+                                                     ($stayCount >= 20 ? 'warning' :
+                                                     ($stayCount >= 5 ? 'info' : 'secondary'));
+                                            ?>">
+                                                <?php
+                                                $stayCount = $guest['stay_count'] ?? 0;
+                                                echo $stayCount >= 50 ? 'Diamond' :
+                                                     ($stayCount >= 20 ? 'Gold' :
+                                                     ($stayCount >= 5 ? 'Iron' : 'Regular'));
+                                                ?>
                                             </span>
                                             <span class="badge bg-info">
                                                 <?php echo htmlspecialchars($guest['id_type']); ?>
@@ -359,7 +397,12 @@ $recentGuests = array_slice($guests, 0, 10);
                 <div class="row">
                     <?php foreach ($recentGuests as $guest): ?>
                     <div class="col-md-6 col-lg-4 mb-3">
-                        <div class="card h-100" style="border-left: 4px solid <?php echo ($guest['loyalty_status'] ?? 'Regular') === 'VIP' ? '#fd7e14' : '#6c757d'; ?>;">
+                        <div class="card h-100" style="border-left: 4px solid <?php
+                            $stayCount = $guest['stay_count'] ?? 0;
+                            echo $stayCount >= 50 ? '#0d6efd' :
+                                 ($stayCount >= 20 ? '#fd7e14' :
+                                 ($stayCount >= 5 ? '#0dcaf0' : '#6c757d'));
+                        ?>;">
                             <div class="card-body">
                                 <div class="d-flex align-items-center mb-3">
                                     <div class="guest-avatar me-3">
@@ -625,6 +668,157 @@ $recentGuests = array_slice($guests, 0, 10);
 
         function generateArchivedReport() {
             window.open('generate_report.php?page=archived_guests&type=pdf', '_blank');
+        }
+
+        function viewRewards(guestId, guestName, currentTier) {
+            // Define rewards data
+            const rewardsData = [
+                { tier: 'Regular', nights: 0, rewards: 'No discount; basic guest services.' },
+                { tier: 'Iron', nights: 5, rewards: '10% off stays; priority check-in; free standard Wi-Fi.' },
+                { tier: 'Gold', nights: 20, rewards: '15% off stays; room upgrade (subject to avail.); complimentary breakfast.' },
+                { tier: 'Diamond', nights: 50, rewards: '25% off stays; suite upgrade + lounge access; late checkout no additional fee (<1hour); free parking.' }
+            ];
+
+            // Fetch current guest data to get accurate stay count
+            fetch('guests.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'HX-Request': 'true'
+                },
+                body: 'action=get&id=' + guestId
+            })
+            .then(response => response.json())
+            .then(guestData => {
+                const stayCount = guestData.stay_count || 0;
+                const actualTier = stayCount >= 50 ? 'Diamond' :
+                                  (stayCount >= 20 ? 'Gold' :
+                                  (stayCount >= 5 ? 'Iron' : 'Regular'));
+
+                showRewardsModal(guestName, actualTier, rewardsData, stayCount);
+            })
+            .catch(error => {
+                console.error('Error fetching guest data:', error);
+                // Fallback to passed currentTier
+                showRewardsModal(guestName, currentTier, rewardsData, 0);
+            });
+        }
+
+        function showRewardsModal(guestName, currentTier, rewardsData, stayCount) {
+
+            // Create modal HTML
+            let modalHtml = `
+                <div class="modal fade" id="rewardsModal" tabindex="-1">
+                    <div class="modal-dialog modal-lg">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title">Loyalty Rewards - ${guestName}</h5>
+                                <button type="button" class="btn-close" data-coreui-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="alert alert-info">
+                                    <strong>Current Tier: ${currentTier}</strong> (${stayCount} stays)
+                                </div>
+                                <div class="mb-3">
+                                    <small class="text-muted">Next tier progress:</small>
+                                    <div class="progress" style="height: 8px;">
+            `;
+
+            // Calculate progress to next tier
+            let progressPercent = 0;
+            let nextTier = '';
+            let nightsToNext = 0;
+
+            if (stayCount < 5) {
+                progressPercent = (stayCount / 5) * 100;
+                nextTier = 'Iron';
+                nightsToNext = 5 - stayCount;
+            } else if (stayCount < 20) {
+                progressPercent = ((stayCount - 5) / 15) * 100;
+                nextTier = 'Gold';
+                nightsToNext = 20 - stayCount;
+            } else if (stayCount < 50) {
+                progressPercent = ((stayCount - 20) / 30) * 100;
+                nextTier = 'Diamond';
+                nightsToNext = 50 - stayCount;
+            } else {
+                progressPercent = 100;
+                nextTier = 'Max';
+            }
+
+            if (nextTier !== 'Max') {
+                modalHtml += `
+                                        <div class="progress-bar bg-primary" role="progressbar" style="width: ${progressPercent}%" aria-valuenow="${progressPercent}" aria-valuemin="0" aria-valuemax="100"></div>
+                                    </div>
+                                    <small class="text-muted">${nightsToNext} more stays to reach ${nextTier} tier</small>
+                                </div>
+                `;
+            } else {
+                modalHtml += `
+                                        <div class="progress-bar bg-success" role="progressbar" style="width: 100%" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100"></div>
+                                    </div>
+                                    <small class="text-success">Maximum tier reached!</small>
+                                </div>
+                `;
+            }
+
+            modalHtml += `
+                                <div class="table-responsive">
+                                <div class="table-responsive">
+                                    <table class="table table-striped">
+                                        <thead>
+                                            <tr>
+                                                <th>Tier</th>
+                                                <th>Nights to Unlock</th>
+                                                <th>Discounts & Rewards</th>
+                                                <th>Status</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+            `;
+
+            rewardsData.forEach(reward => {
+                const isCurrentTier = reward.tier === currentTier;
+                const statusIcon = isCurrentTier ? '<i class="cil-check-circle text-success"></i>' : '<i class="cil-circle text-muted"></i>';
+                const tierColor = reward.tier === 'Diamond' ? 'text-primary' :
+                                 (reward.tier === 'Gold' ? 'text-warning' :
+                                 (reward.tier === 'Iron' ? 'text-info' : 'text-secondary'));
+
+                modalHtml += `
+                    <tr class="${isCurrentTier ? 'table-primary' : ''}">
+                        <td><strong class="${tierColor}">${reward.tier}</strong></td>
+                        <td>${reward.nights}</td>
+                        <td>${reward.rewards}</td>
+                        <td class="text-center">${statusIcon}</td>
+                    </tr>
+                `;
+            });
+
+            modalHtml += `
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-coreui-dismiss="modal">Close</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            // Remove existing modal if present
+            const existingModal = document.getElementById('rewardsModal');
+            if (existingModal) {
+                existingModal.remove();
+            }
+
+            // Add modal to body
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+            // Show modal
+            const modal = new coreui.Modal(document.getElementById('rewardsModal'));
+            modal.show();
         }
     </script>
 </body>

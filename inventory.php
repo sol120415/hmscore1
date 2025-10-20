@@ -230,7 +230,7 @@ $categories = $conn->query("SELECT DISTINCT item_category FROM items WHERE item_
                     <button class="btn btn-success btn-sm" onclick="generateReport()">
                         <i class="cil-file-pdf me-1"></i>Report
                     </button>
-                    <button class="btn btn-sm btn-outline-primary" onclick="openCreateModal()">
+                    <button class="btn btn-sm btn-outline-primary" onclick="openCreateItemModal()">
                         <i class="cil-plus me-1"></i>Add Item
                     </button>
                 </div>
@@ -461,11 +461,12 @@ $categories = $conn->query("SELECT DISTINCT item_category FROM items WHERE item_
 
     <script>
         // Item functions
-        function openCreateModal() {
+        function openCreateItemModal() {
             document.getElementById('itemModalTitle').textContent = 'Add Item';
             document.getElementById('itemFormAction').value = 'create_item';
             document.getElementById('itemId').value = '';
             document.getElementById('itemForm').reset();
+            new coreui.Modal(document.getElementById('itemModal')).show();
         }
 
         function editItem(id) {

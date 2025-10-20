@@ -190,7 +190,7 @@ $recentBookings = $conn->query("
                     <button class="btn btn-success btn-sm" onclick="generateReport()">
                         <i class="cil-file-pdf me-1"></i>Report
                     </button>
-                    <button class="btn btn-sm btn-outline-primary" onclick="openCreateModal()">
+                    <button class="btn btn-sm btn-outline-primary" onclick="openCreateChannelModal()">
                         <i class="cil-plus me-1"></i>Add Channel
                     </button>
                 </div>
@@ -369,11 +369,12 @@ $recentBookings = $conn->query("
     <div id="htmx-response" class="d-none"></div>
 
     <script>
-        function openCreateModal() {
+        function openCreateChannelModal() {
             document.getElementById('modalTitle').textContent = 'Add Channel';
             document.getElementById('formAction').value = 'create';
             document.getElementById('channelId').value = '';
             document.getElementById('channelForm').reset();
+            new coreui.Modal(document.getElementById('channelModal')).show();
         }
 
         function editChannel(id) {
