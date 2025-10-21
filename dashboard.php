@@ -3,18 +3,8 @@ include_once 'db.php';
 
 if(!isset($_SESSION['email'])){
     header('Location: login.php');
-    echo '<div class="toast align-items-center" role="alert" aria-live="assertive" aria-atomic="true">
-      <div class="d-flex">
-        <div class="toast-body">
-          Please login first
-        </div>
-        <button type="button" class="btn-close me-2 m-auto" data-coreui-dismiss="toast" aria-label="Close"></button>
-      </div>
-    </div>';
     exit;
 }
-
-
 ?>
 <!DOCTYPE html>
 <html lang="en" data-coreui-theme="dark">
@@ -111,7 +101,7 @@ if(!isset($_SESSION['email'])){
       </a>
     </li>
     <li class="nav-item">
-      <a class="nav-link" href="?page=logout">
+      <a class="nav-link" href="?page=logout" onclick="if(confirm('Are you sure you want to logout?')) { window.location.href='?page=logout'; return false; } else { return false; }">
         <i class="nav-icon cil-exit-to-app"></i>Logout
       </a>
     </li>
@@ -133,6 +123,7 @@ if(!isset($_SESSION['email'])){
   </div>
 </div>
 
+  <?php
   // Handle logout
   if (isset($_GET['page']) && $_GET['page'] == 'logout') {
    session_destroy();
