@@ -42,7 +42,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_HX_REQUEST']))
                         $stmt = $conn->prepare("
                             SELECT
                                 DATE(created_at) as date,
-                                SUM(total_amount) as revenue
+                                SUM(payment_amount) as revenue
                             FROM room_billing
                             WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL ? DAY)
                             GROUP BY DATE(created_at)
@@ -77,7 +77,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_HX_REQUEST']))
                             (SELECT COUNT(*) FROM guests) as total_guests,
                             (SELECT COUNT(*) FROM rooms WHERE room_status = 'Occupied') as occupied_rooms,
                             (SELECT COUNT(*) FROM rooms) as total_rooms,
-                            (SELECT COALESCE(SUM(total_amount), 0) FROM room_billing WHERE DATE(created_at) = CURDATE()) as today_revenue,
+                            (SELECT COALESCE(SUM(payment_amount), 0) FROM room_billing WHERE DATE(created_at) = CURDATE()) as today_revenue,
                             (SELECT COUNT(*) FROM housekeeping WHERE status = 'Completed' AND DATE(updated_at) = CURDATE()) as today_cleanings
                     ")->fetch(PDO::FETCH_ASSOC);
 
@@ -98,7 +98,7 @@ $summaryStats = $conn->query("
         (SELECT COUNT(*) FROM guests) as total_guests,
         (SELECT COUNT(*) FROM rooms WHERE room_status = 'Occupied') as occupied_rooms,
         (SELECT COUNT(*) FROM rooms) as total_rooms,
-        (SELECT COALESCE(SUM(total_amount), 0) FROM room_billing WHERE DATE(created_at) = CURDATE()) as today_revenue,
+        (SELECT COALESCE(SUM(payment_amount), 0) FROM room_billing WHERE DATE(created_at) = CURDATE()) as today_revenue,
         (SELECT COUNT(*) FROM housekeeping WHERE status = 'Completed' AND DATE(updated_at) = CURDATE()) as today_cleanings
 ")->fetch(PDO::FETCH_ASSOC);
 
@@ -113,7 +113,7 @@ $recentActivities = $conn->query("
     UNION ALL
     SELECT
         'billing' as type,
-        CONCAT('Payment of ₱', rb.total_amount, ' received') as description,
+        CONCAT('Payment of ₱', rb.payment_amount, ' received') as description,
         rb.created_at as timestamp
     FROM room_billing rb
     UNION ALL

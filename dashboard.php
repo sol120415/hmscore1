@@ -123,7 +123,7 @@ if(!isset($_SESSION['email'])){
   </div>
 </div>
 
-  <?php
+  <?php                                             
   // Handle logout
   if (isset($_GET['page']) && $_GET['page'] == 'logout') {
    session_destroy();

@@ -739,6 +739,7 @@ $stats = $conn->query("
             document.getElementById('campaignFormAction').value = 'create_campaign';
             document.getElementById('campaignId').value = '';
             document.getElementById('campaignForm').reset();
+            new coreui.Modal(document.getElementById('campaignModal')).show();
         }
 
         function editCampaign(id) {
@@ -818,6 +819,7 @@ $stats = $conn->query("
             document.getElementById('offerFormAction').value = 'create_offer';
             document.getElementById('offerId').value = '';
             document.getElementById('offerForm').reset();
+            new coreui.Modal(document.getElementById('offerModal')).show();
         }
 
         function openCreatePromotionModal() {
