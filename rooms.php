@@ -93,9 +93,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_HX_REQUEST']))
 }
 
 // Handle HTMX filter requests (GET requests)
-if (isset($_GET['floor']) || isset($_GET['status'])) {
+if (isset($_GET['floor']) || isset($_GET['status']) || isset($_GET['type'])) {
     $floor = $_GET['floor'] ?? '';
     $status = $_GET['status'] ?? '';
+    $type = $_GET['type'] ?? '';
 
     $whereClause = '';
     $conditions = [];
@@ -105,6 +106,9 @@ if (isset($_GET['floor']) || isset($_GET['status'])) {
     }
     if (!empty($status)) {
         $conditions[] = "room_status = '$status'";
+    }
+    if (!empty($type)) {
+        $conditions[] = "room_type = '$type'";
     }
 
     if (!empty($conditions)) {
@@ -133,7 +137,7 @@ if (isset($_GET['floor']) || isset($_GET['status'])) {
                     <?php elseif ($room['room_status'] === 'Maintenance'): ?>
                     <div class="position-absolute top-0 end-0" style="margin-top: -8px; margin-right: -8px;">
                         <button class="btn btn-warning btn-sm rounded-circle shadow" onclick="event.stopPropagation(); openHousekeepingModal(<?php echo $room['id']; ?>, '<?php echo htmlspecialchars($room['room_number']); ?>')" title="Assign Housekeeper">
-                            <i class="cil-wrench text-dark"></i>
+                            <i class="cil-settings text-dark"></i>
                         </button>
                     </div>
                     <?php elseif ($hasHousekeeper): ?>
@@ -159,6 +163,7 @@ if (isset($_GET['floor']) || isset($_GET['status'])) {
 // Get data for display (filtered if applicable)
 $floor = $_GET['floor'] ?? '';
 $status = $_GET['status'] ?? '';
+$type = $_GET['type'] ?? '';
 
 $whereClause = '';
 $conditions = [];
@@ -168,6 +173,9 @@ if (!empty($floor)) {
 }
 if (!empty($status)) {
     $conditions[] = "room_status = '$status'";
+}
+if (!empty($type)) {
+    $conditions[] = "room_type = '$type'";
 }
 
 if (!empty($conditions)) {
@@ -292,8 +300,8 @@ $occupancyRate = $stats['total_rooms'] > 0 ? round(($stats['occupied_rooms'] / $
         <!-- Header with Stats -->
         <div class="mb-4">
             <div class="d-flex justify-content-between gap-3 text-center">
-                <div class="text-center flex-grow-1">
-                <?php include 'roomtitle.html'; ?>
+                <div class="flex-grow-1 text-start">
+                    <h2>Rooms</h2>
                 </div>
                 <div>
                     <small class="text-muted d-block">Total</small>
@@ -385,6 +393,23 @@ $occupancyRate = $stats['total_rooms'] > 0 ? round(($stats['occupied_rooms'] / $
                                 hx-get="rooms.php?status=Maintenance" hx-target="#roomsContainer" hx-swap="innerHTML"
                                 onclick="setActive(this)">Maintenance</button>
                     </div>
+                    <div class="btn-group" role="group">
+                        <button type="button" class="btn btn-outline-secondary btn-sm active"
+                                hx-get="rooms.php" hx-target="#roomsContainer" hx-swap="innerHTML"
+                                onclick="setActive(this)">All Types</button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm"
+                                hx-get="rooms.php?type=Single" hx-target="#roomsContainer" hx-swap="innerHTML"
+                                onclick="setActive(this)">Single</button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm"
+                                hx-get="rooms.php?type=Double" hx-target="#roomsContainer" hx-swap="innerHTML"
+                                onclick="setActive(this)">Double</button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm"
+                                hx-get="rooms.php?type=Deluxe" hx-target="#roomsContainer" hx-swap="innerHTML"
+                                onclick="setActive(this)">Deluxe</button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm"
+                                hx-get="rooms.php?type=Suite" hx-target="#roomsContainer" hx-swap="innerHTML"
+                                onclick="setActive(this)">Suite</button>
+                    </div>
                 </div>
             </div>
             <div class="card-body">
@@ -419,7 +444,8 @@ $occupancyRate = $stats['total_rooms'] > 0 ? round(($stats['occupied_rooms'] / $
                                 <h5 class="card-title mb-1"><?php echo htmlspecialchars($room['room_number']); ?></h5>
                                 <p class="card-text mb-2"><?php echo htmlspecialchars($room['room_type']); ?></p>
                                 <span class="badge bg-light text-dark"><?php echo htmlspecialchars($room['room_status']); ?></span>
-                                <br><small class="mt-2 d-block"><?php echo htmlspecialchars($room['room_max_guests']); ?> guests max</small>
+                                <br><small class=""><?php echo htmlspecialchars($room['room_max_guests']); ?> guests max</small>
+                                <br><small class="">₱<?php echo number_format($room['room_rate'], 2); ?>/night</small>
                             </div>
                         </div>
                     </div>
