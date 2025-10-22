@@ -125,11 +125,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <link href="css/coreui-utilities.min.css" rel="stylesheet">
     <link href="css/coreui-forms.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://unpkg.com/@coreui/icons/css/all.min.css">
+    
+    <link href="loginbg.css" rel="stylesheet">
+    
+    <!-- Theme System CSS -->
+    <link href="css/theme-system.css" rel="stylesheet">
 
     <script src="js/htmx.min.js"></script>
     <script src="/js/htmx.min.js"></script>
-
-    <link href="loginbg.css" rel="stylesheet">
 
     <style>
         .login-container {
@@ -295,6 +298,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <script src="js/coreui.bundle.js"></script>
     <script src="js/bootstrap.bundle.js"></script>
     <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    
+    <!-- Theme System JS -->
+    <script src="js/theme-system.js"></script>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
 
     <script>

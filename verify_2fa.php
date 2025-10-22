@@ -165,15 +165,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' || isset($_GET['resend'])) {
                                 <!-- Code Input Group -->
                                 <div class="mb-3">
                                     <div class="input-group">
-                                        <span class="input-group-text">
-                                            <svg class="icon" style="width: 1.2rem; height: 1.2rem;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-                                                <circle cx="12" cy="16" r="1"></circle>
-                                                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-                                            </svg>
-                                        </span>
                                         <input type="text" class="form-control text-center" id="code" name="code" placeholder="000000" maxlength="6" pattern="[0-9]{6}" autocomplete="off" required>
-                                        
                                     </div>
                                     <div id="code-feedback" class="validation-feedback"></div>
                                 </div>
