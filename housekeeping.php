@@ -891,8 +891,8 @@ $stats = $conn->query("
         }
 
         function editTask(id) {
-            document.getElementById('taskModalTitle').textContent = 'Edit Task';
-            document.getElementById('taskFormAction').value = 'update_task';
+            document.getElementById('housekeepingModalTitle').textContent = 'Edit Housekeeping Task';
+            document.getElementById('housekeepingForm').querySelector('input[name="action"]').value = 'update_task';
 
             fetch('housekeeping.php', {
                 method: 'POST',
@@ -904,12 +904,12 @@ $stats = $conn->query("
             })
             .then(response => response.json())
             .then(data => {
-                document.getElementById('taskId').value = data.id;
-                document.getElementById('room_id').value = data.room_id;
+                // Populate form with existing data
+                document.getElementById('housekeepingRoomId').value = data.room_id;
+                document.getElementById('housekeepingRoomNumber').value = data.room_number || '';
                 document.getElementById('housekeeper_id').value = data.housekeeper_id || '';
                 document.getElementById('task_type').value = data.task_type;
                 document.getElementById('priority').value = data.priority;
-                document.getElementById('task_status').value = data.status;
                 document.getElementById('scheduled_date').value = data.scheduled_date;
                 document.getElementById('scheduled_time').value = data.scheduled_time || '';
                 document.getElementById('estimated_duration_minutes').value = data.estimated_duration_minutes;
@@ -918,7 +918,21 @@ $stats = $conn->query("
                 document.getElementById('guest_feedback').value = data.guest_feedback || '';
                 document.getElementById('supervisor_notes').value = data.supervisor_notes || '';
 
-                new coreui.Modal(document.getElementById('taskModal')).show();
+                // Add hidden input for task ID when updating
+                let taskIdInput = document.getElementById('housekeepingForm').querySelector('input[name="id"]');
+                if (!taskIdInput) {
+                    taskIdInput = document.createElement('input');
+                    taskIdInput.type = 'hidden';
+                    taskIdInput.name = 'id';
+                    document.getElementById('housekeepingForm').appendChild(taskIdInput);
+                }
+                taskIdInput.value = data.id;
+
+                // Update submit button text
+                const submitBtn = document.querySelector('#housekeepingModal .btn-primary');
+                submitBtn.textContent = 'Update Task';
+
+                new coreui.Modal(document.getElementById('housekeepingModal')).show();
             });
         }
 
@@ -950,10 +964,11 @@ $stats = $conn->query("
             const formData = new FormData(form);
             const submitBtn = document.querySelector('#housekeepingModal .btn-primary');
             const originalText = submitBtn.innerHTML;
+            const isUpdate = formData.get('action') === 'update_task';
 
             // Show loading state
             submitBtn.disabled = true;
-            submitBtn.innerHTML = '<i class="cil-spinner cil-spin me-2"></i>Creating...';
+            submitBtn.innerHTML = `<i class="cil-spinner cil-spin me-2"></i>${isUpdate ? 'Updating...' : 'Creating...'}`;
 
             fetch('housekeeping.php', {
                 method: 'POST',
@@ -965,11 +980,11 @@ $stats = $conn->query("
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    showAlert('Housekeeping task created successfully!', 'success');
+                    showAlert(`Housekeeping task ${isUpdate ? 'updated' : 'created'} successfully!`, 'success');
                     new coreui.Modal(document.getElementById('housekeepingModal')).hide();
                     setTimeout(() => location.reload(), 1000);
                 } else {
-                    showAlert(data.message || 'An error occurred while creating the task.', 'danger');
+                    showAlert(data.message || `An error occurred while ${isUpdate ? 'updating' : 'creating'} the task.`, 'danger');
                 }
             })
             .catch(error => {
@@ -983,7 +998,25 @@ $stats = $conn->query("
             });
         }
 
-        // Form submission is handled by the onsubmit attribute in the form
+        // Reset modal when closed
+        document.getElementById('housekeepingModal').addEventListener('hidden.coreui.modal', function() {
+            const form = document.getElementById('housekeepingForm');
+            const submitBtn = document.querySelector('#housekeepingModal .btn-primary');
+
+            // Reset form
+            form.reset();
+
+            // Remove any dynamically added hidden inputs
+            const hiddenInputs = form.querySelectorAll('input[type="hidden"][name="id"]');
+            hiddenInputs.forEach(input => input.remove());
+
+            // Reset action to create
+            form.querySelector('input[name="action"]').value = 'create_task';
+
+            // Reset modal title and button text
+            document.getElementById('housekeepingModalTitle').textContent = 'Create Housekeeping Task';
+            submitBtn.textContent = 'Create Task';
+        });
 
         function showAlert(message, type = 'danger') {
             const alertContainer = document.getElementById('alertContainer') || createAlertContainer();
