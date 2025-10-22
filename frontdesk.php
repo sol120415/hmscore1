@@ -281,7 +281,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     <!-- Quick Actions -->
     <div class="card mb-3">
         <div class="card-body d-flex flex-wrap gap-2">
-            <button class="btn btn-outline-primary btn-sm" data-coreui-toggle="modal" data-coreui-target="#reservationModal" onclick="openCreateModal()">
+            <button class="btn btn-outline-primary btn-sm" onclick="openCreateModal()">
                 <i class="cil-plus me-1"></i>New Reservation
             </button>
             <button class="btn btn-success btn-sm" onclick="window.location.href='?page=rooms&status=Vacant'"><i class="cil-check me-1"></i> In-house</button>
@@ -329,7 +329,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                                     </div>
                                 </div>
                                 <div class="card-footer p-2 d-flex gap-1">
-                                    <button class="btn btn-sm btn-outline-primary w-100" data-coreui-toggle="modal" data-coreui-target="#reservationModal" onclick="openReservationForRoom(<?php echo $room['id']; ?>)"><i class="cil-calendar me-1"></i>Reserve</button>
+                                    <button class="btn btn-sm btn-outline-primary w-100" data-coreui-toggle="modal" data-coreui-target="#walkInModal" onclick="openWalkInForRoom(<?php echo $room['id']; ?>)"><i class="cil-calendar me-1"></i>Reserve</button>
                                     
                                 </div>
                             </div>
@@ -743,24 +743,35 @@ function openCreateModal() {
     document.getElementById('existing-guest').classList.add('show', 'active');
     document.getElementById('new-guest').classList.remove('show', 'active');
 
-    // Disable date and duration initially, enable room selection
+    // Enable room selection by default
     document.getElementById('room_id').disabled = false;
     document.getElementById('check_in_date').disabled = true;
     document.querySelectorAll('input[name="reservation_hour_count"]').forEach(radio => radio.disabled = true);
     document.getElementById('reservation_days_count').disabled = true;
+
+    // Show the modal
+    const modal = new coreui.Modal(document.getElementById('reservationModal'));
+    modal.show();
 }
 
-function openReservationForRoom(roomId) {
-    openCreateModal();
-    // Pre-select the room
+function openWalkInForRoom(roomId) {
+    // Pre-select the room in the walk-in modal
     setTimeout(() => {
-        const roomSelect = document.getElementById('room_id');
+        const roomSelect = document.getElementById('walkInModal').querySelector('select[name="room_id"]');
         roomSelect.value = roomId;
-        updateRoomSelection();
-        // Trigger change event to update available rooms
-        roomSelect.dispatchEvent(new Event('change'));
-        // Also trigger updateAvailableRooms to refresh the room list
-        updateAvailableRooms();
+        // Disable the room selection to make it fixed
+        roomSelect.disabled = true;
+        // Add hidden input to ensure value is submitted since disabled selects aren't
+        const hiddenRoom = document.createElement('input');
+        hiddenRoom.type = 'hidden';
+        hiddenRoom.name = 'room_id';
+        hiddenRoom.value = roomId;
+        roomSelect.parentNode.appendChild(hiddenRoom);
+        // Update label to indicate pre-selected
+        const label = roomSelect.closest('.mb-2').querySelector('label');
+        if (label) {
+            label.textContent = 'Room (Pre-selected) *';
+        }
     }, 100);
 }
 
