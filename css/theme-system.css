@@ -245,6 +245,56 @@ html .theme-toggle {
   color: #ffffff !important;
 }
 
+/* Fix btn-outline-light specifically */
+[data-theme="dark"] .btn-outline-light {
+  background-color: #0d6efd !important;
+  border-color: #0d6efd !important;
+  color: #ffffff !important;
+}
+
+[data-theme="dark"] .btn-outline-light:hover {
+  background-color: #0b5ed7 !important;
+  border-color: #0a58ca !important;
+  color: #ffffff !important;
+}
+
+[data-theme="light"] .btn-outline-light {
+  background-color: #0d6efd !important;
+  border-color: #0d6efd !important;
+  color: #ffffff !important;
+}
+
+[data-theme="light"] .btn-outline-light:hover {
+  background-color: #0b5ed7 !important;
+  border-color: #0a58ca !important;
+  color: #ffffff !important;
+}
+
+/* More aggressive overrides for login button */
+[data-theme="dark"] .login-card .btn-outline-light {
+  background-color: #0d6efd !important;
+  border-color: #0d6efd !important;
+  color: #ffffff !important;
+}
+
+[data-theme="dark"] .login-card .btn-outline-light:hover {
+  background-color: #0b5ed7 !important;
+  border-color: #0a58ca !important;
+  color: #ffffff !important;
+}
+
+[data-theme="light"] .login-card .btn-outline-light {
+  background-color: #0d6efd !important;
+  border-color: #0d6efd !important;
+  color: #ffffff !important;
+}
+
+[data-theme="light"] .login-card .btn-outline-light:hover {
+  background-color: #0b5ed7 !important;
+  border-color: #0a58ca !important;
+  color: #ffffff !important;
+}
+
 /* Make Login via Gmail more visible in light mode */
 [data-theme="light"] .login-card .btn-outline-light,
 [data-theme="light"] .login-card .btn-outline-secondary,
