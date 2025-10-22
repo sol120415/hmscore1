@@ -87,8 +87,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <link href="css/coreui-reboot.min.css" rel="stylesheet">
     <link href="css/coreui-utilities.min.css" rel="stylesheet">
     <link href="css/coreui-forms.min.css" rel="stylesheet">
-
+    <link rel="stylesheet" href="https://unpkg.com/@coreui/icons/css/all.min.css">
+    
     <link href="loginbg.css" rel="stylesheet">
+    
+    <!-- Theme System CSS -->
+    <link href="css/theme-system.css" rel="stylesheet">
 
     <style>
         .forgot-container {
@@ -223,6 +227,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <!-- CoreUI JS -->
     <script src="js/coreui.bundle.js"></script>
     <script src="js/bootstrap.bundle.js"></script>
+    
+    <!-- Theme System JS -->
+    <script src="js/theme-system.js"></script>
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {

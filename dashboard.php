@@ -19,6 +19,9 @@ if(!isset($_SESSION['email'])){
     <link href="css/coreui-forms.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://unpkg.com/@coreui/icons/css/all.min.css">
     
+    <!-- Theme System CSS -->
+    <link href="css/theme-system.css" rel="stylesheet">
+    
     <script src="js/htmx.min.js"></script>
     <script src="/js/htmx.min.js"></script>
 
@@ -39,6 +42,9 @@ if(!isset($_SESSION['email'])){
     <!-- CoreUI JS -->
     <script src="js/coreui.bundle.js"></script>
     <script src="js/bootstrap.bundle.js"></script>
+    
+    <!-- Theme System JS -->
+    <script src="js/theme-system.js"></script>
 </head>
 <body>
 
