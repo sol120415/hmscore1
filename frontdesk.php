@@ -271,7 +271,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                         <div class="small">Revenue Today</div>
                         <div class="fs-4 fw-bold">₱<?php echo number_format($revenueToday, 2); ?></div>
                     </div>
-                    <i class="cil-dollar icon-2xl opacity-75"></i>
+                    <i class="cil-money icon-2xl opacity-75"></i>
                 </div>
                 <div class="card-footer small text-white-50">Departures today: <?php echo $departuresToday; ?></div>
             </div>
@@ -289,7 +289,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             <button class="btn btn-warning btn-sm" onclick="window.location.href='?page=housekeeping'"><i class="cil-broom me-1"></i> Housekeeping</button>
             <button class="btn btn-info btn-sm" onclick="window.location.href='?page=room_billing'"><i class="cil-cash me-1"></i> Billing</button>
             <button class="btn btn-dark btn-sm" onclick="window.location.href='?page=rooms'"><i class="cil-home me-1"></i> Rooms</button>
-            <button class="btn btn-outline-info btn-sm me-2" data-coreui-toggle="modal" data-coreui-target="#priceListModal"><i class="cil-dollar me-1"></i>Room Prices</button>
+            <button class="btn btn-outline-info btn-sm me-2" data-coreui-toggle="modal" data-coreui-target="#priceListModal"><i class="cil-money me-1"></i>Room Prices</button>
             <button class="btn btn-outline-primary btn-sm ms-auto" data-coreui-toggle="modal" data-coreui-target="#walkInModal"><i class="cil-walk me-1"></i> Walk-in Guest</button>
         </div>
     </div>
@@ -573,7 +573,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title">
-                    <i class="cil-dollar text-warning me-2"></i>Room Price List
+                    <i class="cil-money text-warning me-2"></i>Room Price List
                 </h5>
                 <button type="button" class="btn-close" data-coreui-dismiss="modal"></button>
             </div>

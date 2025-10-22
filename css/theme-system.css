@@ -834,3 +834,63 @@ a:hover {
     display: none;
   }
 }
+
+/* Global high-contrast cards and tables for all modules */
+/* Cards */
+[data-theme="light"] .card { background-color: #ffffff !important; color: #212529 !important; border-color: #dee2e6 !important; }
+[data-theme="light"] .card-header { background-color: #f8f9fa !important; color: #212529 !important; border-bottom-color: #dee2e6 !important; }
+[data-theme="dark"] .card { background-color: #1a1a1a !important; color: #ffffff !important; border-color: #495057 !important; }
+[data-theme="dark"] .card-header { background-color: #2d2d2d !important; color: #ffffff !important; border-bottom-color: #495057 !important; }
+
+/* Tables */
+[data-theme="light"] .table { color: #212529 !important; border-color: #dee2e6 !important; }
+[data-theme="light"] .table thead th { background-color: #f8f9fa !important; color: #212529 !important; border-color: #dee2e6 !important; }
+[data-theme="light"] .table tbody td, [data-theme="light"] .table tbody th { background-color: #ffffff !important; color: #212529 !important; border-color: #dee2e6 !important; }
+[data-theme="light"] .table-hover > tbody > tr:hover > * { background-color: #f1f3f5 !important; color: #212529 !important; }
+
+[data-theme="dark"] .table { color: #ffffff !important; border-color: #495057 !important; }
+[data-theme="dark"] .table thead th { background-color: #2d2d2d !important; color: #ffffff !important; border-color: #495057 !important; }
+[data-theme="dark"] .table tbody td, [data-theme="dark"] .table tbody th { background-color: #1a1a1a !important; color: #ffffff !important; border-color: #495057 !important; }
+[data-theme="dark"] .table-hover > tbody > tr:hover > * { background-color: #2a2c30 !important; color: #ffffff !important; }
+
+/* Ensure text color inside card bodies follows theme */
+[data-theme="light"] .card-body { color: #212529 !important; }
+[data-theme="dark"] .card-body { color: #ffffff !important; }
+
+/* Striped tables high contrast */
+[data-theme="light"] .table-striped > tbody > tr:nth-of-type(odd) > * { background-color: #f8f9fa !important; }
+[data-theme="dark"] .table-striped > tbody > tr:nth-of-type(odd) > * { background-color: #23272b !important; color: #ffffff !important; }
+
+/* Table borders always visible */
+.table, .table th, .table td { border-color: var(--theme-border-color) !important; }
+
+/* Typography adopts theme (like KPI numbers) */
+[data-theme="light"] body,
+[data-theme="light"] h1,
+[data-theme="light"] h2,
+[data-theme="light"] h3,
+[data-theme="light"] h4,
+[data-theme="light"] h5,
+[data-theme="light"] h6,
+[data-theme="light"] p,
+[data-theme="light"] span,
+[data-theme="light"] label,
+[data-theme="light"] th,
+[data-theme="light"] td,
+[data-theme="light"] .card-title,
+[data-theme="light"] .card-text { color: #212529 !important; }
+
+[data-theme="dark"] body,
+[data-theme="dark"] h1,
+[data-theme="dark"] h2,
+[data-theme="dark"] h3,
+[data-theme="dark"] h4,
+[data-theme="dark"] h5,
+[data-theme="dark"] h6,
+[data-theme="dark"] p,
+[data-theme="dark"] span,
+[data-theme="dark"] label,
+[data-theme="dark"] th,
+[data-theme="dark"] td,
+[data-theme="dark"] .card-title,
+[data-theme="dark"] .card-text { color: #ffffff !important; }
