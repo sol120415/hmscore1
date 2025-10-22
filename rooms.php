@@ -17,14 +17,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_HX_REQUEST']))
             switch ($action) {
                 case 'create':
                     // Create new room
-                    $stmt = $conn->prepare("INSERT INTO rooms (room_number, room_type, room_floor, room_status, room_max_guests, room_amenities, room_maintenance_notes) VALUES (?, ?, ?, ?, ?, ?, ?)");
+                    $stmt = $conn->prepare("INSERT INTO rooms (room_number, room_type, room_floor, room_status, room_maintenance_notes) VALUES (?, ?, ?, ?, ?)");
                     $stmt->execute([
                         $_POST['room_number'],
                         $_POST['room_type'],
                         $_POST['room_floor'],
                         $_POST['room_status'],
-                        $_POST['room_max_guests'] ?: 2,
-                        $_POST['room_amenities'] ?: null,
                         $_POST['room_maintenance_notes'] ?: null
                     ]);
                     echo json_encode(['success' => true, 'message' => 'Room created successfully']);
@@ -56,14 +54,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_HX_REQUEST']))
 
                 case 'update':
                     // Update room
-                    $stmt = $conn->prepare("UPDATE rooms SET room_number=?, room_type=?, room_floor=?, room_status=?, room_max_guests=?, room_amenities=?, room_maintenance_notes=? WHERE id=?");
+                    $stmt = $conn->prepare("UPDATE rooms SET room_number=?, room_type=?, room_floor=?, room_status=?, room_maintenance_notes=? WHERE id=?");
                     $stmt->execute([
                         $_POST['room_number'],
                         $_POST['room_type'],
                         $_POST['room_floor'],
                         $_POST['room_status'],
-                        $_POST['room_max_guests'] ?: 2,
-                        $_POST['room_amenities'] ?: null,
                         $_POST['room_maintenance_notes'] ?: null,
                         $_POST['id']
                     ]);
@@ -572,13 +568,7 @@ $occupancyRate = $stats['total_rooms'] > 0 ? round(($stats['occupied_rooms'] / $
                                             </select>
                                         </div>
                                     </div>
-                                    <div class="row g-2">
-                                        <div class="col-6">
-                                            <label class="form-label small">Max Guests</label>
-                                            <input type="number" class="form-control form-control-sm" id="room_max_guests" name="room_max_guests" min="1" value="2" placeholder="Max Guests">
-                                        </div>
-                                    
-                                    </div>
+                                    <!-- Max Guests is virtual and calculated based on room_type -->
                                 </div>
                             </div>
                             <div class="col-lg-5">
@@ -625,17 +615,29 @@ $occupancyRate = $stats['total_rooms'] > 0 ? round(($stats['occupied_rooms'] / $
                 },
                 body: 'action=get&id=' + id
             })
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok: ' + response.statusText);
+                }
+                return response.json();
+            })
             .then(data => {
+                if (data.error) {
+                    throw new Error(data.error);
+                }
                 document.getElementById('roomId').value = data.id;
                 document.getElementById('room_number').value = data.room_number;
                 document.getElementById('room_floor').value = data.room_floor;
                 document.getElementById('room_type').value = data.room_type;
                 document.getElementById('room_status').value = data.room_status;
-                document.getElementById('room_max_guests').value = data.room_max_guests;
+                // room_max_guests is virtual, no need to set it
                 document.getElementById('room_maintenance_notes').value = data.room_maintenance_notes || '';
 
                 new coreui.Modal(document.getElementById('roomModal')).show();
+            })
+            .catch(error => {
+                console.error('Error fetching room data:', error);
+                alert('Error loading room data: ' + error.message);
             });
         }
 
@@ -671,7 +673,12 @@ $occupancyRate = $stats['total_rooms'] > 0 ? round(($stats['occupied_rooms'] / $
                 },
                 body: formData
             })
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok: ' + response.statusText);
+                }
+                return response.json();
+            })
             .then(data => {
                 if (data.success) {
                     const action = document.getElementById('formAction').value;
@@ -680,8 +687,12 @@ $occupancyRate = $stats['total_rooms'] > 0 ? round(($stats['occupied_rooms'] / $
                     new coreui.Modal(document.getElementById('roomModal')).hide();
                     location.reload();
                 } else {
-                    alert('Error: ' + data.message);
+                    throw new Error(data.message || 'Unknown error occurred');
                 }
+            })
+            .catch(error => {
+                console.error('Error submitting room form:', error);
+                alert('Error: ' + error.message);
             });
         }
 
