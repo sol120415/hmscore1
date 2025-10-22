@@ -57,22 +57,25 @@
 
 /* Modern Theme Toggle Button */
 .theme-toggle {
-  position: fixed;
-  top: 20px;
-  right: 20px;
-  z-index: 1000;
+  position: fixed !important;
+  top: 20px !important;
+  right: 20px !important;
+  z-index: 9999 !important;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   border: none;
   border-radius: 25px;
   width: 60px;
   height: 30px;
-  display: flex;
+  display: flex !important;
   align-items: center;
+  justify-content: center;
   cursor: pointer;
   transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
   overflow: hidden;
   position: relative;
+  opacity: 1 !important;
+  visibility: visible !important;
 }
 
 .theme-toggle::before {
@@ -139,6 +142,32 @@
 
 [data-theme="dark"] .theme-toggle-icon {
   transform: translateX(10px);
+}
+
+/* Ensure toggle is always visible and accessible */
+.theme-toggle {
+  pointer-events: auto !important;
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+}
+
+/* Make sure toggle is visible on all pages */
+body .theme-toggle,
+html .theme-toggle {
+  display: flex !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+/* Override any potential hiding */
+.theme-toggle.hidden,
+.theme-toggle[style*="display: none"],
+.theme-toggle[style*="visibility: hidden"] {
+  display: flex !important;
+  visibility: visible !important;
+  opacity: 1 !important;
 }
 
 /* Smooth transitions for all theme-aware elements */

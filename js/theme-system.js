@@ -100,6 +100,15 @@ class ThemeManager {
         // Add to page
         document.body.appendChild(this.themeToggle);
         
+        // Ensure toggle is visible
+        this.themeToggle.style.display = 'flex';
+        this.themeToggle.style.visibility = 'visible';
+        this.themeToggle.style.opacity = '1';
+        this.themeToggle.style.position = 'fixed';
+        this.themeToggle.style.top = '20px';
+        this.themeToggle.style.right = '20px';
+        this.themeToggle.style.zIndex = '9999';
+        
         // Add click animation
         this.themeToggle.addEventListener('click', (e) => {
             e.preventDefault();
@@ -112,6 +121,30 @@ class ThemeManager {
         
         // Update icon
         this.updateToggleIcon();
+        
+        // Ensure toggle remains visible
+        this.ensureToggleVisible();
+    }
+    
+    /**
+     * Ensure toggle button is always visible
+     */
+    ensureToggleVisible() {
+        if (!this.themeToggle) return;
+        
+        // Force visibility
+        this.themeToggle.style.display = 'flex';
+        this.themeToggle.style.visibility = 'visible';
+        this.themeToggle.style.opacity = '1';
+        this.themeToggle.style.position = 'fixed';
+        this.themeToggle.style.top = '20px';
+        this.themeToggle.style.right = '20px';
+        this.themeToggle.style.zIndex = '9999';
+        
+        // Remove any classes that might hide it
+        this.themeToggle.classList.remove('hidden', 'd-none', 'invisible');
+        
+        console.log('Theme toggle button created and positioned at top right corner');
     }
 
     /**
