@@ -212,8 +212,8 @@ $recentGuests = array_slice($guests, 0, 10);
         <!-- Header with Stats -->
         <div class="mb-4">
             <div class="d-flex justify-content-between gap-3 text-center">
-                <div class="text-center flex-grow-1">
-                <?php include 'gueststitle.html'; ?>
+                <div class="flex-grow-1 text-start">
+                    <h2>Guests</h2>
                 </div>
                 <div>
                     <small class="text-muted d-block">Total</small>
@@ -250,7 +250,7 @@ $recentGuests = array_slice($guests, 0, 10);
                     <button class="btn btn-sm btn-success" onclick="generateReport()">
                         <i class="cil-file-pdf me-1"></i>Report
                     </button>
-                    <button class="btn btn-sm btn-outline-primary" onclick="openCreateModal()">
+                    <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#guestModal" onclick="openCreateModal()">
                         <i class="cil-plus me-1"></i>Add Guest
                     </button>
                 </div>
@@ -438,7 +438,7 @@ $recentGuests = array_slice($guests, 0, 10);
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="modalTitle">Add Guest</h5>
-                    <button type="button" class="btn-close" data-coreui-dismiss="modal"></button>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
                     <form id="guestForm">
@@ -463,7 +463,7 @@ $recentGuests = array_slice($guests, 0, 10);
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label for="phone" class="form-label">Phone</label>
-                                 <input type="tel" class="form-control" id="phone" name="phone" inputmode="numeric" maxlength="11" oninput="this.value=this.value.replace(/\\D/g,'').slice(0,11)" onkeypress="return /[0-9]/.test(event.key)">
+                                <input type="tel" class="form-control" id="phone" name="phone">
                             </div>
                         </div>
 
@@ -512,7 +512,7 @@ $recentGuests = array_slice($guests, 0, 10);
                                 <input type="number" class="form-control" id="stay_count" name="stay_count" min="0" value="0">
                             </div>
                             <div class="col-md-3 mb-3">
-                                <label for="total_spend" class="form-label">Total Spend ($)</label>
+                                <label for="total_spend" class="form-label">Total Spend (₱)</label>
                                 <input type="number" class="form-control" id="total_spend" name="total_spend" min="0" step="0.01" value="0.00">
                             </div>
                         </div>
@@ -524,7 +524,7 @@ $recentGuests = array_slice($guests, 0, 10);
                     </form>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-coreui-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                     <button type="button" class="btn btn-primary" onclick="submitGuestForm()">Save</button>
                 </div>
             </div>
@@ -573,7 +573,7 @@ $recentGuests = array_slice($guests, 0, 10);
                 document.getElementById('total_spend').value = data.total_spend || 0.00;
                 document.getElementById('notes').value = data.notes || '';
 
-                new coreui.Modal(document.getElementById('guestModal')).show();
+                new bootstrap.Modal(document.getElementById('guestModal')).show();
             });
         }
 
@@ -612,7 +612,7 @@ $recentGuests = array_slice($guests, 0, 10);
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    new coreui.Modal(document.getElementById('guestModal')).hide();
+                    new bootstrap.Modal(document.getElementById('guestModal')).hide();
                     location.reload();
                 } else {
                     alert('Error: ' + data.message);
@@ -713,7 +713,7 @@ $recentGuests = array_slice($guests, 0, 10);
                         <div class="modal-content">
                             <div class="modal-header">
                                 <h5 class="modal-title">Loyalty Rewards - ${guestName}</h5>
-                                <button type="button" class="btn-close" data-coreui-dismiss="modal"></button>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                             </div>
                             <div class="modal-body">
                                 <div class="alert alert-info">
@@ -800,7 +800,7 @@ $recentGuests = array_slice($guests, 0, 10);
                                 </div>
                             </div>
                             <div class="modal-footer">
-                                <button type="button" class="btn btn-secondary" data-coreui-dismiss="modal">Close</button>
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                             </div>
                         </div>
                     </div>
@@ -817,7 +817,7 @@ $recentGuests = array_slice($guests, 0, 10);
             document.body.insertAdjacentHTML('beforeend', modalHtml);
 
             // Show modal
-            const modal = new coreui.Modal(document.getElementById('rewardsModal'));
+            const modal = new bootstrap.Modal(document.getElementById('rewardsModal'));
             modal.show();
         }
     </script>
