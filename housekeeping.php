@@ -623,7 +623,7 @@ $stats = $conn->query("
                     <button type="button" class="btn-close" data-coreui-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <form id="housekeepingForm">
+                    <form id="housekeepingForm" onsubmit="submitHousekeepingForm(event)">
                         <input type="hidden" name="action" value="create_task">
                         <input type="hidden" name="room_id" id="housekeepingRoomId">
 
@@ -636,10 +636,10 @@ $stats = $conn->query("
                                 </div>
                             </div>
                             <div class="col-md-6">
-                                <label for="housekeeper_id" class="form-label fw-bold">Housekeeper</label>
+                                <label for="housekeeper_id" class="form-label fw-bold">Housekeeper *</label>
                                 <div class="input-group input-group-sm">
                                     <span class="input-group-text"><i class="cil-user"></i></span>
-                                    <select class="form-select" id="housekeeper_id" name="housekeeper_id">
+                                    <select class="form-select" id="housekeeper_id" name="housekeeper_id" required>
                                         <option value="">Select Housekeeper</option>
                                         <?php
                                         $housekeepers = $conn->query("SELECT id, first_name, last_name, employee_id FROM housekeepers WHERE status = 'Active' ORDER BY first_name, last_name")->fetchAll(PDO::FETCH_ASSOC);
@@ -650,10 +650,10 @@ $stats = $conn->query("
                                 </div>
                             </div>
                             <div class="col-md-6">
-                                <label for="task_type" class="form-label fw-bold">Task Type</label>
+                                <label for="task_type" class="form-label fw-bold">Task Type *</label>
                                 <div class="input-group input-group-sm">
                                     <span class="input-group-text"><i class="cil-task"></i></span>
-                                    <select class="form-select" id="task_type" name="task_type">
+                                    <select class="form-select" id="task_type" name="task_type" required>
                                         <option value="Regular Cleaning">Regular Cleaning</option>
                                         <option value="Deep Cleaning">Deep Cleaning</option>
                                         <option value="Maintenance">Maintenance</option>
@@ -663,10 +663,10 @@ $stats = $conn->query("
                                 </div>
                             </div>
                             <div class="col-md-6">
-                                <label for="priority" class="form-label fw-bold">Priority</label>
+                                <label for="priority" class="form-label fw-bold">Priority *</label>
                                 <div class="input-group input-group-sm">
                                     <span class="input-group-text"><i class="cil-bell"></i></span>
-                                    <select class="form-select" id="priority" name="priority">
+                                    <select class="form-select" id="priority" name="priority" required>
                                         <option value="Low">Low</option>
                                         <option value="Normal">Normal</option>
                                         <option value="High">High</option>
@@ -675,7 +675,7 @@ $stats = $conn->query("
                                 </div>
                             </div>
                             <div class="col-md-6">
-                                <label for="scheduled_date" class="form-label fw-bold">Scheduled Date</label>
+                                <label for="scheduled_date" class="form-label fw-bold">Scheduled Date *</label>
                                 <div class="input-group input-group-sm">
                                     <span class="input-group-text"><i class="cil-calendar"></i></span>
                                     <input type="date" class="form-control" id="scheduled_date" name="scheduled_date" value="<?php echo date('Y-m-d'); ?>" required>
@@ -685,7 +685,7 @@ $stats = $conn->query("
                                 <label for="scheduled_time" class="form-label fw-bold">Scheduled Time</label>
                                 <div class="input-group input-group-sm">
                                     <span class="input-group-text"><i class="cil-clock"></i></span>
-                                    <input type="time" class="form-control" id="scheduled_time" name="scheduled_time" value="09:00" required>
+                                    <input type="time" class="form-control" id="scheduled_time" name="scheduled_time" value="09:00">
                                 </div>
                             </div>
                             <div class="col-md-6">
@@ -696,30 +696,17 @@ $stats = $conn->query("
                                 </div>
                             </div>
                             <div class="col-md-6">
-                                <label for="status" class="form-label fw-bold">Status</label>
-                                <div class="input-group input-group-sm">
-                                    <span class="input-group-text"><i class="cil-check-circle"></i></span>
-                                    <select class="form-select" id="task_status" name="status" disabled>
-                                        <option value="In Progress" selected>In Progress</option>
-                                        <option value="Pending">Pending</option>
-                                        <option value="Completed">Completed</option>
-                                        <option value="Cancelled">Cancelled</option>
-                                        <option value="Skipped">Skipped</option>
-                                    </select>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
                                 <label for="issues_found" class="form-label fw-bold">Issues Found</label>
                                 <div class="input-group input-group-sm">
                                     <span class="input-group-text"><i class="cil-warning"></i></span>
-                                    <textarea class="form-control" id="issues_found" name="issues_found" rows="2"></textarea>
+                                    <textarea class="form-control" id="issues_found" name="issues_found" rows="2" placeholder="Any issues found during task"></textarea>
                                 </div>
                             </div>
                             <div class="col-md-6">
                                 <label for="guest_feedback" class="form-label fw-bold">Guest Feedback</label>
                                 <div class="input-group input-group-sm">
                                     <span class="input-group-text"><i class="cil-comment-square"></i></span>
-                                    <textarea class="form-control" id="guest_feedback" name="guest_feedback" rows="2"></textarea>
+                                    <textarea class="form-control" id="guest_feedback" name="guest_feedback" rows="2" placeholder="Feedback from guest"></textarea>
                                 </div>
                             </div>
                             <div class="col-12">
@@ -731,7 +718,7 @@ $stats = $conn->query("
                             </div>
                             <div class="col-12">
                                 <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" id="maintenance_required" name="maintenance_required">
+                                    <input class="form-check-input" type="checkbox" id="maintenance_required" name="maintenance_required" value="1">
                                     <label class="form-check-label fw-bold" for="maintenance_required">
                                         <i class="cil-settings me-1"></i>Maintenance Required
                                     </label>
@@ -742,7 +729,7 @@ $stats = $conn->query("
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-coreui-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-primary">Create Task</button>
+                    <button type="submit" class="btn btn-primary" form="housekeepingForm">Create Task</button>
                 </div>
             </div>
         </div>
@@ -961,12 +948,12 @@ $stats = $conn->query("
 
             const form = document.getElementById('housekeepingForm');
             const formData = new FormData(form);
-            const submitBtn = form.querySelector('button[type="submit"]');
+            const submitBtn = document.querySelector('#housekeepingModal .btn-primary');
             const originalText = submitBtn.innerHTML;
 
             // Show loading state
             submitBtn.disabled = true;
-            submitBtn.innerHTML = '<i class="cil-spinner cil-spin me-2"></i>Assigning...';
+            submitBtn.innerHTML = '<i class="cil-spinner cil-spin me-2"></i>Creating...';
 
             fetch('housekeeping.php', {
                 method: 'POST',
@@ -978,11 +965,11 @@ $stats = $conn->query("
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    showAlert('Housekeeping task assigned successfully!', 'success');
+                    showAlert('Housekeeping task created successfully!', 'success');
                     new coreui.Modal(document.getElementById('housekeepingModal')).hide();
                     setTimeout(() => location.reload(), 1000);
                 } else {
-                    showAlert(data.message || 'An error occurred while assigning the task.', 'danger');
+                    showAlert(data.message || 'An error occurred while creating the task.', 'danger');
                 }
             })
             .catch(error => {
@@ -996,13 +983,7 @@ $stats = $conn->query("
             });
         }
 
-        // Add form submit event listener
-        document.addEventListener('DOMContentLoaded', function() {
-            const housekeepingForm = document.getElementById('housekeepingForm');
-            if (housekeepingForm) {
-                housekeepingForm.addEventListener('submit', submitHousekeepingForm);
-            }
-        });
+        // Form submission is handled by the onsubmit attribute in the form
 
         function showAlert(message, type = 'danger') {
             const alertContainer = document.getElementById('alertContainer') || createAlertContainer();
