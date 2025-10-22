@@ -1,6 +1,9 @@
 <?php
 // Assumes `db.php` and session were already loaded by `dashboard.php`.
 // Fetch key KPIs for the front desk view
+include_once 'db.php';
+
+
 try {
     // Rooms summary
     $roomSummaryStmt = $conn->query("SELECT 
@@ -281,11 +284,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             <button class="btn btn-outline-primary btn-sm" data-coreui-toggle="modal" data-coreui-target="#reservationModal" onclick="openCreateModal()">
                 <i class="cil-plus me-1"></i>New Reservation
             </button>
-            <a class="btn btn-success btn-sm" href="reservations.php?status=Checked In"><i class="cil-check me-1"></i> In-house</a>
-            <a class="btn btn-secondary btn-sm" href="guests.php"><i class="cil-people me-1"></i> Guests</a>
-            <a class="btn btn-warning btn-sm" href="housekeeping.php"><i class="cil-broom me-1"></i> Housekeeping</a>
-            <a class="btn btn-info btn-sm" href="room_billing.php"><i class="cil-cash me-1"></i> Billing</a>
-            <a class="btn btn-dark btn-sm" href="rooms.php"><i class="cil-home me-1"></i> Rooms</a>
+            <button class="btn btn-success btn-sm" onclick="window.location.href='?page=rooms&status=Vacant'"><i class="cil-check me-1"></i> In-house</button>
+            <button class="btn btn-secondary btn-sm" onclick="window.location.href='?page=guests'"><i class="cil-people me-1"></i> Guests</button>
+            <button class="btn btn-warning btn-sm" onclick="window.location.href='?page=housekeeping'"><i class="cil-broom me-1"></i> Housekeeping</button>
+            <button class="btn btn-info btn-sm" onclick="window.location.href='?page=room_billing'"><i class="cil-cash me-1"></i> Billing</button>
+            <button class="btn btn-dark btn-sm" onclick="window.location.href='?page=rooms'"><i class="cil-home me-1"></i> Rooms</button>
             <button class="btn btn-outline-primary btn-sm ms-auto" data-coreui-toggle="modal" data-coreui-target="#walkInModal"><i class="cil-walk me-1"></i> Walk-in Guest</button>
         </div>
     </div>
@@ -325,7 +328,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                                     </div>
                                 </div>
                                 <div class="card-footer p-2 d-flex gap-1">
-                                    <a class="btn btn-sm btn-outline-primary w-100" href="reservations.php"><i class="cil-calendar me-1"></i>Reserve</a>
+                                    <button class="btn btn-sm btn-outline-primary w-100" data-coreui-toggle="modal" data-coreui-target="#reservationModal" onclick="openReservationForRoom(<?php echo $room['id']; ?>)"><i class="cil-calendar me-1"></i>Reserve</button>
                                     <a class="btn btn-sm btn-outline-secondary" title="Open room list" href="rooms.php"><i class="cil-external-link"></i></a>
                                 </div>
                             </div>
@@ -647,6 +650,20 @@ function openCreateModal() {
     document.getElementById('check_in_date').disabled = true;
     document.querySelectorAll('input[name="reservation_hour_count"]').forEach(radio => radio.disabled = true);
     document.getElementById('reservation_days_count').disabled = true;
+}
+
+function openReservationForRoom(roomId) {
+    openCreateModal();
+    // Pre-select the room
+    setTimeout(() => {
+        const roomSelect = document.getElementById('room_id');
+        roomSelect.value = roomId;
+        updateRoomSelection();
+        // Trigger change event to update available rooms
+        roomSelect.dispatchEvent(new Event('change'));
+        // Also trigger updateAvailableRooms to refresh the room list
+        updateAvailableRooms();
+    }, 100);
 }
 
 function updateRoomSelection() {

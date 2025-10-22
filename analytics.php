@@ -6,128 +6,145 @@ if (!isset($_SESSION['email'])) {
     exit;
 }
 
-// Handle HTMX requests
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_HX_REQUEST'])) {
-    header('Content-Type: application/json');
-
-    try {
-        if (isset($_POST['action'])) {
-            $action = $_POST['action'];
-
-            switch ($action) {
-                case 'get_chart_data':
-                    // Get data for charts based on type and period
-                    $type = $_POST['type'] ?? 'reservations';
-                    $period = $_POST['period'] ?? '30';
-
-                    $data = [];
-
-                    if ($type === 'reservations') {
-                        // Get reservation data for the last N days
-                        $stmt = $conn->prepare("
-                            SELECT
-                                DATE(created_at) as date,
-                                COUNT(*) as count,
-                                SUM(CASE WHEN reservation_status = 'Checked In' THEN 1 ELSE 0 END) as checked_in,
-                                SUM(CASE WHEN reservation_status = 'Checked Out' THEN 1 ELSE 0 END) as checked_out
-                            FROM reservations
-                            WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL ? DAY)
-                            GROUP BY DATE(created_at)
-                            ORDER BY date
-                        ");
-                        $stmt->execute([$period]);
-                        $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
-                    } elseif ($type === 'revenue') {
-                        // Get revenue data from room billing
-                        $stmt = $conn->prepare("
-                            SELECT
-                                DATE(created_at) as date,
-                                SUM(payment_amount) as revenue
-                            FROM room_billing
-                            WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL ? DAY)
-                            GROUP BY DATE(created_at)
-                            ORDER BY date
-                        ");
-                        $stmt->execute([$period]);
-                        $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
-                    } elseif ($type === 'occupancy') {
-                        // Get room occupancy data
-                        $stmt = $conn->prepare("
-                            SELECT
-                                DATE(created_at) as date,
-                                COUNT(CASE WHEN room_status = 'Occupied' THEN 1 END) as occupied,
-                                COUNT(*) as total_rooms
-                            FROM rooms
-                            WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL ? DAY)
-                            GROUP BY DATE(created_at)
-                            ORDER BY date
-                        ");
-                        $stmt->execute([$period]);
-                        $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
-                    }
-
-                    echo json_encode($data);
-                    break;
-
-                case 'get_summary_stats':
-                    // Get summary statistics
-                    $stats = $conn->query("
-                        SELECT
-                            (SELECT COUNT(*) FROM reservations WHERE reservation_status IN ('Checked In', 'Checked Out')) as total_reservations,
-                            (SELECT COUNT(*) FROM guests) as total_guests,
-                            (SELECT COUNT(*) FROM rooms WHERE room_status = 'Occupied') as occupied_rooms,
-                            (SELECT COUNT(*) FROM rooms) as total_rooms,
-                            (SELECT COALESCE(SUM(payment_amount), 0) FROM room_billing WHERE DATE(created_at) = CURDATE()) as today_revenue,
-                            (SELECT COUNT(*) FROM housekeeping WHERE status = 'Completed' AND DATE(updated_at) = CURDATE()) as today_cleanings
-                    ")->fetch(PDO::FETCH_ASSOC);
-
-                    echo json_encode($stats);
-                    break;
-            }
-        }
-    } catch (Exception $e) {
-        echo json_encode(['success' => false, 'message' => $e->getMessage()]);
-    }
-    exit;
-}
-
-// Get initial data for display
-$summaryStats = $conn->query("
-    SELECT
-        (SELECT COUNT(*) FROM reservations WHERE reservation_status IN ('Checked In', 'Checked Out')) as total_reservations,
-        (SELECT COUNT(*) FROM guests) as total_guests,
-        (SELECT COUNT(*) FROM rooms WHERE room_status = 'Occupied') as occupied_rooms,
-        (SELECT COUNT(*) FROM rooms) as total_rooms,
-        (SELECT COALESCE(SUM(payment_amount), 0) FROM room_billing WHERE DATE(created_at) = CURDATE()) as today_revenue,
-        (SELECT COUNT(*) FROM housekeeping WHERE status = 'Completed' AND DATE(updated_at) = CURDATE()) as today_cleanings
+// Fetch comprehensive analytics data from database
+// Room Statistics
+$roomStats = $conn->query("
+    SELECT 
+        COUNT(*) as total_rooms,
+        COUNT(CASE WHEN room_status = 'Vacant' THEN 1 END) as vacant_rooms,
+        COUNT(CASE WHEN room_status = 'Occupied' THEN 1 END) as occupied_rooms,
+        COUNT(CASE WHEN room_status = 'Maintenance' THEN 1 END) as maintenance_rooms,
+        COUNT(CASE WHEN room_type = 'Single' THEN 1 END) as single_rooms,
+        COUNT(CASE WHEN room_type = 'Double' THEN 1 END) as double_rooms,
+        COUNT(CASE WHEN room_type = 'Deluxe' THEN 1 END) as deluxe_rooms,
+        COUNT(CASE WHEN room_type = 'Suite' THEN 1 END) as suite_rooms
+    FROM rooms
 ")->fetch(PDO::FETCH_ASSOC);
 
-// Get recent activities
-$recentActivities = $conn->query("
-    SELECT
-        'reservation' as type,
-        CONCAT('New reservation for ', COALESCE(g.first_name, ''), ' ', COALESCE(g.last_name, 'Walk-in')) as description,
-        r.created_at as timestamp
-    FROM reservations r
-    LEFT JOIN guests g ON r.guest_id = g.id
-    UNION ALL
-    SELECT
-        'billing' as type,
-        CONCAT('Payment of ₱', rb.payment_amount, ' received') as description,
-        rb.created_at as timestamp
-    FROM room_billing rb
-    UNION ALL
-    SELECT
-        'housekeeping' as type,
-        CONCAT('Room ', r.room_number, ' cleaning completed') as description,
-        h.updated_at as timestamp
-    FROM housekeeping h
-    LEFT JOIN rooms r ON h.room_id = r.id
-    WHERE h.status = 'Completed'
-    ORDER BY timestamp DESC
+// Reservation Statistics
+$reservationStats = $conn->query("
+    SELECT 
+        COUNT(*) as total_reservations,
+        COUNT(CASE WHEN reservation_status = 'Pending' THEN 1 END) as pending_reservations,
+        COUNT(CASE WHEN reservation_status = 'Checked In' THEN 1 END) as checked_in_reservations,
+        COUNT(CASE WHEN reservation_status = 'Checked Out' THEN 1 END) as checked_out_reservations,
+        COUNT(CASE WHEN reservation_status = 'Cancelled' THEN 1 END) as cancelled_reservations
+    FROM reservations
+")->fetch(PDO::FETCH_ASSOC);
+
+// Monthly Reservations Trend (Last 6 months)
+$monthlyReservations = $conn->query("
+    SELECT 
+        DATE_FORMAT(check_in_date, '%Y-%m') as month,
+        COUNT(*) as count
+    FROM reservations
+    WHERE check_in_date >= DATE_SUB(CURDATE(), INTERVAL 6 MONTH)
+    GROUP BY DATE_FORMAT(check_in_date, '%Y-%m')
+    ORDER BY month ASC
+")->fetchAll(PDO::FETCH_ASSOC);
+
+// Billing Statistics
+$billingStats = $conn->query("
+    SELECT 
+        COUNT(*) as total_transactions,
+        SUM(payment_amount) as total_revenue,
+        AVG(payment_amount) as avg_transaction,
+        COUNT(CASE WHEN billing_status = 'Paid' THEN 1 END) as paid_count,
+        COUNT(CASE WHEN billing_status = 'Pending' THEN 1 END) as pending_count,
+        SUM(CASE WHEN billing_status = 'Paid' THEN payment_amount ELSE 0 END) as paid_revenue
+    FROM room_billing
+")->fetch(PDO::FETCH_ASSOC);
+
+// Monthly Revenue Trend (Last 6 months)
+$monthlyRevenue = $conn->query("
+    SELECT 
+        DATE_FORMAT(transaction_date, '%Y-%m') as month,
+        SUM(payment_amount) as revenue
+    FROM room_billing
+    WHERE transaction_date >= DATE_SUB(CURDATE(), INTERVAL 6 MONTH)
+    AND billing_status = 'Paid'
+    GROUP BY DATE_FORMAT(transaction_date, '%Y-%m')
+    ORDER BY month ASC
+")->fetchAll(PDO::FETCH_ASSOC);
+
+// Payment Method Distribution
+$paymentMethods = $conn->query("
+    SELECT 
+        payment_method,
+        COUNT(*) as count,
+        SUM(payment_amount) as total
+    FROM room_billing
+    WHERE billing_status = 'Paid'
+    GROUP BY payment_method
+")->fetchAll(PDO::FETCH_ASSOC);
+
+// Guest Statistics
+$guestStats = $conn->query("
+    SELECT 
+        COUNT(*) as total_guests,
+        COUNT(CASE WHEN guest_status = 'Active' THEN 1 END) as active_guests,
+        COUNT(CASE WHEN loyalty_status = 'Regular' THEN 1 END) as regular_guests,
+        COUNT(CASE WHEN loyalty_status = 'Iron' THEN 1 END) as iron_guests,
+        COUNT(CASE WHEN loyalty_status = 'Gold' THEN 1 END) as gold_guests,
+        COUNT(CASE WHEN loyalty_status = 'Diamond' THEN 1 END) as diamond_guests,
+        AVG(stay_count) as avg_stay_count,
+        AVG(total_spend) as avg_total_spend
+    FROM guests
+")->fetch(PDO::FETCH_ASSOC);
+
+// Event Statistics
+$eventStats = $conn->query("
+    SELECT 
+        COUNT(*) as total_events,
+        COUNT(CASE WHEN event_status = 'Pending' THEN 1 END) as pending_events,
+        COUNT(CASE WHEN event_status = 'Checked In' THEN 1 END) as active_events,
+        COUNT(CASE WHEN event_status = 'Checked Out' THEN 1 END) as completed_events,
+        AVG(event_expected_attendees) as avg_attendees
+    FROM event_reservation
+")->fetch(PDO::FETCH_ASSOC);
+
+// Inventory Statistics
+$inventoryStats = $conn->query("
+    SELECT 
+        COUNT(*) as total_items,
+        COUNT(CASE WHEN item_status = 'Active' THEN 1 END) as active_items,
+        COUNT(CASE WHEN current_stock <= minimum_stock THEN 1 END) as low_stock_items,
+        SUM(current_stock * unit_cost) as total_inventory_value
+    FROM items
+")->fetch(PDO::FETCH_ASSOC);
+
+// Channel Statistics
+$channelStats = $conn->query("
+    SELECT 
+        c.channel_name,
+        COUNT(cb.id) as booking_count,
+        SUM(cb.total_amount) as total_revenue
+    FROM channels c
+    LEFT JOIN channel_bookings cb ON c.id = cb.channel_id
+    WHERE c.status = 'Active'
+    GROUP BY c.id, c.channel_name
+    ORDER BY total_revenue DESC
     LIMIT 10
 ")->fetchAll(PDO::FETCH_ASSOC);
 
+// Housekeeping Statistics
+$housekeepingStats = $conn->query("
+    SELECT 
+        COUNT(*) as total_tasks,
+        COUNT(CASE WHEN status = 'Pending' THEN 1 END) as pending_tasks,
+        COUNT(CASE WHEN status = 'In Progress' THEN 1 END) as in_progress_tasks,
+        COUNT(CASE WHEN status = 'Completed' THEN 1 END) as completed_tasks,
+        AVG(actual_duration_minutes) as avg_duration
+    FROM housekeeping
+")->fetch(PDO::FETCH_ASSOC);
+
+// Occupancy Rate Calculation
+$occupancyRate = $roomStats['total_rooms'] > 0 ? 
+    round(($roomStats['occupied_rooms'] / $roomStats['total_rooms']) * 100, 1) : 0;
+
+// Revenue per Available Room (RevPAR)
+$revPAR = $roomStats['total_rooms'] > 0 ? 
+    round(($billingStats['paid_revenue'] ?? 0) / $roomStats['total_rooms'], 2) : 0;
 ?>
 
 <!DOCTYPE html>
@@ -140,197 +157,92 @@ $recentActivities = $conn->query("
     <!-- CoreUI CSS -->
     <link href="css/coreui.min.css" rel="stylesheet">
     <link href="css/coreui-grid.min.css" rel="stylesheet">
-    <link href="css/coreui-reboot.min.css" rel="stylesheet">
     <link href="css/coreui-utilities.min.css" rel="stylesheet">
-    <link href="css/coreui-forms.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://unpkg.com/@coreui/icons/css/all.min.css">
 
-    <!-- Chart.js for analytics -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
-    <!-- HTMX -->
-    <script src="js/htmx.min.js"></script>
-
-    <!-- Popper.js for popovers -->
-    <script src="js/popper.min.js"></script>
-    <!-- CoreUI JS -->
-    <script src="js/coreui.bundle.js"></script>
-    <script src="js/bootstrap.bundle.js"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 
     <style>
-        .stats-card {
+        .analytics-card {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             border: none;
             border-radius: 12px;
-            transition: transform 0.2s ease;
-        }
-        .stats-card:hover {
-            transform: translateY(-2px);
+            color: white;
         }
         .chart-container {
             position: relative;
-            height: 300px;
-            width: 100%;
+            height: 350px;
+            padding: 20px;
         }
-        .click-card { cursor: pointer; }
-        .revenue-toggle {
-            position: absolute;
-            top: 8px;
-            right: 8px;
-            width: 28px;
-            height: 18px;
-            border: none;
-            border-radius: 10px;
-            background: rgba(0,0,0,0.6);
-            color: #cfd4da;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 0;
-            line-height: 1;
-            cursor: pointer;
+        .stat-card {
+            transition: transform 0.2s;
         }
-        .revenue-toggle:hover {
-            background: rgba(0,0,0,0.75);
-            color: #ffffff;
+        .stat-card:hover {
+            transform: translateY(-5px);
         }
-        .revenue-toggle i {
-            font-size: 16px;
-            color: #ffffff;
-            display: inline-block;
-            line-height: 1;
+        .metric-value {
+            font-size: 2.5rem;
+            font-weight: bold;
         }
-        .activity-item {
-            border-left: 3px solid;
-            padding-left: 10px;
-            margin-bottom: 10px;
-        }
-        .activity-reservation {
-            border-left-color: #0dcaf0;
-        }
-        .activity-billing {
-            border-left-color: #198754;
-        }
-        .activity-housekeeping {
-            border-left-color: #fd7e14;
+        .metric-label {
+            font-size: 0.9rem;
+            opacity: 0.9;
         }
     </style>
 </head>
 <body>
     <div class="container-fluid p-4">
-
-        <!-- Header with Title -->
+        
+        <!-- Header -->
         <div class="mb-4">
-            <div class="flex-grow-1 text-start">
-                    <h2>Analytics</h2>
-                </div>
+            <h2 class="mb-3">Analytics Dashboard</h2>
+            <p class="text-muted">Comprehensive insights and performance metrics</p>
         </div>
 
-        <!-- Summary Statistics -->
-        <div class="row mb-4">
-            <div class="col-md-2 mb-3">
-                <div class="card stats-card text-white h-100 click-card" onclick="window.location.href='dashboard.php?page=reservations'">
-                    <div class="card-body text-center">
-                        <i class="cil-calendar-check display-4 mb-2"></i>
-                        <h3><?php echo number_format($summaryStats['total_reservations']); ?></h3>
-                        <small>Total Reservations</small>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-2 mb-3">
-                <div class="card stats-card text-white h-100 click-card" onclick="window.location.href='dashboard.php?page=guests'">
-                    <div class="card-body text-center">
-                        <i class="cil-people display-4 mb-2"></i>
-                        <h3><?php echo number_format($summaryStats['total_guests']); ?></h3>
-                        <small>Total Guests</small>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-2 mb-3">
-                <div class="card stats-card text-white h-100 click-card" onclick="window.location.href='dashboard.php?page=rooms'">
-                    <div class="card-body text-center">
-                        <i class="cil-bed display-4 mb-2"></i>
-                        <h3><?php echo $summaryStats['occupied_rooms']; ?>/<?php echo $summaryStats['total_rooms']; ?></h3>
-                        <small>Room Occupancy</small>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-2 mb-3">
-                <div class="card stats-card text-white h-100 position-relative">
-                    <button class="revenue-toggle" id="toggleRevenue" aria-label="Toggle revenue visibility" title="Show/Hide">
-                        <i class="cil-low-vision"></i>
-                    </button>
-                    <div class="card-body text-center">
-                        <i class="cil-dollar display-4 mb-2"></i>
-                        <h3 id="revenueValue">₱<?php echo number_format($summaryStats['today_revenue'], 2); ?></h3>
-                        <small>Today's Revenue</small>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-2 mb-3">
-                <div class="card stats-card text-white h-100 click-card" onclick="window.location.href='dashboard.php?page=housekeeping'">
-                    <div class="card-body text-center">
-                        <i class="cil-home display-4 mb-2"></i>
-                        <h3><?php echo number_format($summaryStats['today_cleanings']); ?></h3>
-                        <small>Today's Cleanings</small>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-2 mb-3">
-                <div class="card stats-card text-white h-100">
+        <!-- Key Performance Indicators -->
+        <div class="row g-3 mb-4">
+            <div class="col-md-3">
+                <div class="card analytics-card h-100">
                     <div class="card-body text-center">
                         <i class="cil-chart-line display-4 mb-2"></i>
-                        <h3><?php echo number_format(($summaryStats['occupied_rooms'] / max($summaryStats['total_rooms'], 1)) * 100, 1); ?>%</h3>
-                        <small>Occupancy Rate</small>
+                        <div class="metric-value"><?php echo $occupancyRate; ?>%</div>
+                        <div class="metric-label">Occupancy Rate</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card analytics-card h-100">
+                    <div class="card-body text-center">
+                        <i class="cil-dollar display-4 mb-2"></i>
+                        <div class="metric-value">$<?php echo number_format($billingStats['total_revenue'] ?? 0, 0); ?></div>
+                        <div class="metric-label">Total Revenue</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card analytics-card h-100">
+                    <div class="card-body text-center">
+                        <i class="cil-people display-4 mb-2"></i>
+                        <div class="metric-value"><?php echo $guestStats['total_guests']; ?></div>
+                        <div class="metric-label">Total Guests</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card analytics-card h-100">
+                    <div class="card-body text-center">
+                        <i class="cil-calendar display-4 mb-2"></i>
+                        <div class="metric-value"><?php echo $reservationStats['total_reservations']; ?></div>
+                        <div class="metric-label">Total Reservations</div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Charts Section -->
-        <div class="row mb-4">
-            <div class="col-md-8">
-                <div class="card">
-                    <div class="card-header d-flex justify-content-between align-items-center">
-                        <h5 class="mb-0">Analytics Overview</h5>
-                        <div class="btn-group" role="group">
-                            <button type="button" class="btn btn-outline-primary btn-sm active" onclick="changeChart('reservations')">Reservations</button>
-                            <button type="button" class="btn btn-outline-primary btn-sm" onclick="changeChart('revenue')">Revenue</button>
-                            <button type="button" class="btn btn-outline-primary btn-sm" onclick="changeChart('occupancy')">Occupancy</button>
-                        </div>
-                        <select class="form-select form-select-sm" id="periodSelect" style="width: auto;">
-                            <option value="7">Last 7 days</option>
-                            <option value="30" selected>Last 30 days</option>
-                            <option value="90">Last 90 days</option>
-                        </select>
-                    </div>
-                    <div class="card-body">
-                        <div class="chart-container">
-                            <canvas id="analyticsChart"></canvas>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-4">
-                <div class="card">
-                    <div class="card-header">
-                        <h5 class="mb-0">Recent Activity</h5>
-                    </div>
-                    <div class="card-body" style="max-height: 300px; overflow-y: auto;">
-                        <?php foreach ($recentActivities as $activity): ?>
-                        <div class="activity-item activity-<?php echo $activity['type']; ?>">
-                            <small class="text-muted d-block"><?php echo date('M-d H:i', strtotime($activity['timestamp'])); ?></small>
-                            <div><?php echo htmlspecialchars($activity['description']); ?></div>
-                        </div>
-                        <?php endforeach; ?>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Detailed Analytics -->
-        <div class="row">
-            <div class="col-md-6">
+        <!-- Charts Row 1: Room & Reservation Analytics -->
+        <div class="row g-4 mb-4">
+            <div class="col-lg-6">
                 <div class="card">
                     <div class="card-header">
                         <h5 class="mb-0">Room Status Distribution</h5>
@@ -342,10 +254,26 @@ $recentActivities = $conn->query("
                     </div>
                 </div>
             </div>
-            <div class="col-md-6">
+            <div class="col-lg-6">
                 <div class="card">
                     <div class="card-header">
-                        <h5 class="mb-0">Reservation Status Distribution</h5>
+                        <h5 class="mb-0">Room Type Distribution</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container">
+                            <canvas id="roomTypeChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts Row 2: Reservation & Billing Trends -->
+        <div class="row g-4 mb-4">
+            <div class="col-lg-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Reservation Status</h5>
                     </div>
                     <div class="card-body">
                         <div class="chart-container">
@@ -354,185 +282,451 @@ $recentActivities = $conn->query("
                     </div>
                 </div>
             </div>
+            <div class="col-lg-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Monthly Reservations Trend</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container">
+                            <canvas id="monthlyReservationsChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
+
+        <!-- Charts Row 3: Revenue Analytics -->
+        <div class="row g-4 mb-4">
+            <div class="col-lg-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Monthly Revenue Trend</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container">
+                            <canvas id="monthlyRevenueChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Payment Method Distribution</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container">
+                            <canvas id="paymentMethodChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts Row 4: Guest & Channel Analytics -->
+        <div class="row g-4 mb-4">
+            <div class="col-lg-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Guest Loyalty Distribution</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container">
+                            <canvas id="guestLoyaltyChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Top Booking Channels by Revenue</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container">
+                            <canvas id="channelRevenueChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts Row 5: Operations Analytics -->
+        <div class="row g-4 mb-4">
+            <div class="col-lg-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Housekeeping Task Status</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container">
+                            <canvas id="housekeepingChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Event Status Overview</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container">
+                            <canvas id="eventStatusChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Additional Metrics -->
+        <div class="row g-3 mb-4">
+            <div class="col-md-4">
+                <div class="card stat-card">
+                    <div class="card-body">
+                        <h6 class="text-muted">Revenue Per Available Room (RevPAR)</h6>
+                        <h3 class="mb-0">$<?php echo number_format($revPAR, 2); ?></h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card stat-card">
+                    <div class="card-body">
+                        <h6 class="text-muted">Average Transaction Value</h6>
+                        <h3 class="mb-0">$<?php echo number_format($billingStats['avg_transaction'] ?? 0, 2); ?></h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card stat-card">
+                    <div class="card-body">
+                        <h6 class="text-muted">Total Inventory Value</h6>
+                        <h3 class="mb-0">$<?php echo number_format($inventoryStats['total_inventory_value'] ?? 0, 2); ?></h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-3 mb-4">
+            <div class="col-md-3">
+                <div class="card stat-card">
+                    <div class="card-body">
+                        <h6 class="text-muted">Active Events</h6>
+                        <h3 class="mb-0"><?php echo $eventStats['active_events']; ?></h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card stat-card">
+                    <div class="card-body">
+                        <h6 class="text-muted">Low Stock Items</h6>
+                        <h3 class="mb-0"><?php echo $inventoryStats['low_stock_items']; ?></h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card stat-card">
+                    <div class="card-body">
+                        <h6 class="text-muted">Pending Housekeeping</h6>
+                        <h3 class="mb-0"><?php echo $housekeepingStats['pending_tasks']; ?></h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card stat-card">
+                    <div class="card-body">
+                        <h6 class="text-muted">Average Guest Stays</h6>
+                        <h3 class="mb-0"><?php echo number_format($guestStats['avg_stay_count'], 1); ?></h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+
     </div>
 
-    <script>
-        let currentChart = 'reservations';
-        let analyticsChart;
-        let roomStatusChart;
-        let reservationStatusChart;
+    <!-- CoreUI JS -->
+    <script src="js/coreui.bundle.js"></script>
 
-        // Initialize charts
-        document.addEventListener('DOMContentLoaded', function() {
-            initializeCharts();
-            loadChartData('reservations', 30);
-            // Revenue hide/show toggle
-            const toggleBtn = document.getElementById('toggleRevenue');
-            const revenueEl = document.getElementById('revenueValue');
-            if (toggleBtn && revenueEl) {
-                let hidden = false;
-                const actualText = revenueEl.textContent;
-                toggleBtn.addEventListener('click', function() {
-                    hidden = !hidden;
-                    if (hidden) {
-                        revenueEl.textContent = '••••••••';
-                        toggleBtn.innerHTML = '<i class="cil-eye"></i>';
-                    } else {
-                        revenueEl.textContent = actualText;
-                        toggleBtn.innerHTML = '<i class="cil-low-vision"></i>';
-                    }
-                });
+    <script>
+        // Chart.js default configuration
+        Chart.defaults.color = '#fff';
+        Chart.defaults.borderColor = 'rgba(255, 255, 255, 0.1)';
+
+        // Room Status Chart
+        new Chart(document.getElementById('roomStatusChart'), {
+            type: 'doughnut',
+            data: {
+                labels: ['Vacant', 'Occupied', 'Maintenance'],
+                datasets: [{
+                    data: [
+                        <?php echo $roomStats['vacant_rooms']; ?>,
+                        <?php echo $roomStats['occupied_rooms']; ?>,
+                        <?php echo $roomStats['maintenance_rooms']; ?>
+                    ],
+                    backgroundColor: ['#28a745', '#dc3545', '#ffc107']
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'bottom' }
+                }
             }
         });
 
-        function initializeCharts() {
-            // Main analytics chart
-            const ctx = document.getElementById('analyticsChart').getContext('2d');
-            analyticsChart = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: [],
-                    datasets: [{
-                        label: 'Reservations',
-                        data: [],
-                        borderColor: '#0dcaf0',
-                        backgroundColor: 'rgba(13, 202, 240, 0.1)',
-                        tension: 0.4,
-                        fill: true
-                    }]
+        // Room Type Chart
+        new Chart(document.getElementById('roomTypeChart'), {
+            type: 'bar',
+            data: {
+                labels: ['Single', 'Double', 'Deluxe', 'Suite'],
+                datasets: [{
+                    label: 'Number of Rooms',
+                    data: [
+                        <?php echo $roomStats['single_rooms']; ?>,
+                        <?php echo $roomStats['double_rooms']; ?>,
+                        <?php echo $roomStats['deluxe_rooms']; ?>,
+                        <?php echo $roomStats['suite_rooms']; ?>
+                    ],
+                    backgroundColor: ['#667eea', '#764ba2', '#f093fb', '#4facfe']
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
                 },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            display: true
-                        }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: true
-                        }
-                    }
+                scales: {
+                    y: { beginAtZero: true }
                 }
-            });
-
-            // Room status chart
-            const roomCtx = document.getElementById('roomStatusChart').getContext('2d');
-            roomStatusChart = new Chart(roomCtx, {
-                type: 'doughnut',
-                data: {
-                    labels: ['Vacant', 'Occupied', 'Maintenance', 'Reserved'],
-                    datasets: [{
-                        data: [<?php
-                            $roomStats = $conn->query("SELECT room_status, COUNT(*) as count FROM rooms GROUP BY room_status")->fetchAll(PDO::FETCH_KEY_PAIR);
-                            echo ($roomStats['Vacant'] ?? 0) . ',';
-                            echo ($roomStats['Occupied'] ?? 0) . ',';
-                            echo ($roomStats['Maintenance'] ?? 0) . ',';
-                            echo ($roomStats['Reserved'] ?? 0);
-                        ?>],
-                        backgroundColor: ['#28a745', '#dc3545', '#ffc107', '#0dcaf0']
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false
-                }
-            });
-
-            // Reservation status chart
-            const resCtx = document.getElementById('reservationStatusChart').getContext('2d');
-            reservationStatusChart = new Chart(resCtx, {
-                type: 'pie',
-                data: {
-                    labels: ['Pending', 'Checked In', 'Checked Out', 'Cancelled', 'Archived'],
-                    datasets: [{
-                        data: [<?php
-                            $resStats = $conn->query("SELECT reservation_status, COUNT(*) as count FROM reservations GROUP BY reservation_status")->fetchAll(PDO::FETCH_KEY_PAIR);
-                            echo ($resStats['Pending'] ?? 0) . ',';
-                            echo ($resStats['Checked In'] ?? 0) . ',';
-                            echo ($resStats['Checked Out'] ?? 0) . ',';
-                            echo ($resStats['Cancelled'] ?? 0) . ',';
-                            echo ($resStats['Archived'] ?? 0);
-                        ?>],
-                        backgroundColor: ['#ffc107', '#28a745', '#0dcaf0', '#dc3545', '#6c757d']
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false
-                }
-            });
-        }
-
-        function changeChart(type) {
-            currentChart = type;
-            const buttons = document.querySelectorAll('.btn-group button');
-            buttons.forEach(btn => btn.classList.remove('active'));
-            event.target.classList.add('active');
-
-            const period = document.getElementById('periodSelect').value;
-            loadChartData(type, period);
-        }
-
-        function loadChartData(type, period) {
-            fetch('analytics.php', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                    'HX-Request': 'true'
-                },
-                body: 'action=get_chart_data&type=' + type + '&period=' + period
-            })
-            .then(response => response.json())
-            .then(data => {
-                updateChart(data, type);
-            })
-            .catch(error => {
-                console.error('Error loading chart data:', error);
-            });
-        }
-
-        function updateChart(data, type) {
-            const labels = data.map(item => {
-                const date = new Date(item.date);
-                return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-            });
-
-            let dataset;
-            if (type === 'reservations') {
-                dataset = {
-                    label: 'Reservations',
-                    data: data.map(item => item.count),
-                    borderColor: '#0dcaf0',
-                    backgroundColor: 'rgba(13, 202, 240, 0.1)'
-                };
-            } else if (type === 'revenue') {
-                dataset = {
-                    label: 'Revenue (₱)',
-                    data: data.map(item => item.revenue),
-                    borderColor: '#198754',
-                    backgroundColor: 'rgba(25, 135, 84, 0.1)'
-                };
-            } else if (type === 'occupancy') {
-                dataset = {
-                    label: 'Occupancy Rate (%)',
-                    data: data.map(item => item.total_rooms > 0 ? (item.occupied / item.total_rooms) * 100 : 0),
-                    borderColor: '#fd7e14',
-                    backgroundColor: 'rgba(253, 126, 20, 0.1)'
-                };
             }
+        });
 
-            analyticsChart.data.labels = labels;
-            analyticsChart.data.datasets = [dataset];
-            analyticsChart.update();
-        }
+        // Reservation Status Chart
+        new Chart(document.getElementById('reservationStatusChart'), {
+            type: 'pie',
+            data: {
+                labels: ['Pending', 'Checked In', 'Checked Out', 'Cancelled'],
+                datasets: [{
+                    data: [
+                        <?php echo $reservationStats['pending_reservations']; ?>,
+                        <?php echo $reservationStats['checked_in_reservations']; ?>,
+                        <?php echo $reservationStats['checked_out_reservations']; ?>,
+                        <?php echo $reservationStats['cancelled_reservations']; ?>
+                    ],
+                    backgroundColor: ['#ffc107', '#28a745', '#17a2b8', '#dc3545']
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'bottom' }
+                }
+            }
+        });
 
-        // Period selector change
-        document.getElementById('periodSelect').addEventListener('change', function() {
-            const period = this.value;
-            loadChartData(currentChart, period);
+        // Monthly Reservations Trend
+        new Chart(document.getElementById('monthlyReservationsChart'), {
+            type: 'line',
+            data: {
+                labels: [<?php 
+                    foreach ($monthlyReservations as $data) {
+                        echo "'" . date('M Y', strtotime($data['month'] . '-01')) . "',";
+                    }
+                ?>],
+                datasets: [{
+                    label: 'Reservations',
+                    data: [<?php 
+                        foreach ($monthlyReservations as $data) {
+                            echo $data['count'] . ',';
+                        }
+                    ?>],
+                    borderColor: '#667eea',
+                    backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                    fill: true,
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: true }
+                },
+                scales: {
+                    y: { beginAtZero: true }
+                }
+            }
+        });
+
+        // Monthly Revenue Trend
+        new Chart(document.getElementById('monthlyRevenueChart'), {
+            type: 'line',
+            data: {
+                labels: [<?php 
+                    foreach ($monthlyRevenue as $data) {
+                        echo "'" . date('M Y', strtotime($data['month'] . '-01')) . "',";
+                    }
+                ?>],
+                datasets: [{
+                    label: 'Revenue ($)',
+                    data: [<?php 
+                        foreach ($monthlyRevenue as $data) {
+                            echo $data['revenue'] . ',';
+                        }
+                    ?>],
+                    borderColor: '#28a745',
+                    backgroundColor: 'rgba(40, 167, 69, 0.1)',
+                    fill: true,
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: true }
+                },
+                scales: {
+                    y: { beginAtZero: true }
+                }
+            }
+        });
+
+        // Payment Method Chart
+        new Chart(document.getElementById('paymentMethodChart'), {
+            type: 'doughnut',
+            data: {
+                labels: [<?php 
+                    foreach ($paymentMethods as $method) {
+                        echo "'" . $method['payment_method'] . "',";
+                    }
+                ?>],
+                datasets: [{
+                    data: [<?php 
+                        foreach ($paymentMethods as $method) {
+                            echo $method['total'] . ',';
+                        }
+                    ?>],
+                    backgroundColor: ['#28a745', '#17a2b8', '#ffc107', '#dc3545']
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'bottom' }
+                }
+            }
+        });
+
+        // Guest Loyalty Chart
+        new Chart(document.getElementById('guestLoyaltyChart'), {
+            type: 'bar',
+            data: {
+                labels: ['Regular', 'Iron', 'Gold', 'Diamond'],
+                datasets: [{
+                    label: 'Number of Guests',
+                    data: [
+                        <?php echo $guestStats['regular_guests']; ?>,
+                        <?php echo $guestStats['iron_guests']; ?>,
+                        <?php echo $guestStats['gold_guests']; ?>,
+                        <?php echo $guestStats['diamond_guests']; ?>
+                    ],
+                    backgroundColor: ['#6c757d', '#8e9aaf', '#ffd700', '#b9f2ff']
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    y: { beginAtZero: true }
+                }
+            }
+        });
+
+        // Channel Revenue Chart
+        new Chart(document.getElementById('channelRevenueChart'), {
+            type: 'horizontalBar',
+            data: {
+                labels: [<?php 
+                    foreach ($channelStats as $channel) {
+                        echo "'" . addslashes($channel['channel_name']) . "',";
+                    }
+                ?>],
+                datasets: [{
+                    label: 'Revenue ($)',
+                    data: [<?php 
+                        foreach ($channelStats as $channel) {
+                            echo ($channel['total_revenue'] ?? 0) . ',';
+                        }
+                    ?>],
+                    backgroundColor: '#667eea'
+                }]
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    x: { beginAtZero: true }
+                }
+            }
+        });
+
+        // Housekeeping Chart
+        new Chart(document.getElementById('housekeepingChart'), {
+            type: 'doughnut',
+            data: {
+                labels: ['Pending', 'In Progress', 'Completed'],
+                datasets: [{
+                    data: [
+                        <?php echo $housekeepingStats['pending_tasks']; ?>,
+                        <?php echo $housekeepingStats['in_progress_tasks']; ?>,
+                        <?php echo $housekeepingStats['completed_tasks']; ?>
+                    ],
+                    backgroundColor: ['#ffc107', '#17a2b8', '#28a745']
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'bottom' }
+                }
+            }
+        });
+
+        // Event Status Chart
+        new Chart(document.getElementById('eventStatusChart'), {
+            type: 'pie',
+            data: {
+                labels: ['Pending', 'Active', 'Completed'],
+                datasets: [{
+                    data: [
+                        <?php echo $eventStats['pending_events']; ?>,
+                        <?php echo $eventStats['active_events']; ?>,
+                        <?php echo $eventStats['completed_events']; ?>
+                    ],
+                    backgroundColor: ['#ffc107', '#28a745', '#17a2b8']
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'bottom' }
+                }
+            }
         });
     </script>
 </body>
