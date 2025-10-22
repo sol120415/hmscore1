@@ -5,6 +5,8 @@
 
 #temp
 js
+!js/app-modal.js
+!js/page-loader.js
 class
 scss
 css
