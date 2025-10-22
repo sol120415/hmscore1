@@ -329,6 +329,22 @@ class ThemeManager {
             control.style.removeProperty('border-color');
         });
         
+        // Force login button styling - Override btn-outline-light specifically
+        const loginButtons = document.querySelectorAll('.btn-outline-light');
+        loginButtons.forEach(button => {
+            button.style.setProperty('background-color', '#0d6efd', 'important');
+            button.style.setProperty('border-color', '#0d6efd', 'important');
+            button.style.setProperty('color', '#ffffff', 'important');
+        });
+        
+        // Force login button hover states
+        const loginButtonsHover = document.querySelectorAll('.btn-outline-light:hover');
+        loginButtonsHover.forEach(button => {
+            button.style.setProperty('background-color', '#0b5ed7', 'important');
+            button.style.setProperty('border-color', '#0a58ca', 'important');
+            button.style.setProperty('color', '#ffffff', 'important');
+        });
+        
         // Force text colors - Only apply to authentication pages (excluding validation error text)
         const authTextElements = document.querySelectorAll('.login-card .text-muted, .login-card .text-white, .login-card .text-primary, .login-card .text-decoration-none, .register-card .text-muted, .register-card .text-white, .register-card .text-primary, .register-card .text-decoration-none, .forgot-card .text-muted, .forgot-card .text-white, .forgot-card .text-primary, .forgot-card .text-decoration-none, .verify-card .text-muted, .verify-card .text-white, .verify-card .text-primary, .verify-card .text-decoration-none');
         authTextElements.forEach(element => {
