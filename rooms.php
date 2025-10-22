@@ -356,59 +356,29 @@ $occupancyRate = $stats['total_rooms'] > 0 ? round(($stats['occupied_rooms'] / $
                     <button class="btn btn-outline-primary btn-sm" data-coreui-toggle="modal" data-coreui-target="#roomModal" onclick="openCreateModal()">
                         New Room
                     </button>
-                    <div class="btn-group" role="group">
-                        <button type="button" class="btn btn-outline-secondary btn-sm active"
-                                hx-get="rooms.php" hx-target="#roomsContainer" hx-swap="innerHTML"
-                                onclick="setActive(this)">All</button>
-                        <button type="button" class="btn btn-outline-secondary btn-sm"
-                                hx-get="rooms.php?floor=1" hx-target="#roomsContainer" hx-swap="innerHTML"
-                                onclick="setActive(this)">Floor 1</button>
-                        <button type="button" class="btn btn-outline-secondary btn-sm"
-                                hx-get="rooms.php?floor=2" hx-target="#roomsContainer" hx-swap="innerHTML"
-                                onclick="setActive(this)">Floor 2</button>
-                        <button type="button" class="btn btn-outline-secondary btn-sm"
-                                hx-get="rooms.php?floor=3" hx-target="#roomsContainer" hx-swap="innerHTML"
-                                onclick="setActive(this)">Floor 3</button>
-                        <button type="button" class="btn btn-outline-secondary btn-sm"
-                                hx-get="rooms.php?floor=4" hx-target="#roomsContainer" hx-swap="innerHTML"
-                                onclick="setActive(this)">Floor 4</button>
-                        <button type="button" class="btn btn-outline-secondary btn-sm"
-                                hx-get="rooms.php?floor=5" hx-target="#roomsContainer" hx-swap="innerHTML"
-                                onclick="setActive(this)">Floor 5</button>
-                    </div>
-                    <div class="btn-group" role="group">
-                        <button type="button" class="btn btn-outline-secondary btn-sm active"
-                                hx-get="rooms.php" hx-target="#roomsContainer" hx-swap="innerHTML"
-                                onclick="setActive(this)">All Status</button>
-                        <button type="button" class="btn btn-outline-secondary btn-sm"
-                                hx-get="rooms.php?status=Vacant" hx-target="#roomsContainer" hx-swap="innerHTML"
-                                onclick="setActive(this)">Vacant</button>
-                        <button type="button" class="btn btn-outline-secondary btn-sm"
-                                hx-get="rooms.php?status=Occupied" hx-target="#roomsContainer" hx-swap="innerHTML"
-                                onclick="setActive(this)">Occupied</button>
-                        <button type="button" class="btn btn-outline-secondary btn-sm"
-                                hx-get="rooms.php?status=Cleaning" hx-target="#roomsContainer" hx-swap="innerHTML"
-                                onclick="setActive(this)">Cleaning</button>
-                        <button type="button" class="btn btn-outline-secondary btn-sm"
-                                hx-get="rooms.php?status=Maintenance" hx-target="#roomsContainer" hx-swap="innerHTML"
-                                onclick="setActive(this)">Maintenance</button>
-                    </div>
-                    <div class="btn-group" role="group">
-                        <button type="button" class="btn btn-outline-secondary btn-sm active"
-                                hx-get="rooms.php" hx-target="#roomsContainer" hx-swap="innerHTML"
-                                onclick="setActive(this)">All Types</button>
-                        <button type="button" class="btn btn-outline-secondary btn-sm"
-                                hx-get="rooms.php?type=Single" hx-target="#roomsContainer" hx-swap="innerHTML"
-                                onclick="setActive(this)">Single</button>
-                        <button type="button" class="btn btn-outline-secondary btn-sm"
-                                hx-get="rooms.php?type=Double" hx-target="#roomsContainer" hx-swap="innerHTML"
-                                onclick="setActive(this)">Double</button>
-                        <button type="button" class="btn btn-outline-secondary btn-sm"
-                                hx-get="rooms.php?type=Deluxe" hx-target="#roomsContainer" hx-swap="innerHTML"
-                                onclick="setActive(this)">Deluxe</button>
-                        <button type="button" class="btn btn-outline-secondary btn-sm"
-                                hx-get="rooms.php?type=Suite" hx-target="#roomsContainer" hx-swap="innerHTML"
-                                onclick="setActive(this)">Suite</button>
+                    <div class="d-flex gap-2">
+                        <select class="form-select form-select-sm" id="floorFilter" onchange="updateFilters()">
+                            <option value="all">All Floors</option>
+                            <option value="1">Floor 1</option>
+                            <option value="2">Floor 2</option>
+                            <option value="3">Floor 3</option>
+                            <option value="4">Floor 4</option>
+                            <option value="5">Floor 5</option>
+                        </select>
+                        <select class="form-select form-select-sm" id="statusFilter" onchange="updateFilters()">
+                            <option value="all">All Status</option>
+                            <option value="Vacant">Vacant</option>
+                            <option value="Occupied">Occupied</option>
+                            <option value="Cleaning">Cleaning</option>
+                            <option value="Maintenance">Maintenance</option>
+                        </select>
+                        <select class="form-select form-select-sm" id="typeFilter" onchange="updateFilters()">
+                            <option value="all">All Types</option>
+                            <option value="Single">Single</option>
+                            <option value="Double">Double</option>
+                            <option value="Deluxe">Deluxe</option>
+                            <option value="Suite">Suite</option>
+                        </select>
                     </div>
                 </div>
             </div>
@@ -806,6 +776,34 @@ $occupancyRate = $stats['total_rooms'] > 0 ? round(($stats['occupied_rooms'] / $
             button.closest('.btn-group').querySelectorAll('button').forEach(btn => btn.classList.remove('active'));
             // Add active class to clicked button
             button.classList.add('active');
+        }
+
+        function updateFilters() {
+            const floor = document.getElementById('floorFilter').value;
+            const status = document.getElementById('statusFilter').value;
+            const type = document.getElementById('typeFilter').value;
+
+            let url = 'rooms.php';
+            const params = [];
+
+            if (floor !== 'all') params.push('floor=' + encodeURIComponent(floor));
+            if (status !== 'all') params.push('status=' + encodeURIComponent(status));
+            if (type !== 'all') params.push('type=' + encodeURIComponent(type));
+
+            if (params.length > 0) {
+                url += '?' + params.join('&');
+            }
+
+            fetch(url, {
+                headers: {
+                    'HX-Request': 'true'
+                }
+            })
+            .then(response => response.text())
+            .then(html => {
+                document.getElementById('roomsContainer').innerHTML = html;
+            })
+            .catch(error => console.error('Error:', error));
         }
 
         function generateReport() {
