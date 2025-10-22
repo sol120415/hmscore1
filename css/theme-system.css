@@ -194,6 +194,44 @@ html .theme-toggle {
   color: #000 !important;
 }
 
+/* Make Login via Gmail more visible in light mode */
+[data-theme="light"] .login-card .btn-outline-light,
+[data-theme="light"] .login-card .btn-outline-secondary,
+[data-theme="light"] .login-card .btn-light {
+  color: #333 !important;
+  border-color: #666 !important;
+  background-color: #f8f9fa !important;
+}
+
+[data-theme="light"] .login-card .btn-outline-light:hover,
+[data-theme="light"] .login-card .btn-outline-secondary:hover,
+[data-theme="light"] .login-card .btn-light:hover {
+  color: #000 !important;
+  border-color: #333 !important;
+  background-color: #e9ecef !important;
+}
+
+/* Target any Gmail login text specifically */
+[data-theme="light"] .login-card a[href*="gmail"],
+[data-theme="light"] .login-card .gmail-login,
+[data-theme="light"] .login-card .social-login {
+  color: #333 !important;
+  border: 1px solid #666 !important;
+  background-color: #f8f9fa !important;
+  padding: 8px 16px !important;
+  border-radius: 4px !important;
+  text-decoration: none !important;
+  display: inline-block !important;
+}
+
+[data-theme="light"] .login-card a[href*="gmail"]:hover,
+[data-theme="light"] .login-card .gmail-login:hover,
+[data-theme="light"] .login-card .social-login:hover {
+  color: #000 !important;
+  border-color: #333 !important;
+  background-color: #e9ecef !important;
+}
+
 /* Body and main containers */
 body {
   background-color: var(--theme-bg-primary);
