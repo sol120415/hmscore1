@@ -937,3 +937,12 @@ a:hover {
   color: #ffffff !important;
 }
 [data-theme] .room-card .card .text-muted { color: #9ca3af !important; }
+
+/* Room card status badges visible in dark mode */
+[data-theme="dark"] .room-card .badge,
+[data-theme="dark"] .room-card .badge.bg-light,
+[data-theme="dark"] .room-card .badge.bg-white {
+  background-color: #ffffff !important;
+  color: #212529 !important;
+  border: 1px solid rgba(255,255,255,0.15) !important;
+}
