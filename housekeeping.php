@@ -256,6 +256,7 @@ $stats = $conn->query("
     <!-- CoreUI JS -->
     <script src="js/coreui.bundle.js"></script>
     <script src="js/bootstrap.bundle.js"></script>
+    <script src="js/app-modal.js"></script>
 
     <style>
         .stats-card {
@@ -923,7 +924,7 @@ $stats = $conn->query("
         }
 
         function deleteTask(id) {
-            if (confirm('Are you sure you want to delete this task? This action cannot be undone.')) {
+            AppModal.confirm('Are you sure you want to delete this task? This action cannot be undone.','localhost says').then(function(yes){ if(!yes) return; 
                 fetch('housekeeping.php', {
                     method: 'POST',
                     headers: {
@@ -940,7 +941,7 @@ $stats = $conn->query("
                         alert('Error: ' + data.message);
                     }
                 });
-            }
+            });
         }
 
         function submitHousekeepingForm(event) {
@@ -1061,7 +1062,7 @@ $stats = $conn->query("
         }
 
         function completeTask(id) {
-            if (confirm('Are you sure you want to mark this task as completed? This will set the room status to vacant.')) {
+            AppModal.confirm('Are you sure you want to mark this task as completed? This will set the room status to vacant.','localhost says').then(function(yes){ if(!yes) return; 
                 fetch('housekeeping.php', {
                     method: 'POST',
                     headers: {
@@ -1083,7 +1084,7 @@ $stats = $conn->query("
                     showAlert('Network error. Please try again.', 'danger');
                     console.error('Error:', error);
                 });
-            }
+            });
         }
 
         function viewTaskDetails(id) {
@@ -1115,7 +1116,7 @@ $stats = $conn->query("
                 if (data.supervisor_notes) {
                     details += `Supervisor Notes: ${data.supervisor_notes}\n`;
                 }
-                alert(details);
+                AppModal.alert(details.replace(/\n/g,'<br>'),'localhost says');
             })
             .catch(error => {
                 alert('Error loading task details');

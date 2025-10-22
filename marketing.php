@@ -1139,7 +1139,7 @@ foreach ($campaignAgg as $r) {
         }
 
         function deleteCampaign(id, name) {
-            if (confirm('Are you sure you want to delete the campaign "' + name + '"? This action cannot be undone.')) {
+            AppModal.confirm('Are you sure you want to delete the campaign "' + name + '"? This action cannot be undone.').then(function(yes){ if(!yes) return; 
                 fetch('marketing.php', {
                     method: 'POST',
                     headers: {
@@ -1156,7 +1156,7 @@ foreach ($campaignAgg as $r) {
                         alert('Error: ' + data.message);
                     }
                 });
-            }
+            });
         }
 
         function submitCampaignForm() {
@@ -1267,7 +1267,7 @@ foreach ($campaignAgg as $r) {
         }
 
         function deleteOffer(id, name) {
-            if (confirm('Are you sure you want to delete the offer "' + name + '"? This action cannot be undone.')) {
+            AppModal.confirm('Are you sure you want to delete the offer "' + name + '"? This action cannot be undone.').then(function(yes){ if(!yes) return; 
                 fetch('marketing.php', {
                     method: 'POST',
                     headers: {
@@ -1284,7 +1284,7 @@ foreach ($campaignAgg as $r) {
                         alert('Error: ' + data.message);
                     }
                 });
-            }
+            });
         }
 
         function submitOfferForm() {
@@ -1337,7 +1337,7 @@ foreach ($campaignAgg as $r) {
         }
 
         function deletePerformance(id) {
-            if (confirm('Are you sure you want to delete this performance data? This action cannot be undone.')) {
+            AppModal.confirm('Are you sure you want to delete this performance data? This action cannot be undone.').then(function(yes){ if(!yes) return; 
                 fetch('marketing.php', {
                     method: 'POST',
                     headers: {
@@ -1354,7 +1354,7 @@ foreach ($campaignAgg as $r) {
                         alert('Error: ' + data.message);
                     }
                 });
-            }
+            });
         }
 
         function generateReport() {

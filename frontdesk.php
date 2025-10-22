@@ -223,7 +223,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 <body>
 <div class="container-fluid p-3">
     <div class="flex-grow-1 text-start">
-                    <h2>Frontdesk</h2>
+                    <h2 style="font-family: Arial, sans-serif; font-size: 24px; font-weight: bold;">Front <span  style="color:#0dcaf0;">Desk</span></h2>
                 </div>
 
     <!-- KPIs -->

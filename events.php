@@ -363,6 +363,7 @@ $stats = $conn->query("
     <!-- CoreUI JS -->
     <script src="js/coreui.bundle.js"></script>
     <script src="js/bootstrap.bundle.js"></script>
+    <script src="js/app-modal.js"></script>
 
     <style>
         .stats-card {
@@ -1015,7 +1016,7 @@ $stats = $conn->query("
         }
 
         function deleteVenue(id, name) {
-            if (confirm('Are you sure you want to delete the venue "' + name + '"? This action cannot be undone.')) {
+            AppModal.confirm('Are you sure you want to delete the venue "' + name + '"? This action cannot be undone.').then(function(yes){ if(!yes) return; 
                 fetch('events.php', {
                     method: 'POST',
                     headers: {
@@ -1032,7 +1033,7 @@ $stats = $conn->query("
                         alert('Error: ' + data.message);
                     }
                 });
-            }
+            });
         }
 
         function submitVenueForm() {
@@ -1107,7 +1108,7 @@ $stats = $conn->query("
         }
 
         function checkInReservation(id) {
-            if (confirm('Are you sure you want to check in this event?')) {
+            AppModal.confirm('Are you sure you want to check in this event?').then(function(yes){ if(!yes) return; 
                 fetch('events.php', {
                     method: 'POST',
                     headers: {
@@ -1124,11 +1125,11 @@ $stats = $conn->query("
                         alert('Error: ' + data.message);
                     }
                 });
-            }
+            });
         }
 
         function checkOutReservation(id) {
-            if (confirm('Are you sure you want to check out this event?')) {
+            AppModal.confirm('Are you sure you want to check out this event?').then(function(yes){ if(!yes) return; 
                 fetch('events.php', {
                     method: 'POST',
                     headers: {
@@ -1145,11 +1146,11 @@ $stats = $conn->query("
                         alert('Error: ' + data.message);
                     }
                 });
-            }
+            });
         }
 
         function archiveReservation(id) {
-            if (confirm('Are you sure you want to archive this event? This will remove it from active events.')) {
+            AppModal.confirm('Are you sure you want to archive this event? This will remove it from active events.').then(function(yes){ if(!yes) return; 
                 fetch('events.php', {
                     method: 'POST',
                     headers: {
@@ -1166,11 +1167,11 @@ $stats = $conn->query("
                         alert('Error: ' + data.message);
                     }
                 });
-            }
+            });
         }
 
         function deleteReservation(id, title) {
-            if (confirm('Are you sure you want to delete the reservation "' + title + '"? This action cannot be undone.')) {
+            AppModal.confirm('Are you sure you want to delete the reservation "' + title + '"? This action cannot be undone.','localhost says').then(function(yes){ if(!yes) return; 
                 fetch('events.php', {
                     method: 'POST',
                     headers: {
@@ -1187,7 +1188,7 @@ $stats = $conn->query("
                         alert('Error: ' + data.message);
                     }
                 });
-            }
+            });
         }
 
         function openEventBillingModal() {

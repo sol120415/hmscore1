@@ -154,6 +154,7 @@ $recentGuests = array_slice($guests, 0, 10);
     <!-- CoreUI JS -->
     <script src="js/coreui.bundle.js"></script>
     <script src="js/bootstrap.bundle.js"></script>
+    <script src="js/app-modal.js"></script>
 
     <style>
         .stats-card {
@@ -578,7 +579,7 @@ $recentGuests = array_slice($guests, 0, 10);
         }
 
         function deleteGuest(id, name) {
-            if (confirm('Are you sure you want to delete the guest "' + name + '"? This action cannot be undone.')) {
+            AppModal.confirm('Are you sure you want to delete the guest "' + name + '"? This action cannot be undone.','localhost says').then(function(yes){ if(!yes) return; 
                 fetch('guests.php', {
                     method: 'POST',
                     headers: {
@@ -595,7 +596,7 @@ $recentGuests = array_slice($guests, 0, 10);
                         alert('Error: ' + data.message);
                     }
                 });
-            }
+            });
         }
 
         function submitGuestForm() {
@@ -621,7 +622,7 @@ $recentGuests = array_slice($guests, 0, 10);
         }
 
         function archiveGuest(id, name) {
-            if (confirm('Are you sure you want to archive the guest "' + name + '"? They will be moved to the archived list.')) {
+            AppModal.confirm('Are you sure you want to archive the guest "' + name + '"? They will be moved to the archived list.','localhost says').then(function(yes){ if(!yes) return; 
                 fetch('guests.php', {
                     method: 'POST',
                     headers: {
@@ -638,11 +639,11 @@ $recentGuests = array_slice($guests, 0, 10);
                         alert('Error: ' + data.message);
                     }
                 });
-            }
+            });
         }
 
         function restoreGuest(id, name) {
-            if (confirm('Are you sure you want to restore the guest "' + name + '"? They will be moved back to active guests.')) {
+            AppModal.confirm('Are you sure you want to restore the guest "' + name + '"? They will be moved back to active guests.','localhost says').then(function(yes){ if(!yes) return; 
                 fetch('guests.php', {
                     method: 'POST',
                     headers: {
@@ -659,7 +660,7 @@ $recentGuests = array_slice($guests, 0, 10);
                         alert('Error: ' + data.message);
                     }
                 });
-            }
+            });
         }
 
         function generateReport() {

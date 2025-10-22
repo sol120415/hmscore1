@@ -606,6 +606,7 @@ $todayCheckOuts = $conn->query("SELECT COUNT(*) as checkouts_today FROM reservat
     <!-- CoreUI JS -->
     <script src="js/coreui.bundle.js"></script>
     <script src="js/bootstrap.bundle.js"></script>
+    <script src="js/app-modal.js"></script>
 
     <style>
         .stats-card {
@@ -647,7 +648,7 @@ $todayCheckOuts = $conn->query("SELECT COUNT(*) as checkouts_today FROM reservat
         <div class="mb-4">
             <div class="d-flex justify-content-between gap-3 text-center">
                 <div class="flex-grow-1 text-start">
-                    <h2>Reservations</h2>
+                    <h2 style="font-family: Arial, sans-serif; font-size: 24px; font-weight: bold;">Reserv<span style="color:#0dcaf0;">ations</span></h2>
                 </div>
                 <div>
                     <small class="text-muted d-block">Total</small>
@@ -978,7 +979,7 @@ $todayCheckOuts = $conn->query("SELECT COUNT(*) as checkouts_today FROM reservat
         }
 
         function deleteReservation(id) {
-            if (confirm('Are you sure you want to delete this reservation? This action cannot be undone.')) {
+            AppModal.confirm('Are you sure you want to delete this reservation? This action cannot be undone.','localhost says').then(function(yes){ if(!yes) return; 
                 const btn = event.target.closest('button');
                 const originalHTML = btn.innerHTML;
                 btn.disabled = true;
@@ -1008,7 +1009,7 @@ $todayCheckOuts = $conn->query("SELECT COUNT(*) as checkouts_today FROM reservat
                     btn.disabled = false;
                     btn.innerHTML = originalHTML;
                 });
-            }
+            });
         }
 
         function setActive(button) {
@@ -1019,7 +1020,7 @@ $todayCheckOuts = $conn->query("SELECT COUNT(*) as checkouts_today FROM reservat
         }
 
         function checkInReservation(id) {
-            if (confirm('Are you sure you want to check in this guest?')) {
+            AppModal.confirm('Are you sure you want to check in this guest?','localhost says').then(function(yes){ if(!yes) return; 
                 const btn = event.target.closest('button');
                 const originalHTML = btn.innerHTML;
                 btn.disabled = true;
@@ -1049,11 +1050,11 @@ $todayCheckOuts = $conn->query("SELECT COUNT(*) as checkouts_today FROM reservat
                     btn.disabled = false;
                     btn.innerHTML = originalHTML;
                 });
-            }
+            });
         }
 
         function checkOutReservation(id) {
-            if (confirm('Are you sure you want to check out this guest?')) {
+            AppModal.confirm('Are you sure you want to check out this guest?','localhost says').then(function(yes){ if(!yes) return; 
                 const btn = event.target.closest('button');
                 const originalHTML = btn.innerHTML;
                 btn.disabled = true;
@@ -1083,11 +1084,11 @@ $todayCheckOuts = $conn->query("SELECT COUNT(*) as checkouts_today FROM reservat
                     btn.disabled = false;
                     btn.innerHTML = originalHTML;
                 });
-            }
+            });
         }
 
         function archiveReservation(id) {
-            if (confirm('Are you sure you want to archive this reservation? This will remove it from active reservations.')) {
+            AppModal.confirm('Are you sure you want to archive this reservation? This will remove it from active reservations.','localhost says').then(function(yes){ if(!yes) return; 
                 const btn = event.target.closest('button');
                 const originalHTML = btn.innerHTML;
                 btn.disabled = true;
@@ -1117,7 +1118,7 @@ $todayCheckOuts = $conn->query("SELECT COUNT(*) as checkouts_today FROM reservat
                     btn.disabled = false;
                     btn.innerHTML = originalHTML;
                 });
-            }
+            });
         }
 
         function updateRoomSelection() {

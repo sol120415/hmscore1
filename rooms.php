@@ -238,6 +238,7 @@ $occupancyRate = $stats['total_rooms'] > 0 ? round(($stats['occupied_rooms'] / $
     <!-- CoreUI JS -->
     <script src="js/coreui.bundle.js"></script>
     <script src="js/bootstrap.bundle.js"></script>
+    <script src="js/app-modal.js"></script>
 
     <style>
         .stats-card {
@@ -302,7 +303,7 @@ $occupancyRate = $stats['total_rooms'] > 0 ? round(($stats['occupied_rooms'] / $
         <div class="mb-4">
             <div class="d-flex justify-content-between gap-3 text-center">
                 <div class="flex-grow-1 text-start">
-                    <h2>Rooms</h2>
+                    <h2 style="font-family: Arial, sans-serif; font-size: 24px; font-weight: bold;">Room <span style="color:#0dcaf0;">Status</span></h2>
                 </div>
                 <div>
                     <small class="text-muted d-block">Total</small>
@@ -643,7 +644,7 @@ $occupancyRate = $stats['total_rooms'] > 0 ? round(($stats['occupied_rooms'] / $
         }
 
         function deleteRoom(id, roomNumber) {
-            if (confirm('Are you sure you want to delete room ' + roomNumber + '? This action cannot be undone.')) {
+            AppModal.confirm('Are you sure you want to delete room ' + roomNumber + '? This action cannot be undone.').then(function(yes){ if(!yes) return; 
                 fetch('rooms.php', {
                     method: 'POST',
                     headers: {
@@ -660,7 +661,7 @@ $occupancyRate = $stats['total_rooms'] > 0 ? round(($stats['occupied_rooms'] / $
                         alert('Error: ' + data.message);
                     }
                 });
-            }
+            });
         }
 
         function submitRoomForm() {

@@ -408,7 +408,7 @@ $recentBookings = $conn->query("
         }
 
         function deleteChannel(id, name) {
-            if (confirm('Are you sure you want to delete the channel "' + name + '"? This action cannot be undone.')) {
+            AppModal.confirm('Are you sure you want to delete the channel "' + name + '"? This action cannot be undone.').then(function(yes){ if(!yes) return; 
                 fetch('channels.php', {
                     method: 'POST',
                     headers: {
@@ -425,7 +425,7 @@ $recentBookings = $conn->query("
                         alert('Error: ' + data.message);
                     }
                 });
-            }
+            });
         }
 
         function submitChannelForm() {

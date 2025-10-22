@@ -1212,7 +1212,7 @@ $payment_terms = ['Net 15', 'Net 30', 'Net 45', 'Net 60', 'COD', 'Due on Receipt
         }
 
         function deleteItem(id, name) {
-            if (confirm('Are you sure you want to delete the item "' + name + '"? This action cannot be undone.')) {
+            AppModal.confirm('Are you sure you want to delete the item "' + name + '"? This action cannot be undone.').then(function(yes){ if(!yes) return; 
                 fetch('inventory.php', {
                     method: 'POST',
                     headers: {
@@ -1229,7 +1229,7 @@ $payment_terms = ['Net 15', 'Net 30', 'Net 45', 'Net 60', 'COD', 'Due on Receipt
                         alert('Error: ' + data.message);
                     }
                 });
-            }
+            });
         }
 
         function submitItemForm() {
@@ -1444,7 +1444,7 @@ $payment_terms = ['Net 15', 'Net 30', 'Net 45', 'Net 60', 'COD', 'Due on Receipt
 
         // Delete movement
         function deleteMovement(id) {
-            if (confirm('Are you sure you want to delete this movement? This will reverse the stock change.')) {
+            AppModal.confirm('Are you sure you want to delete this movement? This will reverse the stock change.').then(function(yes){ if(!yes) return; 
                 fetch('inventory.php', {
                     method: 'POST',
                     headers: {
@@ -1461,7 +1461,7 @@ $payment_terms = ['Net 15', 'Net 30', 'Net 45', 'Net 60', 'COD', 'Due on Receipt
                         alert('Error: ' + data.message);
                     }
                 });
-            }
+            });
         }
 
         // Generate report
@@ -1663,7 +1663,7 @@ $payment_terms = ['Net 15', 'Net 30', 'Net 45', 'Net 60', 'COD', 'Due on Receipt
         }
 
         function deleteSupplier(id, name) {
-            if (confirm('Are you sure you want to delete the supplier "' + name + '"? This action cannot be undone.')) {
+            AppModal.confirm('Are you sure you want to delete the supplier "' + name + '"? This action cannot be undone.').then(function(yes){ if(!yes) return; 
                 fetch('inventory.php', {
                     method: 'POST',
                     headers: {
@@ -1680,7 +1680,7 @@ $payment_terms = ['Net 15', 'Net 30', 'Net 45', 'Net 60', 'COD', 'Due on Receipt
                         alert('Error: ' + data.message);
                     }
                 });
-            }
+            });
         }
 
         function submitSupplierForm() {
