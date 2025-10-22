@@ -130,20 +130,20 @@ if (isset($_SERVER['HTTP_HX_REQUEST']) && $_SERVER['REQUEST_METHOD'] === 'GET') 
                     ?>
                     <?php if ($room['room_status'] === 'Cleaning'): ?>
                     <div class="position-absolute top-0 end-0" style="margin-top: -8px; margin-right: -8px;">
-                        <button class="btn btn-success btn-sm rounded-circle shadow" onclick="event.stopPropagation(); openHousekeepingModal(<?php echo $room['id']; ?>, '<?php echo htmlspecialchars($room['room_number']); ?>')" title="Room Being Cleaned">
-                            <i class="cil-check text-white"></i>
+                        <button class="btn btn-outline-success btn-sm rounded-circle shadow" onclick="event.stopPropagation(); openHousekeepingModal(<?php echo $room['id']; ?>, '<?php echo htmlspecialchars($room['room_number']); ?>')" title="Room Being Cleaned">
+                            <i class="cil-check text-success"></i>
                         </button>
                     </div>
                     <?php elseif ($room['room_status'] === 'Maintenance'): ?>
                     <div class="position-absolute top-0 end-0" style="margin-top: -8px; margin-right: -8px;">
-                        <button class="btn btn-warning btn-sm rounded-circle shadow" onclick="event.stopPropagation(); openHousekeepingModal(<?php echo $room['id']; ?>, '<?php echo htmlspecialchars($room['room_number']); ?>')" title="Assign Housekeeper">
-                            <i class="cil-settings text-dark"></i>
+                        <button class="btn btn-outline-warning btn-sm rounded-circle shadow" onclick="event.stopPropagation(); openHousekeepingModal(<?php echo $room['id']; ?>, '<?php echo htmlspecialchars($room['room_number']); ?>')" title="Assign Housekeeper">
+                            <i class="cil-settings text-warning"></i>
                         </button>
                     </div>
                     <?php elseif ($hasHousekeeper): ?>
                     <div class="position-absolute top-0 end-0" style="margin-top: -8px; margin-right: -8px;">
-                        <button class="btn btn-info btn-sm rounded-circle shadow" onclick="event.stopPropagation(); openHousekeepingModal(<?php echo $room['id']; ?>, '<?php echo htmlspecialchars($room['room_number']); ?>')" title="View Housekeeping Task">
-                            <i class="cil-broom text-white"></i>
+                        <button class="btn btn-outline-info btn-sm rounded-circle shadow" onclick="event.stopPropagation(); openHousekeepingModal(<?php echo $room['id']; ?>, '<?php echo htmlspecialchars($room['room_number']); ?>')" title="View Housekeeping Task">
+                            <i class="cil-broom text-info"></i>
                         </button>
                     </div>
                     <?php endif; ?>
@@ -395,14 +395,14 @@ $occupancyRate = $stats['total_rooms'] > 0 ? round(($stats['occupied_rooms'] / $
                                 ?>
                                 <?php if ($room['room_status'] === 'Maintenance'): ?>
                                 <div class="position-absolute top-0 end-0" style="margin-top: -8px; margin-right: -8px;">
-                                    <button class="btn btn-warning btn-sm rounded-circle shadow" onclick="event.stopPropagation(); openHousekeepingModal(<?php echo $room['id']; ?>, '<?php echo htmlspecialchars($room['room_number']); ?>')" title="Assign Housekeeper">
-                                        <i class="cil-settings text-dark"></i>
+                                    <button class="btn btn-outline-warning btn-sm rounded-circle shadow" onclick="event.stopPropagation(); openHousekeepingModal(<?php echo $room['id']; ?>, '<?php echo htmlspecialchars($room['room_number']); ?>')" title="Assign Housekeeper">
+                                        <i class="cil-settings text-warning"></i>
                                     </button>
                                 </div>
                                 <?php elseif ($hasHousekeeper && $room['room_status'] !== 'Cleaning'): ?>
                                 <div class="position-absolute top-0 end-0" style="margin-top: -8px; margin-right: -8px;">
-                                    <button class="btn btn-info btn-sm rounded-circle shadow" onclick="event.stopPropagation(); openHousekeepingModal(<?php echo $room['id']; ?>, '<?php echo htmlspecialchars($room['room_number']); ?>')" title="View Housekeeping Task">
-                                        <i class="cil-broom text-white"></i>
+                                    <button class="btn btn-outline-info btn-sm rounded-circle shadow" onclick="event.stopPropagation(); openHousekeepingModal(<?php echo $room['id']; ?>, '<?php echo htmlspecialchars($room['room_number']); ?>')" title="View Housekeeping Task">
+                                        <i class="cil-broom text-info"></i>
                                     </button>
                                 </div>
                                 <?php endif; ?>
