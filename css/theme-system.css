@@ -836,10 +836,10 @@ a:hover {
 }
 
 /* Global high-contrast cards and tables for all modules */
-/* Cards */
-[data-theme="light"] .card { background-color: #ffffff !important; color: #212529 !important; border-color: #dee2e6 !important; }
+/* Cards (exclude colored KPI/analytics cards) */
+[data-theme="light"] .card:not(.bg-primary):not(.bg-success):not(.bg-warning):not(.bg-info):not(.bg-danger):not(.bg-dark):not(.bg-secondary):not(.analytics-card) { background-color: #ffffff !important; color: #212529 !important; border-color: #dee2e6 !important; }
 [data-theme="light"] .card-header { background-color: #f8f9fa !important; color: #212529 !important; border-bottom-color: #dee2e6 !important; }
-[data-theme="dark"] .card { background-color: #1a1a1a !important; color: #ffffff !important; border-color: #495057 !important; }
+[data-theme="dark"] .card:not(.bg-primary):not(.bg-success):not(.bg-warning):not(.bg-info):not(.bg-danger):not(.bg-dark):not(.bg-secondary):not(.analytics-card) { background-color: #1a1a1a !important; color: #ffffff !important; border-color: #495057 !important; }
 [data-theme="dark"] .card-header { background-color: #2d2d2d !important; color: #ffffff !important; border-bottom-color: #495057 !important; }
 
 /* Tables */
@@ -854,8 +854,8 @@ a:hover {
 [data-theme="dark"] .table-hover > tbody > tr:hover > * { background-color: #2a2c30 !important; color: #ffffff !important; }
 
 /* Ensure text color inside card bodies follows theme */
-[data-theme="light"] .card-body { color: #212529 !important; }
-[data-theme="dark"] .card-body { color: #ffffff !important; }
+[data-theme="light"] .card:not(.bg-primary):not(.bg-success):not(.bg-warning):not(.bg-info):not(.bg-danger):not(.bg-dark):not(.bg-secondary):not(.analytics-card) .card-body { color: #212529 !important; }
+[data-theme="dark"] .card:not(.bg-primary):not(.bg-success):not(.bg-warning):not(.bg-info):not(.bg-danger):not(.bg-dark):not(.bg-secondary):not(.analytics-card) .card-body { color: #ffffff !important; }
 
 /* Striped tables high contrast */
 [data-theme="light"] .table-striped > tbody > tr:nth-of-type(odd) > * { background-color: #f8f9fa !important; }
@@ -923,3 +923,17 @@ a:hover {
   background-color: #1a1a1a !important;
   color: #ffffff !important;
 }
+
+/* Frontdesk Room Cards - keep original look regardless of theme */
+[data-theme] .room-card .card {
+  background: #1f2937 !important; /* original dark slate */
+  border-color: #1f2937 !important;
+  color: #ffffff !important;
+}
+[data-theme] .room-card .card .card-body,
+[data-theme] .room-card .card .card-header,
+[data-theme] .room-card .card .card-footer {
+  background: transparent !important;
+  color: #ffffff !important;
+}
+[data-theme] .room-card .card .text-muted { color: #9ca3af !important; }
