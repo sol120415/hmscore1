@@ -253,25 +253,42 @@ class ThemeManager {
             container.style.setProperty('background-color', theme === 'light' ? '#ffffff' : '#1a1a1a', 'important');
         });
         
-        // Force card backgrounds
-        const cards = document.querySelectorAll('.login-card, .register-card, .forgot-card, .verify-card');
-        cards.forEach(card => {
+        // Force card backgrounds - Only apply to authentication pages
+        const authCards = document.querySelectorAll('.login-card, .register-card, .forgot-card, .verify-card');
+        authCards.forEach(card => {
             card.style.setProperty('background-color', theme === 'light' ? '#ffffff' : '#1a1a1a', 'important');
             card.style.setProperty('color', theme === 'light' ? '#212529' : '#ffffff', 'important');
             card.style.setProperty('border-color', theme === 'light' ? '#dee2e6' : '#495057', 'important');
         });
         
-        // Force form controls
-        const formControls = document.querySelectorAll('.form-control');
-        formControls.forEach(control => {
+        // Explicitly exclude dashboard cards from theme changes
+        const dashboardCards = document.querySelectorAll('.card:not(.login-card):not(.register-card):not(.forgot-card):not(.verify-card)');
+        dashboardCards.forEach(card => {
+            // Remove any theme-related inline styles
+            card.style.removeProperty('background-color');
+            card.style.removeProperty('color');
+            card.style.removeProperty('border-color');
+        });
+        
+        // Force form controls - Only apply to authentication pages
+        const authFormControls = document.querySelectorAll('.login-card .form-control, .register-card .form-control, .forgot-card .form-control, .verify-card .form-control');
+        authFormControls.forEach(control => {
             control.style.setProperty('background-color', theme === 'light' ? '#ffffff' : '#1a1a1a', 'important');
             control.style.setProperty('color', theme === 'light' ? '#212529' : '#ffffff', 'important');
             control.style.setProperty('border-color', theme === 'light' ? '#dee2e6' : '#495057', 'important');
         });
         
-        // Force text colors (excluding validation error text)
-        const textElements = document.querySelectorAll('.text-muted, .text-white, .text-primary, .text-decoration-none');
-        textElements.forEach(element => {
+        // Remove theme styles from dashboard form controls
+        const dashboardFormControls = document.querySelectorAll('.form-control:not(.login-card .form-control):not(.register-card .form-control):not(.forgot-card .form-control):not(.verify-card .form-control)');
+        dashboardFormControls.forEach(control => {
+            control.style.removeProperty('background-color');
+            control.style.removeProperty('color');
+            control.style.removeProperty('border-color');
+        });
+        
+        // Force text colors - Only apply to authentication pages (excluding validation error text)
+        const authTextElements = document.querySelectorAll('.login-card .text-muted, .login-card .text-white, .login-card .text-primary, .login-card .text-decoration-none, .register-card .text-muted, .register-card .text-white, .register-card .text-primary, .register-card .text-decoration-none, .forgot-card .text-muted, .forgot-card .text-white, .forgot-card .text-primary, .forgot-card .text-decoration-none, .verify-card .text-muted, .verify-card .text-white, .verify-card .text-primary, .verify-card .text-decoration-none');
+        authTextElements.forEach(element => {
             // Skip validation error elements
             if (element.classList.contains('invalid-feedback') || 
                 element.classList.contains('text-danger') || 
@@ -289,6 +306,12 @@ class ThemeManager {
             } else if (element.classList.contains('text-primary')) {
                 element.style.setProperty('color', '#0d6efd', 'important');
             }
+        });
+        
+        // Remove theme styles from dashboard text elements
+        const dashboardTextElements = document.querySelectorAll('.text-muted:not(.login-card .text-muted):not(.register-card .text-muted):not(.forgot-card .text-muted):not(.verify-card .text-muted), .text-white:not(.login-card .text-white):not(.register-card .text-white):not(.forgot-card .text-white):not(.verify-card .text-white), .text-primary:not(.login-card .text-primary):not(.register-card .text-primary):not(.forgot-card .text-primary):not(.verify-card .text-primary)');
+        dashboardTextElements.forEach(element => {
+            element.style.removeProperty('color');
         });
         
         // Explicitly preserve validation error text colors

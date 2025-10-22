@@ -126,38 +126,56 @@ body {
   --cui-card-border-color: var(--theme-border-color);
 }
 
-/* Cards and containers */
-.card {
+/* Cards and containers - Only apply to authentication pages */
+.login-card,
+.register-card,
+.forgot-card,
+.verify-card {
   background-color: var(--theme-bg-primary);
   border-color: var(--theme-border-color);
   color: var(--theme-text-primary);
 }
 
-.card-header {
+.login-card .card-header,
+.register-card .card-header,
+.forgot-card .card-header,
+.verify-card .card-header {
   background-color: var(--theme-bg-secondary);
   border-bottom-color: var(--theme-border-color);
 }
 
-.card-body {
+.login-card .card-body,
+.register-card .card-body,
+.forgot-card .card-body,
+.verify-card .card-body {
   background-color: var(--theme-bg-primary);
   color: var(--theme-text-primary);
 }
 
-/* Forms */
-.form-control {
+/* Forms - Only apply to authentication pages */
+.login-card .form-control,
+.register-card .form-control,
+.forgot-card .form-control,
+.verify-card .form-control {
   background-color: var(--theme-bg-primary);
   border-color: var(--theme-border-color);
   color: var(--theme-text-primary);
 }
 
-.form-control:focus {
+.login-card .form-control:focus,
+.register-card .form-control:focus,
+.forgot-card .form-control:focus,
+.verify-card .form-control:focus {
   background-color: var(--theme-bg-primary);
   border-color: var(--theme-accent);
   color: var(--theme-text-primary);
   box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
 }
 
-.form-label {
+.login-card .form-label,
+.register-card .form-label,
+.forgot-card .form-label,
+.verify-card .form-label {
   color: var(--theme-text-primary);
 }
 
