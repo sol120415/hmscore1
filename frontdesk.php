@@ -289,6 +289,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             <button class="btn btn-warning btn-sm" onclick="window.location.href='?page=housekeeping'"><i class="cil-broom me-1"></i> Housekeeping</button>
             <button class="btn btn-info btn-sm" onclick="window.location.href='?page=room_billing'"><i class="cil-cash me-1"></i> Billing</button>
             <button class="btn btn-dark btn-sm" onclick="window.location.href='?page=rooms'"><i class="cil-home me-1"></i> Rooms</button>
+            <button class="btn btn-outline-info btn-sm me-2" data-coreui-toggle="modal" data-coreui-target="#priceListModal"><i class="cil-dollar me-1"></i>Room Prices</button>
             <button class="btn btn-outline-primary btn-sm ms-auto" data-coreui-toggle="modal" data-coreui-target="#walkInModal"><i class="cil-walk me-1"></i> Walk-in Guest</button>
         </div>
     </div>
@@ -329,7 +330,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                                 </div>
                                 <div class="card-footer p-2 d-flex gap-1">
                                     <button class="btn btn-sm btn-outline-primary w-100" data-coreui-toggle="modal" data-coreui-target="#reservationModal" onclick="openReservationForRoom(<?php echo $room['id']; ?>)"><i class="cil-calendar me-1"></i>Reserve</button>
-                                    <a class="btn btn-sm btn-outline-secondary" title="Open room list" href="rooms.php"><i class="cil-external-link"></i></a>
+                                    
                                 </div>
                             </div>
                         </div>
@@ -561,6 +562,103 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                         <button type="submit" class="btn btn-primary">Create Reservation</button>
                     </div>
                 </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Room Price List Modal -->
+<div class="modal fade" id="priceListModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="cil-dollar text-warning me-2"></i>Room Price List
+                </h5>
+                <button type="button" class="btn-close" data-coreui-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row g-3">
+                    <!-- Single Room -->
+                    <div class="col-md-6 col-lg-3">
+                        <div class="card h-100 border" style="background: #f8f9fa;">
+                            <div class="card-header text-center bg-secondary text-white">
+                                <h6 class="mb-0">Single Room</h6>
+                            </div>
+                            <div class="card-body text-center">
+                                <div class="h4 text-primary mb-2">₱1,500</div>
+                                <div class="small text-muted mb-2">per night</div>
+                                <div class="small">
+                                    <i class="cil-user me-1"></i>1 Guest<br>
+                                    <i class="cil-drop me-1"></i>Bathroom
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Double Room -->
+                    <div class="col-md-6 col-lg-3">
+                        <div class="card h-100 border border-success">
+                            <div class="card-header text-center bg-success text-white">
+                                <h6 class="mb-0">Double Room</h6>
+                            </div>
+                            <div class="card-body text-center">
+                                <div class="h4 text-success mb-2">₱2,500</div>
+                                <div class="small text-muted mb-2">per night</div>
+                                <div class="small">
+                                    <i class="cil-people me-1"></i>2 Guests<br>
+                                    <i class="cil-tv me-1"></i>TV<br>
+                                    <i class="cil-drop me-1"></i>Bathroom
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Deluxe Room -->
+                    <div class="col-md-6 col-lg-3">
+                        <div class="card h-100 border border-warning" style="border-width: 2px !important;">
+                            <div class="card-header text-center bg-warning">
+                                <h6 class="mb-0 fw-bold">Deluxe Room</h6>
+                                <span class="badge bg-warning text-dark">Popular</span>
+                            </div>
+                            <div class="card-body text-center">
+                                <div class="h4 text-warning mb-2 fw-bold">₱3,500</div>
+                                <div class="small text-muted mb-2">per night</div>
+                                <div class="small">
+                                    <i class="cil-people me-1"></i>3 Guests<br>
+                                    <i class="cil-tv me-1"></i>TV<br>
+                                    <i class="cil-fan me-1"></i>Air Conditioning<br>
+                                    <i class="cil-drop me-1"></i>Bathroom
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Suite -->
+                    <div class="col-md-6 col-lg-3">
+                        <div class="card h-100 border border-danger shadow-lg" style="border-width: 3px !important;">
+                            <div class="card-header text-center bg-danger text-white">
+                                <h6 class="mb-0 fw-bold">Suite</h6>
+                                <span class="badge bg-light text-danger">Premium</span>
+                            </div>
+                            <div class="card-body text-center">
+                                <div class="h4 text-danger mb-2 fw-bold">₱4,500</div>
+                                <div class="small text-muted mb-2">per night</div>
+                                <div class="small">
+                                    <i class="cil-people me-1"></i>4 Guests<br>
+                                    <i class="cil-tv me-1"></i>TV<br>
+                                    <i class="cil-fan me-1"></i>Air Conditioning<br>
+                                    <i class="cil-drop me-1"></i>Bathroom<br>
+                                    <i class="cil-restaurant me-1"></i>Kitchen
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-coreui-dismiss="modal">Close</button>
+                
             </div>
         </div>
     </div>
