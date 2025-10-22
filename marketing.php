@@ -143,7 +143,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_HX_REQUEST']))
 
                 case 'create_offer':
                     // Create new promotional offer
-                    $stmt = $conn->prepare("INSERT INTO promotional_offers (code, name, description, offer_type, discount_value, discount_percentage, min_stay_nights, max_discount_amount, applicable_room_types, applicable_rate_plans, usage_limit, usage_count, valid_from, valid_until) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+                    $stmt = $conn->prepare("INSERT INTO promotional_offers (code, name, description, offer_type, discount_value, discount_percentage, min_stay_nights, max_discount_amount, applicable_room_types, usage_limit, usage_count, valid_from, valid_until) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
                     $stmt->execute([
                         $_POST['code'],
                         $_POST['name'],
@@ -154,7 +154,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_HX_REQUEST']))
                         $_POST['min_stay_nights'] ?: 1,
                         $_POST['max_discount_amount'] ?: null,
                         $_POST['applicable_room_types'] ?: null,
-                        $_POST['applicable_rate_plans'] ?: null,
                         $_POST['usage_limit'] ?: null,
                         $_POST['usage_count'] ?: 0,
                         $_POST['valid_from'],
@@ -165,7 +164,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_HX_REQUEST']))
 
                 case 'update_offer':
                     // Update promotional offer
-                    $stmt = $conn->prepare("UPDATE promotional_offers SET code=?, name=?, description=?, offer_type=?, discount_value=?, discount_percentage=?, min_stay_nights=?, max_discount_amount=?, applicable_room_types=?, applicable_rate_plans=?, usage_limit=?, usage_count=?, valid_from=?, valid_until=?, is_active=? WHERE id=?");
+                    $stmt = $conn->prepare("UPDATE promotional_offers SET code=?, name=?, description=?, offer_type=?, discount_value=?, discount_percentage=?, min_stay_nights=?, max_discount_amount=?, applicable_room_types=?, usage_limit=?, usage_count=?, valid_from=?, valid_until=?, is_active=? WHERE id=?");
                     $stmt->execute([
                         $_POST['code'],
                         $_POST['name'],
@@ -176,7 +175,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_HX_REQUEST']))
                         $_POST['min_stay_nights'] ?: 1,
                         $_POST['max_discount_amount'] ?: null,
                         $_POST['applicable_room_types'] ?: null,
-                        $_POST['applicable_rate_plans'] ?: null,
                         $_POST['usage_limit'] ?: null,
                         $_POST['usage_count'] ?: 0,
                         $_POST['valid_from'],
@@ -459,9 +457,6 @@ foreach ($campaignAgg as $r) {
                 <button class="nav-link" id="offers-tab" data-bs-toggle="tab" data-bs-target="#offers" type="button" role="tab">Offers</button>
             </li>
             <li class="nav-item" role="presentation">
-                <button class="nav-link" id="promotions-tab" data-bs-toggle="tab" data-bs-target="#promotions" type="button" role="tab">Promotions</button>
-            </li>
-            <li class="nav-item" role="presentation">
                 <button class="nav-link" id="performance-tab" data-bs-toggle="tab" data-bs-target="#performance" type="button" role="tab">Performance</button>
             </li>
             <li class="nav-item" role="presentation">
@@ -594,93 +589,6 @@ foreach ($campaignAgg as $r) {
                 </div>
             </div>
 
-            <!-- Promotions Tab -->
-            <div class="tab-pane fade" id="promotions" role="tabpanel">
-                <div class="card">
-                    <div class="card-header d-flex justify-content-between align-items-center">
-                        <h5 class="mb-0">Promotions</h5>
-                        <div class="d-flex gap-2">
-                            <button class="btn btn-sm btn-outline-primary" onclick="openCreatePromotionModal()">
-                                <i class="cil-plus me-1"></i>Add Promotion
-                            </button>
-                        </div>
-                    </div>
-                    <div class="card-body">
-                        <div id="promotionsContent">
-                            <?php
-                            $promotions = $conn->query("SELECT * FROM promotional_offers WHERE is_active = 1 AND valid_until >= CURDATE() ORDER BY valid_until ASC")->fetchAll(PDO::FETCH_ASSOC);
-                            if (count($promotions) > 0): ?>
-                                <div class="row">
-                                    <div class="col-md-8">
-                                        <div class="card">
-                                            <div class="card-header">
-                                                <h6 class="mb-0">Available Promotions</h6>
-                                            </div>
-                                            <div class="card-body">
-                                                <div class="table-responsive">
-                                                    <table class="table table-striped">
-                                                        <thead>
-                                                            <tr>
-                                                                <th>Code</th>
-                                                                <th>Name</th>
-                                                                <th>Type</th>
-                                                                <th>Discount</th>
-                                                                <th>Valid Until</th>
-                                                                <th>Status</th>
-                                                            </tr>
-                                                        </thead>
-                                                        <tbody>
-                                                            <?php foreach ($promotions as $promo): ?>
-                                                            <tr>
-                                                                <td><code><?php echo htmlspecialchars($promo['code']); ?></code></td>
-                                                                <td><?php echo htmlspecialchars($promo['name']); ?></td>
-                                                                <td><?php echo htmlspecialchars($promo['offer_type']); ?></td>
-                                                                <td>
-                                            <?php if ($promo['discount_percentage']): ?>
-                                                <?php echo $promo['discount_percentage']; ?>%
-                                            <?php elseif ($promo['discount_value']): ?>
-                                                ₱<?php echo number_format($promo['discount_value'], 2); ?>
-                                                                    <?php else: ?>
-                                                                        Special
-                                                                    <?php endif; ?>
-                                                                </td>
-                                                                <td><?php echo date('M j, Y', strtotime($promo['valid_until'])); ?></td>
-                                                                <td><span class="badge bg-success">Active</span></td>
-                                                            </tr>
-                                                            <?php endforeach; ?>
-                                                        </tbody>
-                                                    </table>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-4">
-                                        <div class="card">
-                                            <div class="card-header">
-                                                <h6 class="mb-0">Quick Actions</h6>
-                                            </div>
-                                            <div class="card-body">
-                                                <button class="btn btn-primary w-100 mb-2" onclick="openCreateOfferModal()">
-                                                    <i class="cil-plus me-1"></i>Create New Offer
-                                                </button>
-                                                <button class="btn btn-outline-secondary w-100" onclick="refreshPromotions()">
-                                                    <i class="cil-reload me-1"></i>Refresh List
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            <?php else: ?>
-                                <div class="text-center text-muted py-5">
-                                    <i class="cil-gift display-4 mb-3"></i>
-                                    <h5>Promotions Management</h5>
-                                    <p>Click "Add Promotion" to create promotional offers that can be applied during billing.</p>
-                                </div>
-                            <?php endif; ?>
-                        </div>
-                    </div>
-                </div>
-            </div>
 
             <!-- Performance Tab -->
             <div class="tab-pane fade" id="performance" role="tabpanel">
@@ -1000,13 +908,13 @@ foreach ($campaignAgg as $r) {
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label for="applicable_room_types" class="form-label">Applicable Room Types</label>
-                                <input type="text" class="form-control" id="applicable_room_types" name="applicable_room_types" placeholder="Single,Double,Deluxe,Suite">
-                                <small class="form-text text-muted">Comma-separated list of room types this offer applies to (leave empty for all)</small>
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label for="applicable_rate_plans" class="form-label">Applicable Rate Plans</label>
-                                <input type="text" class="form-control" id="applicable_rate_plans" name="applicable_rate_plans" placeholder="Standard,Premium,VIP">
-                                <small class="form-text text-muted">Comma-separated list of rate plans this offer applies to (leave empty for all)</small>
+                                <select class="form-select" id="applicable_room_types" name="applicable_room_types" multiple>
+                                    <option value="Single">Single</option>
+                                    <option value="Double">Double</option>
+                                    <option value="Deluxe">Deluxe</option>
+                                    <option value="Suite">Suite</option>
+                                </select>
+                                <small class="form-text text-muted">Select room types this offer applies to (leave empty for all)</small>
                             </div>
                         </div>
 
@@ -1252,8 +1160,18 @@ foreach ($campaignAgg as $r) {
                 document.getElementById('discount_value').value = data.discount_value || '';
                 document.getElementById('min_stay_nights').value = data.min_stay_nights;
                 document.getElementById('max_discount_amount').value = data.max_discount_amount || '';
-                document.getElementById('applicable_room_types').value = data.applicable_room_types || '';
-                document.getElementById('applicable_rate_plans').value = data.applicable_rate_plans || '';
+                // Handle multiple select for room types
+                const roomTypesSelect = document.getElementById('applicable_room_types');
+                if (data.applicable_room_types) {
+                    const selectedTypes = data.applicable_room_types.split(',');
+                    Array.from(roomTypesSelect.options).forEach(option => {
+                        option.selected = selectedTypes.includes(option.value);
+                    });
+                } else {
+                    Array.from(roomTypesSelect.options).forEach(option => {
+                        option.selected = false;
+                    });
+                }
                 document.getElementById('usage_limit').value = data.usage_limit || '';
                 document.getElementById('usage_count').value = data.usage_count || 0;
                 document.getElementById('valid_from').value = data.valid_from;
@@ -1290,6 +1208,15 @@ foreach ($campaignAgg as $r) {
         function submitOfferForm() {
             const form = document.getElementById('offerForm');
             const formData = new FormData(form);
+
+            // Handle multiple select for room types
+            const roomTypesSelect = document.getElementById('applicable_room_types');
+            const selectedRoomTypes = Array.from(roomTypesSelect.selectedOptions).map(option => option.value);
+            if (selectedRoomTypes.length > 0) {
+                formData.set('applicable_room_types', selectedRoomTypes.join(','));
+            } else {
+                formData.set('applicable_room_types', '');
+            }
 
             fetch('marketing.php', {
                 method: 'POST',
