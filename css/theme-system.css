@@ -195,14 +195,16 @@ html .theme-toggle {
 }
 
 /* Make Login via Gmail button black in light mode - same approach as CORE text */
-[data-theme="light"] .login-card .btn-outline-light,
-[data-theme="light"] .login-card .btn-outline-secondary,
-[data-theme="light"] .login-card .btn-light,
-[data-theme="light"] .login-card a[href*="gmail"],
-[data-theme="light"] .login-card .gmail-login,
-[data-theme="light"] .login-card .social-login {
+[data-theme="light"] .login-card .btn-google {
   color: #000 !important;
   border-color: #000 !important;
+  background: #ffffff !important;
+}
+
+[data-theme="light"] .login-card .btn-google:hover {
+  color: #000 !important;
+  border-color: #000 !important;
+  background: #f8f9fa !important;
 }
 
 /* Make Login via Gmail more visible in light mode */
