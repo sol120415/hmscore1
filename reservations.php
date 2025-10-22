@@ -606,7 +606,7 @@ $todayCheckOuts = $conn->query("SELECT COUNT(*) as checkouts_today FROM reservat
     <!-- CoreUI JS -->
     <script src="js/coreui.bundle.js"></script>
     <script src="js/bootstrap.bundle.js"></script>
-    <script src="js/app-modal.js"></script>
+    <script src="js/app-modal.js?v=<?php echo @filemtime('js/app-modal.js'); ?>"></script>
 
     <style>
         .stats-card {
