@@ -283,6 +283,54 @@ html .theme-toggle {
   background-color: #f8f9fa !important;
 }
 
+/* Make modals consistent with light theme */
+[data-theme="light"] .modal {
+  --cui-modal-bg: #ffffff !important;
+  --cui-modal-border-color: #dee2e6 !important;
+}
+
+[data-theme="light"] .modal-content {
+  background-color: #ffffff !important;
+  border-color: #dee2e6 !important;
+  color: #212529 !important;
+}
+
+[data-theme="light"] .modal-header {
+  background-color: #ffffff !important;
+  border-bottom-color: #dee2e6 !important;
+  color: #212529 !important;
+}
+
+[data-theme="light"] .modal-body {
+  background-color: #ffffff !important;
+  color: #212529 !important;
+}
+
+[data-theme="light"] .modal-footer {
+  background-color: #ffffff !important;
+  border-top-color: #dee2e6 !important;
+}
+
+[data-theme="light"] .modal-title {
+  color: #212529 !important;
+}
+
+[data-theme="light"] .modal .form-control {
+  background-color: #ffffff !important;
+  border-color: #ced4da !important;
+  color: #212529 !important;
+}
+
+[data-theme="light"] .modal .form-select {
+  background-color: #ffffff !important;
+  border-color: #ced4da !important;
+  color: #212529 !important;
+}
+
+[data-theme="light"] .modal .btn-close {
+  filter: invert(0) !important;
+}
+
 /* Body and main containers */
 body {
   background-color: var(--theme-bg-primary);
