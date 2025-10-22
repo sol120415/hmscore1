@@ -58,23 +58,23 @@
 /* Modern Theme Toggle Button */
 .theme-toggle {
   position: fixed !important;
-  top: 20px !important;
-  right: 20px !important;
-  z-index: 9999 !important;
+  top: 15px !important;
+  right: 15px !important;
+  z-index: 1000 !important;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   border: none;
-  border-radius: 25px;
-  width: 60px;
-  height: 30px;
+  border-radius: 15px;
+  width: 40px;
+  height: 20px;
   display: flex !important;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
   overflow: hidden;
   position: relative;
-  opacity: 1 !important;
+  opacity: 0.8 !important;
   visibility: visible !important;
 }
 
@@ -91,16 +91,17 @@
 }
 
 .theme-toggle:hover {
-  transform: scale(1.05);
-  box-shadow: 0 6px 25px rgba(0, 0, 0, 0.3);
+  transform: scale(1.02);
+  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.2);
+  opacity: 1 !important;
 }
 
 .theme-toggle-icon {
   position: relative;
   z-index: 2;
-  font-size: 16px;
+  font-size: 12px;
   color: white;
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.3s ease;
   transform: translateX(0);
 }
 
@@ -108,19 +109,19 @@
 .theme-toggle::after {
   content: '';
   position: absolute;
-  top: 3px;
-  left: 3px;
-  width: 24px;
-  height: 24px;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
   background: white;
   border-radius: 50%;
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  transition: all 0.3s ease;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
 }
 
 /* Light mode toggle state */
 [data-theme="light"] .theme-toggle::after {
-  transform: translateX(30px);
+  transform: translateX(20px);
 }
 
 [data-theme="light"] .theme-toggle::before {
@@ -128,7 +129,7 @@
 }
 
 [data-theme="light"] .theme-toggle-icon {
-  transform: translateX(-10px);
+  transform: translateX(-8px);
 }
 
 /* Dark mode toggle state */
@@ -141,7 +142,7 @@
 }
 
 [data-theme="dark"] .theme-toggle-icon {
-  transform: translateX(10px);
+  transform: translateX(8px);
 }
 
 /* Ensure toggle is always visible and accessible */
