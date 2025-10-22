@@ -263,8 +263,8 @@ $occupancyRate = $stats['total_rooms'] > 0 ? round(($stats['occupied_rooms'] / $
             color: #f8d7da;
         }
         .room-cleaning {
-            background: linear-gradient(135deg, #856404, #5a3d02);
-            color: #fff3cd;
+            background: linear-gradient(135deg, #0d6efd, #084298);
+            color: #b3d4ff;
         }
         .room-maintenance {
             background: linear-gradient(135deg, #0c5460, #062a30);
@@ -393,13 +393,7 @@ $occupancyRate = $stats['total_rooms'] > 0 ? round(($stats['occupied_rooms'] / $
                                 // Check if room has an assigned housekeeper
                                 $hasHousekeeper = $conn->query("SELECT COUNT(*) as count FROM housekeeping WHERE room_id = {$room['id']} AND status IN ('Pending', 'In Progress')")->fetch(PDO::FETCH_ASSOC)['count'] > 0;
                                 ?>
-                                <?php if ($room['room_status'] === 'Cleaning'): ?>
-                                <div class="position-absolute top-0 end-0" style="margin-top: -8px; margin-right: -8px;">
-                                    <button class="btn btn-success btn-sm rounded-circle shadow" onclick="event.stopPropagation(); openHousekeepingModal(<?php echo $room['id']; ?>, '<?php echo htmlspecialchars($room['room_number']); ?>')" title="Room Being Cleaned">
-                                        <i class="cil-check text-white"></i>
-                                    </button>
-                                </div>
-                                <?php elseif ($room['room_status'] === 'Maintenance'): ?>
+                                <?php if ($room['room_status'] === 'Maintenance'): ?>
                                 <div class="position-absolute top-0 end-0" style="margin-top: -8px; margin-right: -8px;">
                                     <button class="btn btn-warning btn-sm rounded-circle shadow" onclick="event.stopPropagation(); openHousekeepingModal(<?php echo $room['id']; ?>, '<?php echo htmlspecialchars($room['room_number']); ?>')" title="Assign Housekeeper">
                                         <i class="cil-settings text-dark"></i>
