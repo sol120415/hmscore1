@@ -131,6 +131,87 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 }
 ?>
 
+<!DOCTYPE html>
+<html lang="en" data-coreui-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Frontdesk - Hotel Management System</title>
+
+    <!-- CoreUI CSS -->
+    <link href="css/coreui.min.css" rel="stylesheet">
+    <link href="css/coreui-grid.min.css" rel="stylesheet">
+    <link href="css/coreui-reboot.min.css" rel="stylesheet">
+    <link href="css/coreui-utilities.min.css" rel="stylesheet">
+    <link href="css/coreui-forms.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/@coreui/icons/css/all.min.css">
+
+    <!-- HTMX -->
+    <script src="js/htmx.min.js"></script>
+
+    <!-- Popper.js for popovers -->
+    <script src="js/popper.min.js"></script>
+    <!-- CoreUI JS -->
+    <script src="js/coreui.bundle.js"></script>
+    <script src="js/bootstrap.bundle.js"></script>
+
+    <style>
+        .stats-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 12px;
+        }
+        .room-card {
+            transition: all 0.2s ease;
+            cursor: pointer;
+            border: 2px solid transparent;
+        }
+        .room-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .room-vacant {
+            background: linear-gradient(135deg, #2d5016, #1a3326);
+            color: #d4edda;
+        }
+        .room-occupied {
+            background: linear-gradient(135deg, #721c24, #4a0f14);
+            color: #f8d7da;
+        }
+        .room-cleaning {
+            background: linear-gradient(135deg, #856404, #5a3d02);
+            color: #fff3cd;
+        }
+        .room-maintenance {
+            background: linear-gradient(135deg, #0c5460, #062a30);
+            color: #d1ecf1;
+        }
+        .room-reserved {
+            background: linear-gradient(135deg, #383d41, #212529);
+            color: #e2e3e5;
+        }
+        .input-group-text {
+            background: #4a5568;
+            border-color: #4a5568;
+            color: #e2e8f0;
+        }
+        .form-control:focus, .form-select:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+        }
+        .floor-section {
+            margin-bottom: 2rem;
+        }
+        .floor-header {
+            margin-bottom: 1rem;
+            padding: 0.5rem 1rem;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+    </style>
+</head>
+<body>
 <div class="container-fluid p-3">
     <div class="flex-grow-1 text-start">
                     <h2>Frontdesk</h2>
@@ -327,6 +408,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         </div>
     </div>
 </div>
+</body>
+</html>
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
