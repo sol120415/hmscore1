@@ -221,9 +221,9 @@ $recentActivities = $conn->query("
 
         <!-- Header with Title -->
         <div class="mb-4">
-            <div class="text-center">
-                <?php include 'analyticstitle.html'; ?>
-            </div>
+            <div class="flex-grow-1 text-start">
+                    <h2>Analytics</h2>
+                </div>
         </div>
 
         <!-- Summary Statistics -->

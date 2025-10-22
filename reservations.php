@@ -646,8 +646,8 @@ $todayCheckOuts = $conn->query("SELECT COUNT(*) as checkouts_today FROM reservat
         <!-- Header with Stats -->
         <div class="mb-4">
             <div class="d-flex justify-content-between gap-3 text-center">
-                <div class="text-center flex-grow-1">
-                <?php include 'reservationstitle.html'; ?>
+                <div class="flex-grow-1 text-start">
+                    <h2>Reservations</h2>
                 </div>
                 <div>
                     <small class="text-muted d-block">Total</small>

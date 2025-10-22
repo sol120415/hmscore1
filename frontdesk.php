@@ -132,9 +132,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 ?>
 
 <div class="container-fluid p-3">
-    <div class="text-center mb-3">
-        <?php if (file_exists('frontdesktitle.html')) { include 'frontdesktitle.html'; } else { echo '<h3 class="mb-0">Front Desk</h3>'; } ?>
-    </div>
+    <div class="flex-grow-1 text-start">
+                    <h2>Frontdesk</h2>
+                </div>
 
     <!-- KPIs -->
     <div class="row g-3 mb-3">

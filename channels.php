@@ -160,8 +160,8 @@ $recentBookings = $conn->query("
         <!-- Header with Stats -->
         <div class="mb-4">
             <div class="d-flex justify-content-between gap-3 text-center">
-                <div class="text-center flex-grow-1">
-                <?php include 'channelstitle.html'; ?>
+                <div class="flex-grow-1 text-start">
+                    <h2>Channels</h2>
                 </div>
                 <div>
                     <small class="text-muted d-block">Total</small>

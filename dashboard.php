@@ -129,7 +129,7 @@ if(!isset($_SESSION['email'])){
   </div>
 </div>
 
-<footer class="mt-auto bg-dark text-white text-center py-2">
+<footer class="mt-2bg-dark text-white text-center pt-2">
   <p>&copy; 2025 Hotel Management System. All rights reserved.</p>
 </footer>
 
