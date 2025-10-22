@@ -160,6 +160,7 @@ $revPAR = $roomStats['total_rooms'] > 0 ?
     <link href="css/coreui-grid.min.css" rel="stylesheet">
     <link href="css/coreui-utilities.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://unpkg.com/@coreui/icons/css/all.min.css">
+    <link href="css/theme-system.css" rel="stylesheet">
 
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
@@ -192,6 +193,33 @@ $revPAR = $roomStats['total_rooms'] > 0 ?
             font-size: 0.9rem;
             opacity: 0.9;
         }
+        /* Theme-aware analytics surfaces */
+        .card { background-color: var(--theme-bg-primary); border-color: var(--theme-border-color); color: var(--theme-text-primary); }
+        .card-header { background-color: var(--theme-bg-secondary); border-bottom-color: var(--theme-border-color); color: var(--theme-text-primary); }
+        body { color: var(--theme-text-primary) !important; }
+        .text-muted { color: var(--theme-text-secondary) !important; }
+        .table { color: var(--theme-text-primary); }
+        .table thead th { background-color: var(--theme-bg-secondary); color: var(--theme-text-primary); border-color: var(--theme-border-color); }
+        .table tbody td, .table tbody th { background-color: var(--theme-bg-primary); color: var(--theme-text-primary); border-color: var(--theme-border-color); }
+        /* Chart canvas background for light mode so axes are visible */
+        [data-theme="light"] .chart-container { background-color: #ffffff; }
+        [data-theme="dark"] .chart-container { background-color: #23272b; }
+        .table-hover > tbody > tr:hover > * { background-color: var(--theme-bg-secondary) !important; }
+        .table-striped > tbody > tr:nth-of-type(odd) > * { background-color: var(--theme-bg-secondary) !important; }
+        .table, .table th, .table td { border-color: var(--theme-border-color) !important; }
+        /* High-contrast tables in light mode */
+        [data-theme="light"] .table { color: #212529 !important; border-color: #dee2e6 !important; }
+        [data-theme="light"] .table thead th { background-color: #f8f9fa !important; color: #212529 !important; border-color: #dee2e6 !important; }
+        [data-theme="light"] .table tbody td,
+        [data-theme="light"] .table tbody th { background-color: #ffffff !important; color: #212529 !important; border-color: #dee2e6 !important; }
+        [data-theme="light"] .table-hover > tbody > tr:hover > * { background-color: #f1f3f5 !important; color: #212529 !important; }
+        /* High-contrast tables in dark mode */
+        [data-theme="dark"] .table { color: #ffffff !important; border-color: #495057 !important; }
+        [data-theme="dark"] .table thead th { background-color: #2d2d2d !important; color: #ffffff !important; border-color: #495057 !important; }
+        [data-theme="dark"] .table tbody td,
+        [data-theme="dark"] .table tbody th { background-color: #1a1a1a !important; color: #ffffff !important; border-color: #495057 !important; }
+        [data-theme="dark"] .table-hover > tbody > tr:hover > * { background-color: #2a2c30 !important; color: #ffffff !important; }
+        [data-theme="dark"] .card-header, [data-theme="dark"] .card-header h5 { background-color: #2d2d2d !important; color: #ffffff !important; }
     </style>
 </head>
 <body>
@@ -217,8 +245,8 @@ $revPAR = $roomStats['total_rooms'] > 0 ?
             <div class="col-md-3">
                 <div class="card analytics-card h-100">
                     <div class="card-body text-center">
-                        <i class="cil-dollar display-4 mb-2"></i>
-                        <div class="metric-value">$<?php echo number_format($billingStats['total_revenue'] ?? 0, 0); ?></div>
+                        <i class="cil-money display-4 mb-2"></i>
+                        <div class="metric-value">₱<?php echo number_format($billingStats['total_revenue'] ?? 0, 0); ?></div>
                         <div class="metric-label">Total Revenue</div>
                     </div>
                 </div>
@@ -389,7 +417,7 @@ $revPAR = $roomStats['total_rooms'] > 0 ?
                 <div class="card stat-card">
                     <div class="card-body">
                         <h6 class="text-muted">Revenue Per Available Room (RevPAR)</h6>
-                        <h3 class="mb-0">$<?php echo number_format($revPAR, 2); ?></h3>
+                        <h3 class="mb-0">₱<?php echo number_format($revPAR, 2); ?></h3>
                     </div>
                 </div>
             </div>
@@ -397,7 +425,7 @@ $revPAR = $roomStats['total_rooms'] > 0 ?
                 <div class="card stat-card">
                     <div class="card-body">
                         <h6 class="text-muted">Average Transaction Value</h6>
-                        <h3 class="mb-0">$<?php echo number_format($billingStats['avg_transaction'] ?? 0, 2); ?></h3>
+                        <h3 class="mb-0">₱<?php echo number_format($billingStats['avg_transaction'] ?? 0, 2); ?></h3>
                     </div>
                 </div>
             </div>
@@ -405,7 +433,7 @@ $revPAR = $roomStats['total_rooms'] > 0 ?
                 <div class="card stat-card">
                     <div class="card-body">
                         <h6 class="text-muted">Total Inventory Value</h6>
-                        <h3 class="mb-0">$<?php echo number_format($inventoryStats['total_inventory_value'] ?? 0, 2); ?></h3>
+                        <h3 class="mb-0">₱<?php echo number_format($inventoryStats['total_inventory_value'] ?? 0, 2); ?></h3>
                     </div>
                 </div>
             </div>
@@ -452,9 +480,17 @@ $revPAR = $roomStats['total_rooms'] > 0 ?
     <script src="js/coreui.bundle.js"></script>
 
     <script>
-        // Chart.js default configuration
-        Chart.defaults.color = '#fff';
-        Chart.defaults.borderColor = 'rgba(255, 255, 255, 0.1)';
+        (function(){
+            function applyChartTheme(){
+                var t = document.documentElement.getAttribute('data-theme') || 'light';
+                var textColor = t === 'dark' ? '#ffffff' : '#212529';
+                var gridColor = t === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)';
+                Chart.defaults.color = textColor;
+                Chart.defaults.borderColor = gridColor;
+            }
+            applyChartTheme();
+            window.addEventListener('themechange', applyChartTheme);
+        })();
 
         // Room Status Chart
         new Chart(document.getElementById('roomStatusChart'), {
@@ -575,7 +611,7 @@ $revPAR = $roomStats['total_rooms'] > 0 ?
                     }
                 ?>],
                 datasets: [{
-                    label: 'Revenue ($)',
+                    label: 'Revenue (₱)',
                     data: [<?php 
                         foreach ($monthlyRevenue as $data) {
                             echo $data['revenue'] . ',';
@@ -664,7 +700,7 @@ $revPAR = $roomStats['total_rooms'] > 0 ?
                     }
                 ?>],
                 datasets: [{
-                    label: 'Revenue ($)',
+                    label: 'Revenue (₱)',
                     data: [<?php 
                         foreach ($channelStats as $channel) {
                             echo ($channel['total_revenue'] ?? 0) . ',';
