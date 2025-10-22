@@ -5,6 +5,14 @@ if(!isset($_SESSION['email'])){
     header('Location: login.php');
     exit;
 }
+
+// Handle logout BEFORE any output
+if (isset($_GET['page']) && $_GET['page'] === 'logout') {
+    session_unset();
+    session_destroy();
+    header('Location: login.php');
+    exit;
+}
 ?>
 <!DOCTYPE html>
 <html lang="en" data-coreui-theme="dark">
@@ -135,14 +143,6 @@ if(!isset($_SESSION['email'])){
   <p>&copy; 2025 Hotel Management System. All rights reserved.</p>
 </footer>
 
-<?php
-// Handle logout
-if (isset($_GET['page']) && $_GET['page'] == 'logout') {
- session_destroy();
- header('Location: login.php');
- exit;
-}
-  ?>
 
   <script>
     // Highlight current page in sidebar
