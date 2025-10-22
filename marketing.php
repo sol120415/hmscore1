@@ -823,21 +823,7 @@ $stats = $conn->query("
         }
 
         function openCreatePromotionModal() {
-            // Load promotions content
-            fetch('marketing.php?action=get_promotions_page', {
-                method: 'GET',
-                headers: {
-                    'HX-Request': 'true'
-                }
-            })
-            .then(response => response.text())
-            .then(html => {
-                document.getElementById('promotionsContent').innerHTML = html;
-            })
-            .catch(error => {
-                console.error('Error loading promotions:', error);
-                document.getElementById('promotionsContent').innerHTML = '<div class="alert alert-danger">Error loading promotions page</div>';
-            });
+            openCreateOfferModal();
         }
 
         function refreshPromotions() {

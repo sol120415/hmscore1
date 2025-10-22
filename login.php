@@ -53,6 +53,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             } else {
                 // Verify password
                 if (password_verify($password, $user['password'])) {
+                    // If a code was already sent within the last minute for this email, reuse it and redirect
+                    if (
+                        isset($_SESSION['twofa_email']) && $_SESSION['twofa_email'] === $email &&
+                        isset($_SESSION['twofa_code']) && isset($_SESSION['twofa_last_sent']) &&
+                        (time() - $_SESSION['twofa_last_sent'] < 60)
+                    ) {
+                        header('Location: verify_2fa.php');
+                        exit;
+                    }
+
                     // Generate 2FA code
                     $twofa_code = rand(100000, 999999);
                     $_SESSION['twofa_email'] = $email;
@@ -81,6 +91,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     ";
 
                     if (sendEmail($email, $subject, $body)) {
+                        $_SESSION['twofa_last_sent'] = time();
                         header('Location: verify_2fa.php');
                         exit;
                     } else {
@@ -128,7 +139,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             background: linear-gradient(135deg, #2d3748 0%, #1a202c 100%);
         }
         .login-card {
-            width: 100%;
+            width: 300px;
             max-width: 400px;
         }
     </style>
@@ -177,11 +188,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                                 <polyline points="22,6 12,13 2,6"></polyline>
                                             </svg>
                                         </span>
-                                        <input type="email" class="form-control" id="exampleFormControlInput1" name="email" placeholder="name@example.com" aria-describedby="email-addon" required>
-                                        <div class="invalid-feedback">
-                                            Please enter a valid email address.
-                                        </div>
+                                        <input type="email" class="form-control" id="email" name="email" placeholder="name@example.com" aria-describedby="email-addon" required>
                                     </div>
+                                    <div id="email-feedback" class="validation-feedback"></div>
                                 </div>
 
                                 <!-- Password Input Group with Remember Me -->
@@ -202,9 +211,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                             </svg>
                                         </button>
                                     </div>
-                                    <div class="invalid-feedback">
-                                        Please enter your password.
-                                    </div>
+                                    <div id="password-feedback" class="validation-feedback"></div>
                                 </div>
 
                                 <!-- Submit Button -->
@@ -295,7 +302,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             });
 
             // Real-time validation
-            const emailInput = document.getElementById('exampleFormControlInput1');
+            const emailInput = document.getElementById('email');
             const submitBtn = document.querySelector('button[type="submit"]');
 
             // Email validation on input
@@ -317,23 +324,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
             });
 
-            // Password validation on input
-            passwordInput.addEventListener('input', function() {
-                const password = this.value;
-
-                if (password === '') {
-                    this.classList.remove('is-valid', 'is-invalid');
-                    hideValidationMessage('password');
-                } else if (password.length >= 6) {
-                    this.classList.remove('is-invalid');
-                    this.classList.add('is-valid');
-                    showValidationMessage('password', 'Password strength: Good', 'valid');
-                } else {
-                    this.classList.remove('is-valid');
-                    this.classList.add('is-invalid');
-                    showValidationMessage('password', 'Password must be at least 6 characters.', 'invalid');
-                }
-            });
 
             // Form submission validation
             document.querySelector('form').addEventListener('submit', function(e) {
@@ -372,22 +362,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             });
 
             function showValidationMessage(field, message, type) {
-                let feedbackElement = document.querySelector(`#${field}-feedback`);
-                if (!feedbackElement) {
-                    feedbackElement = document.createElement('div');
-                    feedbackElement.id = `${field}-feedback`;
-                    feedbackElement.className = 'validation-feedback';
-                    document.querySelector(`#${field}`).parentNode.appendChild(feedbackElement);
+                const feedbackElement = document.querySelector(`#${field}-feedback`);
+                if (feedbackElement) {
+                    feedbackElement.textContent = message;
+                    feedbackElement.className = `validation-feedback ${type}-feedback`;
                 }
-
-                feedbackElement.textContent = message;
-                feedbackElement.className = `validation-feedback ${type}-feedback`;
             }
 
             function hideValidationMessage(field) {
                 const feedbackElement = document.querySelector(`#${field}-feedback`);
                 if (feedbackElement) {
                     feedbackElement.textContent = '';
+                    feedbackElement.className = 'validation-feedback';
                 }
             }
 
@@ -424,6 +410,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             font-size: 0.875rem;
             margin-top: 0.25rem;
             display: block;
+            min-height: 1.25rem; /* Reserve space to prevent layout shift */
         }
 
         .valid-feedback {
@@ -432,6 +419,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         .invalid-feedback {
             color: #dc3545;
+        }
+
+        /* Ensure card maintains consistent height like verify_2fa */
+        .login-card .card-body {
+            padding-bottom: 2rem;
         }
 
         .form-control.is-valid {
