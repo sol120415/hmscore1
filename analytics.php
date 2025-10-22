@@ -488,8 +488,40 @@ $revPAR = $roomStats['total_rooms'] > 0 ?
                 Chart.defaults.color = textColor;
                 Chart.defaults.borderColor = gridColor;
             }
-            applyChartTheme();
-            window.addEventListener('themechange', applyChartTheme);
+            function applyTableTheme(){
+                var t = document.documentElement.getAttribute('data-theme') || 'light';
+                var isLight = t === 'light';
+                var container = document.querySelector('.container-fluid');
+                if (!container) return;
+                var tables = container.querySelectorAll('table, .table');
+                tables.forEach(function(tbl){
+                    // Normalize table-dark in light mode
+                    if (isLight && tbl.classList.contains('table-dark')) {
+                        tbl.classList.remove('table-dark');
+                    }
+                    // Apply inline colors to ensure immediate visibility
+                    var theadCells = tbl.querySelectorAll('thead th, thead td');
+                    theadCells.forEach(function(c){
+                        c.style.backgroundColor = isLight ? '#f8f9fa' : '#2d2d2d';
+                        c.style.color = isLight ? '#212529' : '#ffffff';
+                        c.style.borderColor = isLight ? '#dee2e6' : '#495057';
+                    });
+                    var bodyCells = tbl.querySelectorAll('tbody th, tbody td');
+                    bodyCells.forEach(function(c){
+                        c.style.backgroundColor = isLight ? '#ffffff' : '#1a1a1a';
+                        c.style.color = isLight ? '#212529' : '#ffffff';
+                        c.style.borderColor = isLight ? '#dee2e6' : '#495057';
+                    });
+                });
+            }
+            function applyAll(){
+                applyChartTheme();
+                applyTableTheme();
+            }
+            // Initial
+            document.addEventListener('DOMContentLoaded', applyAll);
+            // On theme toggle
+            document.addEventListener('themechange', applyAll);
         })();
 
         // Room Status Chart
