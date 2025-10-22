@@ -176,6 +176,24 @@ html .theme-toggle {
   transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
 }
 
+/* Make CORE text black in light mode for better visibility */
+[data-theme="light"] .login-card .hotel-logo .logo-text {
+  color: #000 !important;
+}
+
+[data-theme="light"] .login-card .logo-container .logo-text {
+  color: #000 !important;
+}
+
+/* Target CORE text specifically in login card */
+[data-theme="light"] .login-card .hotel-logo {
+  color: #000 !important;
+}
+
+[data-theme="light"] .login-card .logo-container {
+  color: #000 !important;
+}
+
 /* Body and main containers */
 body {
   background-color: var(--theme-bg-primary);
