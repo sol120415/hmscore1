@@ -1111,51 +1111,84 @@ document.addEventListener('DOMContentLoaded', function() {
       </div>
       <form id="walkInForm" onsubmit="submitWalkIn(event)">
         <div class="modal-body">
-          <div class="mb-2">
-            <label class="form-label small">First Name *</label>
-            <input type="text" class="form-control form-control-sm" name="first_name" required>
-          </div>
-          <div class="mb-2">
-            <label class="form-label small">Last Name *</label>
-            <input type="text" class="form-control form-control-sm" name="last_name" required>
-          </div>
-          <div class="mb-2">
-            <label class="form-label small">Email *</label>
-            <input type="email" class="form-control form-control-sm" name="email" required>
-          </div>
-          <div class="row g-2 mb-2">
-            <div class="col-6">
-              <label class="form-label small">ID Type *</label>
-              <select class="form-select form-select-sm" name="id_type" required>
-                <option value="Passport">Passport</option>
-                <option value="Driver License">Driver License</option>
-                <option value="National ID" selected>National ID</option>
-              </select>
+          <div class="row g-3 align-items-start">
+            <div class="col-lg-7">
+              <div class="rounded-3 border p-3">
+                <div class="row g-2 mb-2">
+                  <div class="col-6">
+                    <label class="form-label small">First Name *</label>
+                    <input type="text" class="form-control form-control-sm" name="first_name" required>
+                  </div>
+                  <div class="col-6">
+                    <label class="form-label small">Last Name *</label>
+                    <input type="text" class="form-control form-control-sm" name="last_name" required>
+                  </div>
+                </div>
+                <div class="mb-2">
+                  <label class="form-label small">Email *</label>
+                  <input type="email" class="form-control form-control-sm" name="email" required>
+                </div>
+                <div class="row g-2 mb-2">
+                  <div class="col-6">
+                    <label class="form-label small">ID Type *</label>
+                    <select class="form-select form-select-sm" name="id_type" required>
+                      <option value="Passport">Passport</option>
+                      <option value="Driver License">Driver License</option>
+                      <option value="National ID" selected>National ID</option>
+                    </select>
+                  </div>
+                  <div class="col-6">
+                    <label class="form-label small">ID Number *</label>
+                    <input type="text" class="form-control form-control-sm" name="id_number" required>
+                  </div>
+                </div>
+                <div class="row g-2 align-items-end mb-2">
+                  <div class="col-6">
+                    <label class="form-label small">Date of Birth *</label>
+                    <input type="date" class="form-control form-control-sm" name="date_of_birth" required>
+                  </div>
+                  <div class="col-6 text-end">
+                    <button type="button" class="btn btn-secondary btn-sm me-2" data-coreui-dismiss="modal">Cancel</button>
+                    <button type="submit" id="walkInSubmit" class="btn btn-primary btn-sm">Check In</button>
+                  </div>
+                </div>
+              </div>
             </div>
-            <div class="col-6">
-              <label class="form-label small">ID Number *</label>
-              <input type="text" class="form-control form-control-sm" name="id_number" required>
+            <div class="col-lg-5">
+              <div class="rounded-3 border p-3">
+                <div class="mb-2">
+                  <label class="form-label small">Room (Vacant only) *</label>
+                  <select class="form-select form-select-sm" name="room_id" required>
+                    <option value="">Select room...</option>
+                    <?php foreach ($vacantRoomsList as $vr): ?>
+                      <option value="<?php echo (int)$vr['id']; ?>">#<?php echo htmlspecialchars($vr['room_number']); ?> • <?php echo htmlspecialchars($vr['room_type']); ?></option>
+                    <?php endforeach; ?>
+                  </select>
+                </div>
+
+                <div class="mb-2">
+                  <label class="form-label small">Duration *</label>
+                  <div class="row g-2">
+                    <div class="col-6">
+                      <select class="form-select form-select-sm" id="walkin_hours" name="reservation_hour_count">
+                        <option value="8" selected>8 hours</option>
+                        <option value="16">16 hours</option>
+                        <option value="24">1 day (24h)</option>
+                        <option value="48">2 days (48h)</option>
+                        <option value="72">3 days (72h)</option>
+                      </select>
+                    </div>
+                    <div class="col-6">
+                      <input type="datetime-local" class="form-control form-control-sm" id="walkin_checkin" name="check_in_date" placeholder="dd/mm/yyyy --:--">
+                    </div>
+                  </div>
+                </div>
+
+              </div>
             </div>
           </div>
-          <div class="mb-2">
-            <label class="form-label small">Date of Birth *</label>
-            <input type="date" class="form-control form-control-sm" name="date_of_birth" required>
-          </div>
-          <div class="mb-2">
-            <label class="form-label small">Room (Vacant only) *</label>
-            <select class="form-select form-select-sm" name="room_id" required>
-              <option value="">Select room...</option>
-              <?php foreach ($vacantRoomsList as $vr): ?>
-                <option value="<?php echo (int)$vr['id']; ?>">#<?php echo htmlspecialchars($vr['room_number']); ?> • <?php echo htmlspecialchars($vr['room_type']); ?></option>
-              <?php endforeach; ?>
-            </select>
-          </div>
-          <div class="text-muted small">Walk-in will be checked in immediately for 8 hours by default. You can edit later in Reservations.</div>
         </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-coreui-dismiss="modal">Cancel</button>
-          <button type="submit" id="walkInSubmit" class="btn btn-primary">Check In</button>
-        </div>
+        <div class="modal-footer d-none"></div>
       </form>
     </div>
   </div>
