@@ -213,7 +213,7 @@ $categories = $conn->query("SELECT DISTINCT item_category FROM items WHERE item_
                 </div>
                 <div>
                     <small class="text-muted d-block">Total Value</small>
-                    <span class="fw-bold text-info">$<?php echo number_format($stats['total_value'] ?: 0, 2); ?></span>
+                    <span class="fw-bold text-info">₱<?php echo number_format($stats['total_value'] ?: 0, 2); ?></span>
                 </div>
                 <div>
                     <small class="text-muted d-block">Movements</small>

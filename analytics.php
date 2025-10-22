@@ -172,6 +172,34 @@ $recentActivities = $conn->query("
             height: 300px;
             width: 100%;
         }
+        .click-card { cursor: pointer; }
+        .revenue-toggle {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            width: 28px;
+            height: 18px;
+            border: none;
+            border-radius: 10px;
+            background: rgba(0,0,0,0.6);
+            color: #cfd4da;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+            line-height: 1;
+            cursor: pointer;
+        }
+        .revenue-toggle:hover {
+            background: rgba(0,0,0,0.75);
+            color: #ffffff;
+        }
+        .revenue-toggle i {
+            font-size: 16px;
+            color: #ffffff;
+            display: inline-block;
+            line-height: 1;
+        }
         .activity-item {
             border-left: 3px solid;
             padding-left: 10px;
@@ -201,7 +229,7 @@ $recentActivities = $conn->query("
         <!-- Summary Statistics -->
         <div class="row mb-4">
             <div class="col-md-2 mb-3">
-                <div class="card stats-card text-white h-100">
+                <div class="card stats-card text-white h-100 click-card" onclick="window.location.href='dashboard.php?page=reservations'">
                     <div class="card-body text-center">
                         <i class="cil-calendar-check display-4 mb-2"></i>
                         <h3><?php echo number_format($summaryStats['total_reservations']); ?></h3>
@@ -210,7 +238,7 @@ $recentActivities = $conn->query("
                 </div>
             </div>
             <div class="col-md-2 mb-3">
-                <div class="card stats-card text-white h-100">
+                <div class="card stats-card text-white h-100 click-card" onclick="window.location.href='dashboard.php?page=guests'">
                     <div class="card-body text-center">
                         <i class="cil-people display-4 mb-2"></i>
                         <h3><?php echo number_format($summaryStats['total_guests']); ?></h3>
@@ -219,7 +247,7 @@ $recentActivities = $conn->query("
                 </div>
             </div>
             <div class="col-md-2 mb-3">
-                <div class="card stats-card text-white h-100">
+                <div class="card stats-card text-white h-100 click-card" onclick="window.location.href='dashboard.php?page=rooms'">
                     <div class="card-body text-center">
                         <i class="cil-bed display-4 mb-2"></i>
                         <h3><?php echo $summaryStats['occupied_rooms']; ?>/<?php echo $summaryStats['total_rooms']; ?></h3>
@@ -228,16 +256,19 @@ $recentActivities = $conn->query("
                 </div>
             </div>
             <div class="col-md-2 mb-3">
-                <div class="card stats-card text-white h-100">
+                <div class="card stats-card text-white h-100 position-relative">
+                    <button class="revenue-toggle" id="toggleRevenue" aria-label="Toggle revenue visibility" title="Show/Hide">
+                        <i class="cil-low-vision"></i>
+                    </button>
                     <div class="card-body text-center">
                         <i class="cil-dollar display-4 mb-2"></i>
-                        <h3>₱<?php echo number_format($summaryStats['today_revenue'], 2); ?></h3>
+                        <h3 id="revenueValue">₱<?php echo number_format($summaryStats['today_revenue'], 2); ?></h3>
                         <small>Today's Revenue</small>
                     </div>
                 </div>
             </div>
             <div class="col-md-2 mb-3">
-                <div class="card stats-card text-white h-100">
+                <div class="card stats-card text-white h-100 click-card" onclick="window.location.href='dashboard.php?page=housekeeping'">
                     <div class="card-body text-center">
                         <i class="cil-home display-4 mb-2"></i>
                         <h3><?php echo number_format($summaryStats['today_cleanings']); ?></h3>
@@ -336,6 +367,23 @@ $recentActivities = $conn->query("
         document.addEventListener('DOMContentLoaded', function() {
             initializeCharts();
             loadChartData('reservations', 30);
+            // Revenue hide/show toggle
+            const toggleBtn = document.getElementById('toggleRevenue');
+            const revenueEl = document.getElementById('revenueValue');
+            if (toggleBtn && revenueEl) {
+                let hidden = false;
+                const actualText = revenueEl.textContent;
+                toggleBtn.addEventListener('click', function() {
+                    hidden = !hidden;
+                    if (hidden) {
+                        revenueEl.textContent = '••••••••';
+                        toggleBtn.innerHTML = '<i class="cil-eye"></i>';
+                    } else {
+                        revenueEl.textContent = actualText;
+                        toggleBtn.innerHTML = '<i class="cil-low-vision"></i>';
+                    }
+                });
+            }
         });
 
         function initializeCharts() {

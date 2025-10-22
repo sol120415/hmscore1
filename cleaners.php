@@ -291,7 +291,7 @@ $stats = $conn->query("
                                     </div>
                                     <div class="mt-2">
                                         <small class="text-muted d-block">Current: <?php echo htmlspecialchars($supply['current_stock']); ?> | Min: <?php echo htmlspecialchars($supply['minimum_stock_level']); ?></small>
-                                        <small class="text-muted d-block">Cost/Unit: $<?php echo number_format($supply['cost_per_unit'], 2); ?></small>
+                                        <small class="text-muted d-block">Cost/Unit: ₱<?php echo number_format($supply['cost_per_unit'], 2); ?></small>
                                         <?php if ($supply['supplier']): ?>
                                         <small class="text-muted d-block">Supplier: <?php echo htmlspecialchars($supply['supplier']); ?></small>
                                         <?php endif; ?>
@@ -352,7 +352,7 @@ $stats = $conn->query("
                                 <label for="phone" class="form-label fw-bold">Phone</label>
                                 <div class="input-group input-group-sm">
                                     <span class="input-group-text"><i class="cil-phone"></i></span>
-                                    <input type="tel" class="form-control" id="phone" name="phone" placeholder="Phone Number">
+                                     <input type="tel" class="form-control" id="phone" name="phone" placeholder="Phone Number" inputmode="numeric" maxlength="11" oninput="this.value=this.value.replace(/\\D/g,'').slice(0,11)" onkeypress="return /[0-9]/.test(event.key)">
                                 </div>
                             </div>
                             <div class="col-md-6">

@@ -103,7 +103,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             background: linear-gradient(135deg, #2d3748 0%, #1a202c 100%);
         }
         .forgot-card {
-            width: 100%;
+            width: 350px;
             max-width: 400px;
         }
     </style>

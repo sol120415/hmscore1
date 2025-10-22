@@ -16,6 +16,11 @@ use Dompdf\Options;
 $options = new Options();
 $options->set('isHtml5ParserEnabled', true);
 $options->set('isRemoteEnabled', true);
+// Ensure fonts support the Peso sign (₱)
+$options->set('defaultFont', 'DejaVu Sans');
+if (function_exists('mb_internal_encoding')) {
+    mb_internal_encoding('UTF-8');
+}
 
 $dompdf = new Dompdf($options);
 
@@ -31,8 +36,9 @@ switch ($page) {
         $html = '
         <html>
         <head>
+            <meta charset="UTF-8">
             <style>
-                body { font-family: Arial, sans-serif; margin: 20px; }
+                body { font-family: DejaVu Sans, Arial, sans-serif; margin: 20px; }
                 h1 { color: #0dcaf0; text-align: center; }
                 h2 { color: #495057; border-bottom: 2px solid #0dcaf0; padding-bottom: 5px; }
                 table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
@@ -101,7 +107,7 @@ switch ($page) {
                 <td>' . htmlspecialchars($booking['booking_reference']) . '</td>
                 <td>' . htmlspecialchars($booking['guest_name']) . '</td>
                 <td>' . date('M d, Y', strtotime($booking['check_in_date'])) . '</td>
-                <td>$' . number_format($booking['total_amount'], 2) . '</td>
+                <td>₱' . number_format($booking['total_amount'], 2) . '</td>
                 <td>' . htmlspecialchars($booking['booking_status']) . '</td>
             </tr>';
         }
@@ -118,8 +124,9 @@ switch ($page) {
         $html = '
         <html>
         <head>
+            <meta charset="UTF-8">
             <style>
-                body { font-family: Arial, sans-serif; margin: 20px; }
+                body { font-family: DejaVu Sans, Arial, sans-serif; margin: 20px; }
                 h1 { color: #0dcaf0; text-align: center; }
                 h2 { color: #495057; border-bottom: 2px solid #0dcaf0; padding-bottom: 5px; }
                 table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
@@ -187,8 +194,9 @@ switch ($page) {
         $html = '
         <html>
         <head>
+            <meta charset="UTF-8">
             <style>
-                body { font-family: Arial, sans-serif; margin: 20px; }
+                body { font-family: DejaVu Sans, Arial, sans-serif; margin: 20px; }
                 h1 { color: #0dcaf0; text-align: center; }
                 h2 { color: #495057; border-bottom: 2px solid #0dcaf0; padding-bottom: 5px; }
                 table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
@@ -269,8 +277,9 @@ switch ($page) {
         $html = '
         <html>
         <head>
+            <meta charset="UTF-8">
             <style>
-                body { font-family: Arial, sans-serif; margin: 20px; }
+                body { font-family: DejaVu Sans, Arial, sans-serif; margin: 20px; }
                 h1 { color: #0dcaf0; text-align: center; }
                 h2 { color: #495057; border-bottom: 2px solid #0dcaf0; padding-bottom: 5px; }
                 table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
@@ -312,7 +321,7 @@ switch ($page) {
                 <td>' . htmlspecialchars($venue['venue_name']) . '</td>
                 <td>' . htmlspecialchars($venue['venue_address']) . '</td>
                 <td>' . htmlspecialchars($venue['venue_capacity']) . '</td>
-                <td>$' . number_format($venue['venue_rate'] ?: 0, 2) . '</td>
+                <td>₱' . number_format($venue['venue_rate'] ?: 0, 2) . '</td>
                 <td>' . htmlspecialchars($venue['venue_status']) . '</td>
                 <td>' . date('M d, Y', strtotime($venue['created_at'])) . '</td>
             </tr>';

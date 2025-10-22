@@ -1,61 +1,103 @@
 <?php
 include_once 'db.php';
 
-// Redirect if not logged in or no 2FA session
-if (!isset($_SESSION['twofa_email']) || !isset($_SESSION['twofa_code'])) {
+// Redirect if not logged in or no 2FA session email
+if (!isset($_SESSION['twofa_email'])) {
     header('Location: login.php');
     exit;
 }
 
 // Check if 2FA code has expired
-if (time() > $_SESSION['twofa_expires']) {
-    unset($_SESSION['twofa_email'], $_SESSION['twofa_code'], $_SESSION['twofa_expires']);
-    $error = 'Verification code has expired. Please login again.';
+if (isset($_SESSION['twofa_expires']) && time() > $_SESSION['twofa_expires']) {
+    // Keep email to allow resending without forcing re-login
+    unset($_SESSION['twofa_code'], $_SESSION['twofa_expires']);
+    $error = 'Verification code has expired. You can resend a new code.';
 }
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $code = $_POST['code'] ?? '';
-
-    // Sanitize input
-    $code = trim($code);
-
-    $errors = [];
-
-    // Code validation
-    if (empty($code)) {
-        $errors[] = 'Verification code is required.';
-    } elseif (!is_numeric($code) || strlen($code) !== 6) {
-        $errors[] = 'Please enter a valid 6-digit verification code.';
-    }
-
-    if (empty($errors)) {
-        // Verify the code
-        if ($code == $_SESSION['twofa_code']) {
-            // Get user details
-            $stmt = $conn->prepare("SELECT id, email FROM users WHERE email = ?");
-            $stmt->execute([$_SESSION['twofa_email']]);
-            $user = $stmt->fetch(PDO::FETCH_ASSOC);
-
-            if ($user) {
-                // Set session variables
-                $_SESSION['email'] = $user['email'];
-                $_SESSION['user_id'] = $user['id'];
-                $_SESSION['verified'] = true;
-
-                // Clear 2FA session data
-                unset($_SESSION['twofa_email'], $_SESSION['twofa_code'], $_SESSION['twofa_expires']);
-
-                // Redirect to dashboard
-                header('Location: dashboard.php');
-                exit;
-            } else {
-                $error = 'User not found. Please try logging in again.';
-            }
+if ($_SERVER['REQUEST_METHOD'] === 'POST' || isset($_GET['resend'])) {
+    // Handle resend request
+    if (isset($_POST['resend']) || isset($_GET['resend'])) {
+        // Enforce 60s cooldown between sends
+        if (isset($_SESSION['twofa_last_sent']) && time() - $_SESSION['twofa_last_sent'] < 60) {
+            $remaining = 60 - (time() - $_SESSION['twofa_last_sent']);
+            $error = 'Please wait ' . $remaining . 's before requesting a new code.';
         } else {
-            $error = 'Invalid verification code. Please try again.';
+        require_once 'email_config.php';
+        $twofa_code = rand(100000, 999999);
+        $_SESSION['twofa_code'] = $twofa_code;
+        $_SESSION['twofa_expires'] = time() + 300; // 5 minutes
+
+        $email = $_SESSION['twofa_email'];
+        $subject = 'Your 2FA Code - CORE1 Hotel Management';
+        $body = "
+                    <html>
+                    <head>
+                        <style>
+                            body { font-family: Arial, sans-serif; }
+                            .code { font-size: 24px; font-weight: bold; color: #0dcaf0; }
+                        </style>
+                    </head>
+                    <body>
+                        <h2>Two-Factor Authentication</h2>
+                        <p>Your verification code is:</p>
+                        <p class='code'>$twofa_code</p>
+                        <p>This code will expire in 5 minutes.</p>
+                        <p>If you didn't request this, please ignore this email.</p>
+                    </body>
+                    </html>
+                    ";
+
+        if (sendEmail($email, $subject, $body)) {
+            $_SESSION['twofa_last_sent'] = time();
+            $success = 'A new verification code has been sent to your email.';
+        } else {
+            $error = 'Failed to send verification code. Please try again.';
+        }
         }
     } else {
-        $error = implode('<br>', $errors);
+        $code = $_POST['code'] ?? '';
+
+        // Sanitize input
+        $code = trim($code);
+
+        $errors = [];
+
+        // Code validation
+        if (empty($code)) {
+            $errors[] = 'Verification code is required.';
+        } elseif (!is_numeric($code) || strlen($code) !== 6) {
+            $errors[] = 'Please enter a valid 6-digit verification code.';
+        }
+
+        if (empty($errors)) {
+            // Verify the code
+            if (isset($_SESSION['twofa_code']) && $code == $_SESSION['twofa_code']) {
+                // Get user details
+                $stmt = $conn->prepare("SELECT id, email FROM users WHERE email = ?");
+                $stmt->execute([$_SESSION['twofa_email']]);
+                $user = $stmt->fetch(PDO::FETCH_ASSOC);
+
+                if ($user) {
+                    // Set session variables
+                    $_SESSION['email'] = $user['email'];
+                    $_SESSION['user_id'] = $user['id'];
+                    $_SESSION['verified'] = true;
+
+                    // Clear 2FA session data
+                    unset($_SESSION['twofa_email'], $_SESSION['twofa_code'], $_SESSION['twofa_expires']);
+
+                    // Redirect to dashboard
+                    header('Location: dashboard.php');
+                    exit;
+                } else {
+                    $error = 'User not found. Please try logging in again.';
+                }
+            } else {
+                $error = 'Invalid or expired verification code. Please try again or resend.';
+            }
+        } else {
+            $error = implode('<br>', $errors);
+        }
     }
 }
 ?>
@@ -133,6 +175,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                         <input type="text" class="form-control text-center" id="code" name="code" placeholder="000000" maxlength="6" pattern="[0-9]{6}" autocomplete="off" required>
                                         
                                     </div>
+                                    <div id="code-feedback" class="validation-feedback"></div>
                                 </div>
 
                                 <!-- Submit Button -->
@@ -141,9 +184,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 </div>
 
                                 <!-- Links -->
-                                <div class="text-center">
+                                <div class="d-flex justify-content-between">
                                     <a href="login.php" class="text-decoration-none">
                                         <small>Back to Login</small>
+                                    </a>
+                                    <a href="verify_2fa.php?resend=1" class="text-decoration-none">
+                                        <small>Resend Code</small>
                                     </a>
                                 </div>
                             </form>
@@ -181,6 +227,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <div class="toast align-items-center text-white bg-danger border-0" role="alert" aria-live="assertive" aria-atomic="true" data-bs-autohide="true" data-bs-delay="2000">
             <div class="d-flex">
                 <div class="toast-body"><?php echo htmlspecialchars($error); ?></div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+        </div>
+    </div>
+    <?php } ?>
+    <?php if (isset($success)) { ?>
+    <div class="toast-container position-fixed top-0 end-0 p-3">
+        <div class="toast align-items-center text-white bg-success border-0" role="alert" aria-live="assertive" aria-atomic="true" data-bs-autohide="true" data-bs-delay="2000">
+            <div class="d-flex">
+                <div class="toast-body"><?php echo htmlspecialchars($success); ?></div>
                 <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
             </div>
         </div>
@@ -260,6 +316,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             font-size: 0.875rem;
             margin-top: 0.25rem;
             display: block;
+            min-height: 1.25rem; /* Reserve space to prevent layout shift */
         }
 
         .valid-feedback {
@@ -268,6 +325,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         .invalid-feedback {
             color: #dc3545;
+        }
+
+        /* Ensure card maintains consistent height by reserving space for validation */
+        .verify-card .card-body {
+            padding-bottom: 2rem;
         }
 
         .form-control.is-valid {

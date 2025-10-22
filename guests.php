@@ -463,7 +463,7 @@ $recentGuests = array_slice($guests, 0, 10);
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label for="phone" class="form-label">Phone</label>
-                                <input type="tel" class="form-control" id="phone" name="phone">
+                                 <input type="tel" class="form-control" id="phone" name="phone" inputmode="numeric" maxlength="11" oninput="this.value=this.value.replace(/\\D/g,'').slice(0,11)" onkeypress="return /[0-9]/.test(event.key)">
                             </div>
                         </div>
 

@@ -829,7 +829,7 @@ $todayCheckOuts = $conn->query("SELECT COUNT(*) as checkouts_today FROM reservat
                                             <input type="email" class="form-control form-control-sm" id="new_email" name="new_email" placeholder="Email *">
                                         </div>
                                         <div class="col-md-6">
-                                            <input type="tel" class="form-control form-control-sm" id="new_phone" name="new_phone" placeholder="Phone">
+                                             <input type="tel" class="form-control form-control-sm" id="new_phone" name="new_phone" placeholder="Phone" inputmode="numeric" maxlength="11" oninput="this.value=this.value.replace(/\\D/g,'').slice(0,11)" onkeypress="return /[0-9]/.test(event.key)">
                                         </div>
                                         <div class="col-md-4">
                                             <select class="form-select form-select-sm" id="new_id_type" name="new_id_type">

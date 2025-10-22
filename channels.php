@@ -265,7 +265,7 @@ $recentBookings = $conn->query("
                                 <td><?php echo htmlspecialchars($booking['booking_reference']); ?></td>
                                 <td><?php echo htmlspecialchars($booking['guest_name']); ?></td>
                                 <td><?php echo date('M d, Y', strtotime($booking['check_in_date'])); ?></td>
-                                <td>$<?php echo number_format($booking['total_amount'], 2); ?></td>
+                                <td>₱<?php echo number_format($booking['total_amount'], 2); ?></td>
                                 <td>
                                     <span class="badge bg-<?php
                                         echo $booking['booking_status'] === 'Confirmed' ? 'success' :
@@ -321,7 +321,7 @@ $recentBookings = $conn->query("
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label for="contact_phone" class="form-label">Contact Phone</label>
-                                <input type="tel" class="form-control" id="contact_phone" name="contact_phone">
+                                <input type="tel" class="form-control" id="contact_phone" name="contact_phone" inputmode="numeric" maxlength="11" oninput="this.value=this.value.replace(/\\D/g,'').slice(0,11)" onkeypress="return /[0-9]/.test(event.key)">
                             </div>
                         </div>
 

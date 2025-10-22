@@ -1,5 +1,6 @@
 <?php
 include_once 'db.php';
+require_once 'google_oauth_config.php';
 // Redirect if already logged in
 if (isset($_SESSION['email'])) {
     header('Location: dashboard.php');
@@ -53,6 +54,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             } else {
                 // Verify password
                 if (password_verify($password, $user['password'])) {
+                    // If a code was already sent within the last minute for this email, reuse it and redirect
+                    if (
+                        isset($_SESSION['twofa_email']) && $_SESSION['twofa_email'] === $email &&
+                        isset($_SESSION['twofa_code']) && isset($_SESSION['twofa_last_sent']) &&
+                        (time() - $_SESSION['twofa_last_sent'] < 60)
+                    ) {
+                        header('Location: verify_2fa.php');
+                        exit;
+                    }
+
                     // Generate 2FA code
                     $twofa_code = rand(100000, 999999);
                     $_SESSION['twofa_email'] = $email;
@@ -81,6 +92,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     ";
 
                     if (sendEmail($email, $subject, $body)) {
+                        $_SESSION['twofa_last_sent'] = time();
                         header('Location: verify_2fa.php');
                         exit;
                     } else {
@@ -131,8 +143,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             background: linear-gradient(135deg, #2d3748 0%, #1a202c 100%);
         }
         .login-card {
-            width: 100%;
+            width: 300px;
             max-width: 400px;
+        }
+        .btn-google {
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.15);
+            color: #e2e8f0;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            backdrop-filter: blur(2px);
+        }
+        .btn-google:hover { background: rgba(255,255,255,0.12); }
+        .gmail-icon {
+            width: 18px;
+            height: 18px;
+            display: inline-block;
+            background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48"><path fill="%23FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.8 32.9 29.3 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34.9 6.1 29.7 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20c10 0 19-7.3 19-20 0-1.3-.1-2.3-.4-3.5z"/><path fill="%234CAF50" d="M6.3 14.7l6.6 4.8C14.7 16.2 18.9 12 24 12c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34.9 6.1 29.7 4 24 4 16 4 8.9 8.4 6.3 14.7z"/><path fill="%232196F3" d="M24 44c5.2 0 10-1.8 13.6-4.9l-6.3-5.2C29.2 35.7 26.7 36 24 36c-5.2 0-9.6-3.5-11.2-8.2l-6.6 5.1C8.9 39.6 15.9 44 24 44z"/><path fill="%23F44336" d="M43.6 20.5H42V20H24v8h11.3c-1.9 4.9-6.4 8-11.3 8-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34.9 6.1 29.7 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20c10 0 19-7.3 19-20 0-1.3-.1-2.3-.4-3.5z"/></svg>') no-repeat center/contain;
         }
     </style>
 </head>
@@ -180,11 +209,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                                 <polyline points="22,6 12,13 2,6"></polyline>
                                             </svg>
                                         </span>
-                                        <input type="email" class="form-control" id="exampleFormControlInput1" name="email" placeholder="name@example.com" aria-describedby="email-addon" required>
-                                        <div class="invalid-feedback">
-                                            Please enter a valid email address.
-                                        </div>
+                                        <input type="email" class="form-control" id="email" name="email" placeholder="name@example.com" aria-describedby="email-addon" required>
                                     </div>
+                                    <div id="email-feedback" class="validation-feedback"></div>
                                 </div>
 
                                 <!-- Password Input Group with Remember Me -->
@@ -205,9 +232,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                             </svg>
                                         </button>
                                     </div>
-                                    <div class="invalid-feedback">
-                                        Please enter your password.
-                                    </div>
+                                    <div id="password-feedback" class="validation-feedback"></div>
                                 </div>
 
                                 <!-- Submit Button -->
@@ -215,20 +240,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                     <button type="submit" class="btn btn-outline-light">Login</button>
                                 </div>
 
-                                <!-- Links -->
-                                <div class="text-center">
+                                <hr class="my-4">
+
+                                <div class="text-center text-muted mb-3">OR</div>
+
+                                <div class="d-grid mb-3">
+                                    <button type="button" id="googleLoginBtn" class="btn btn-google">Login via Gmail</button>
+                                </div>
+
+                                <div class="text-center mb-2">
                                     <a href="forgot_password.php" class="text-decoration-none">
                                         <small>Forgot password?</small>
                                     </a>
                                 </div>
 
-                                <hr class="my-4">
 
-                                <div class="text-center">
-                                    <small class="text-muted">
-                                        Don't have an account?
-                                        <a href="register.php" class="text-decoration-none">Sign up</a>
-                                    </small>
                                 </div>
                             </form>
                         </div>
@@ -275,6 +301,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     
     <!-- Theme System JS -->
     <script src="js/theme-system.js"></script>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
@@ -301,7 +328,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             });
 
             // Real-time validation
-            const emailInput = document.getElementById('exampleFormControlInput1');
+            const emailInput = document.getElementById('email');
             const submitBtn = document.querySelector('button[type="submit"]');
 
             // Email validation on input
@@ -323,23 +350,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
             });
 
-            // Password validation on input
-            passwordInput.addEventListener('input', function() {
-                const password = this.value;
-
-                if (password === '') {
-                    this.classList.remove('is-valid', 'is-invalid');
-                    hideValidationMessage('password');
-                } else if (password.length >= 6) {
-                    this.classList.remove('is-invalid');
-                    this.classList.add('is-valid');
-                    showValidationMessage('password', 'Password strength: Good', 'valid');
-                } else {
-                    this.classList.remove('is-valid');
-                    this.classList.add('is-invalid');
-                    showValidationMessage('password', 'Password must be at least 6 characters.', 'invalid');
-                }
-            });
 
             // Form submission validation
             document.querySelector('form').addEventListener('submit', function(e) {
@@ -378,22 +388,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             });
 
             function showValidationMessage(field, message, type) {
-                let feedbackElement = document.querySelector(`#${field}-feedback`);
-                if (!feedbackElement) {
-                    feedbackElement = document.createElement('div');
-                    feedbackElement.id = `${field}-feedback`;
-                    feedbackElement.className = 'validation-feedback';
-                    document.querySelector(`#${field}`).parentNode.appendChild(feedbackElement);
+                const feedbackElement = document.querySelector(`#${field}-feedback`);
+                if (feedbackElement) {
+                    feedbackElement.textContent = message;
+                    feedbackElement.className = `validation-feedback ${type}-feedback`;
                 }
-
-                feedbackElement.textContent = message;
-                feedbackElement.className = `validation-feedback ${type}-feedback`;
             }
 
             function hideValidationMessage(field) {
                 const feedbackElement = document.querySelector(`#${field}-feedback`);
                 if (feedbackElement) {
                     feedbackElement.textContent = '';
+                    feedbackElement.className = 'validation-feedback';
                 }
             }
 
@@ -423,6 +429,38 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }, 5000);
             }
         });
+
+        // Trigger Google One Tap chooser on custom button
+        document.addEventListener('click', function(e){
+            if (e.target && (e.target.id === 'googleLoginBtn' || e.target.closest('#googleLoginBtn'))) {
+                if (window.google && window.google.accounts && window.google.accounts.id) {
+                    google.accounts.id.initialize({
+                        client_id: '<?php echo defined('GOOGLE_CLIENT_ID') ? GOOGLE_CLIENT_ID : 'YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com'; ?>',
+                        callback: handleGoogleSignIn,
+                        ux_mode: 'popup',
+                    });
+                    google.accounts.id.prompt(); // shows account chooser
+                }
+            }
+        });
+
+        // Google Sign-In callback
+        function handleGoogleSignIn(response) {
+            const formData = new URLSearchParams();
+            formData.append('credential', response.credential);
+            fetch('google_callback.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: formData.toString()
+            }).then(r => r.json())
+              .then(data => {
+                  if (data && data.success) {
+                      window.location.href = 'dashboard.php';
+                  } else {
+                      showToast('Google sign-in failed.', 'error');
+                  }
+              }).catch(() => showToast('Google sign-in failed.', 'error'));
+        }
     </script>
 
     <style>
@@ -430,6 +468,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             font-size: 0.875rem;
             margin-top: 0.25rem;
             display: block;
+            min-height: 1.25rem; /* Reserve space to prevent layout shift */
         }
 
         .valid-feedback {
@@ -438,6 +477,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         .invalid-feedback {
             color: #dc3545;
+        }
+
+        /* Ensure card maintains consistent height like verify_2fa */
+        .login-card .card-body {
+            padding-bottom: 2rem;
         }
 
         .form-control.is-valid {

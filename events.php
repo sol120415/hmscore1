@@ -769,7 +769,7 @@ $stats = $conn->query("
                                             </div>
                                             <div class="d-flex flex-column gap-1">
                                                 <span class="badge bg-warning">Pending</span>
-                                                <small class="text-muted">Balance: $<?php echo number_format($billing['calculated_balance'], 2); ?></small>
+                                                <small class="text-muted">Balance: ₱<?php echo number_format($billing['calculated_balance'], 2); ?></small>
                                             </div>
                                         </div>
                                     </div>
@@ -866,7 +866,7 @@ $stats = $conn->query("
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label for="event_organizer_contact" class="form-label">Organizer Contact *</label>
-                                <input type="text" class="form-control" id="event_organizer_contact" name="event_organizer_contact" required>
+                                <input type="tel" class="form-control numeric-only" id="event_organizer_contact" name="event_organizer_contact" inputmode="numeric" maxlength="11" oninput="this.value=this.value.replace(/\D/g,'').slice(0,11)" onkeypress="return /[0-9]/.test(event.key)" required>
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label for="event_expected_attendees" class="form-label">Expected Attendees *</label>
@@ -1210,7 +1210,7 @@ $stats = $conn->query("
             document.getElementById('reservation_id').value = reservationId;
             document.getElementById('venue_id').value = venueId;
             document.getElementById('balance').value = calculatedBalance.toFixed(2);
-            document.getElementById('balance_display').textContent = '$' + calculatedBalance.toFixed(2);
+            document.getElementById('balance_display').textContent = '₱' + calculatedBalance.toFixed(2);
             document.getElementById('billing_description_display').textContent = 'Event charge for ' + venueName + ' - ' + organizerName;
 
             new coreui.Modal(document.getElementById('billingModal')).show();
