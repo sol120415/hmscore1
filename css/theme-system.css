@@ -176,6 +176,14 @@ html .theme-toggle {
   transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
 }
 
+/* Improve visibility of highlighted text on the login page in light mode */
+[data-theme="light"] .login-card *::selection {
+  color: #000 !important;
+}
+[data-theme="light"] .login-card *::-moz-selection {
+  color: #000 !important;
+}
+
 /* Body and main containers */
 body {
   background-color: var(--theme-bg-primary);
