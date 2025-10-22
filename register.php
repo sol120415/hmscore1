@@ -115,7 +115,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             background: linear-gradient(135deg, #2d3748 0%, #1a202c 100%);
         }
         .register-card {
-            width: 350px;
+            width: 351px;
             max-width: 400px;
         }
     </style>
