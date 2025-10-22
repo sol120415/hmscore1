@@ -281,7 +281,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     <!-- Quick Actions -->
     <div class="card mb-3">
         <div class="card-body d-flex flex-wrap gap-2">
-            <button class="btn btn-outline-primary btn-sm" onclick="openCreateModal()">
+            <button class="btn btn-outline-primary btn-sm" data-coreui-toggle="modal" data-coreui-target="#reservationModal" onclick="openCreateModal()">
                 <i class="cil-plus me-1"></i>New Reservation
             </button>
             <button class="btn btn-success btn-sm" onclick="window.location.href='?page=rooms&status=Vacant'"><i class="cil-check me-1"></i> In-house</button>
@@ -1114,7 +1114,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 <!-- Walk-in Guest Modal -->
 <div class="modal fade" id="walkInModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog">
+  <div class="modal-dialog" style="max-width: 50vw;">
     <div class="modal-content">
       <div class="modal-header">
         <h6 class="modal-title">Walk-in Guest</h6>
@@ -1153,15 +1153,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     <input type="text" class="form-control form-control-sm" name="id_number" required>
                   </div>
                 </div>
-                <div class="row g-2 align-items-end mb-2">
-                  <div class="col-6">
-                    <label class="form-label small">Date of Birth *</label>
-                    <input type="date" class="form-control form-control-sm" name="date_of_birth" required>
-                  </div>
-                  <div class="col-6 text-end">
-                    <button type="button" class="btn btn-secondary btn-sm me-2" data-coreui-dismiss="modal">Cancel</button>
-                    <button type="submit" id="walkInSubmit" class="btn btn-primary btn-sm">Check In</button>
-                  </div>
+                <div class="mb-2">
+                  <label class="form-label small">Date of Birth *</label>
+                  <input type="date" class="form-control form-control-sm" name="date_of_birth" required>
                 </div>
               </div>
             </div>
@@ -1199,7 +1193,12 @@ document.addEventListener('DOMContentLoaded', function() {
             </div>
           </div>
         </div>
-        <div class="modal-footer d-none"></div>
+        <div class="modal-body">
+          <div class="d-flex justify-content-end gap-2 mt-3">
+            <button type="button" class="btn btn-secondary btn-sm" data-coreui-dismiss="modal">Cancel</button>
+            <button type="submit" id="walkInSubmit" class="btn btn-primary btn-sm">Check In</button>
+          </div>
+        </div>
       </form>
     </div>
   </div>
