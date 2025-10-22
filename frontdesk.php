@@ -62,7 +62,7 @@ try {
 
     // Vacant rooms for Walk-in form
     $vacantRoomsStmt = $conn->query("SELECT id, room_number, room_type FROM rooms WHERE room_status = 'Vacant' ORDER BY CAST(room_number AS UNSIGNED), room_number");
-    $vacantRooms = $vacantRoomsStmt->fetchAll(PDO::FETCH_ASSOC);
+    $vacantRoomsList = $vacantRoomsStmt->fetchAll(PDO::FETCH_ASSOC);
 } catch (Throwable $e) {
     // Soft-fail the dashboard but keep the page usable
     error_log('Front desk metrics error: ' . $e->getMessage());
@@ -70,7 +70,7 @@ try {
     $inHouseCount = $pendingResCount = $arrivalsToday = $departuresToday = 0;
     $revenueToday = 0.0;
     $rooms = $upcomingArrivals = $upcomingDepartures = $recentReservations = [];
-    $vacantRooms = [];
+    $vacantRoomsList = [];
 }
 
 // Helper: percent occupancy
@@ -435,7 +435,7 @@ function submitWalkIn(e) {
             <label class="form-label small">Room (Vacant only) *</label>
             <select class="form-select form-select-sm" name="room_id" required>
               <option value="">Select room...</option>
-              <?php foreach ($vacantRooms as $vr): ?>
+              <?php foreach ($vacantRoomsList as $vr): ?>
                 <option value="<?php echo (int)$vr['id']; ?>">#<?php echo htmlspecialchars($vr['room_number']); ?> • <?php echo htmlspecialchars($vr['room_type']); ?></option>
               <?php endforeach; ?>
             </select>

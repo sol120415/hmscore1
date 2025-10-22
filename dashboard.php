@@ -129,13 +129,17 @@ if(!isset($_SESSION['email'])){
   </div>
 </div>
 
-  <?php                                             
-  // Handle logout
-  if (isset($_GET['page']) && $_GET['page'] == 'logout') {
-   session_destroy();
-   header('Location: login.php');
-   exit;
-  }
+<footer class="mt-auto bg-dark text-white text-center py-2">
+  <p>&copy; 2025 Hotel Management System. All rights reserved.</p>
+</footer>
+
+<?php
+// Handle logout
+if (isset($_GET['page']) && $_GET['page'] == 'logout') {
+ session_destroy();
+ header('Location: login.php');
+ exit;
+}
   ?>
 
   <script>
