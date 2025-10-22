@@ -754,7 +754,8 @@ $recentTransactions = array_slice($billings, 0, 10);
         }
 
         function openReportModal() {
-            new coreui.Modal(document.getElementById('reportModal')).show();
+            const modal = new coreui.Modal(document.getElementById('reportModal'));
+            modal.show();
         }
 
         function generateReport() {
@@ -767,7 +768,11 @@ $recentTransactions = array_slice($billings, 0, 10);
             // Open PDF in new window/tab
             window.open('room_billing.php?action=export_pdf&date=' + date + '&HX-Request=true', '_blank');
 
-            new coreui.Modal(document.getElementById('reportModal')).hide();
+            // Hide modal
+            const modal = coreui.Modal.getInstance(document.getElementById('reportModal'));
+            if (modal) {
+                modal.hide();
+            }
         }
 
         function openBillingModal(reservationId, calculatedBalance, discountedBalance, roomNumber, guestName, roomId) {

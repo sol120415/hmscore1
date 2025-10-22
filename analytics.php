@@ -161,6 +161,7 @@ $revPAR = $roomStats['total_rooms'] > 0 ?
     <link href="css/coreui-utilities.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://unpkg.com/@coreui/icons/css/all.min.css">
     <link href="css/theme-system.css" rel="stylesheet">
+    <link href="css/analytics-theme.css" rel="stylesheet">
 
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
@@ -223,7 +224,7 @@ $revPAR = $roomStats['total_rooms'] > 0 ?
     </style>
 </head>
 <body>
-    <div class="container-fluid p-4">
+    <div class="container-fluid p-4 analytics-page">
         
         <!-- Header -->
         <div class="mb-4">
@@ -480,13 +481,56 @@ $revPAR = $roomStats['total_rooms'] > 0 ?
     <script src="js/coreui.bundle.js"></script>
 
     <script>
+        // Chart.js theme application that updates existing charts
         (function(){
-            function applyChartTheme(){
-                var t = document.documentElement.getAttribute('data-theme') || 'light';
-                var textColor = t === 'dark' ? '#ffffff' : '#212529';
-                var gridColor = t === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)';
-                Chart.defaults.color = textColor;
-                Chart.defaults.borderColor = gridColor;
+            const charts = [];
+            function getTheme() {
+                return document.documentElement.getAttribute('data-theme') || 'light';
+            }
+            function getChartColors(theme){
+                if (theme === 'dark') {
+                    return {
+                        text: '#ffffff',
+                        grid: 'rgba(255,255,255,0.12)',
+                        tooltipBg: '#2a2c30',
+                        tooltipTitle: '#ffffff',
+                        tooltipBody: '#e9ecef'
+                    };
+                }
+                return {
+                    text: '#212529',
+                    grid: 'rgba(0,0,0,0.12)',
+                    tooltipBg: '#ffffff',
+                    tooltipTitle: '#212529',
+                    tooltipBody: '#212529'
+                };
+            }
+            function applyChartTheme(chart){
+                const theme = getTheme();
+                const c = getChartColors(theme);
+                // Legend text
+                if (chart.options.plugins && chart.options.plugins.legend) {
+                    chart.options.plugins.legend.labels = chart.options.plugins.legend.labels || {};
+                    chart.options.plugins.legend.labels.color = c.text;
+                }
+                // Tooltip colors
+                if (chart.options.plugins && chart.options.plugins.tooltip) {
+                    chart.options.plugins.tooltip.backgroundColor = c.tooltipBg;
+                    chart.options.plugins.tooltip.titleColor = c.tooltipTitle;
+                    chart.options.plugins.tooltip.bodyColor = c.tooltipBody;
+                }
+                // Scales
+                if (chart.options.scales) {
+                    Object.keys(chart.options.scales).forEach((k)=>{
+                        const s = chart.options.scales[k];
+                        if (!s.ticks) s.ticks = {};
+                        if (!s.grid) s.grid = {};
+                        s.ticks.color = c.text;
+                        s.grid.color = c.grid;
+                        s.grid.borderColor = c.grid;
+                    });
+                }
+                chart.update('none');
             }
             function applyTableTheme(){
                 var t = document.documentElement.getAttribute('data-theme') || 'light';
@@ -514,18 +558,21 @@ $revPAR = $roomStats['total_rooms'] > 0 ?
                     });
                 });
             }
-            function applyAll(){
-                applyChartTheme();
+            function applyThemeToAll(){
+                charts.forEach(applyChartTheme);
                 applyTableTheme();
             }
-            // Initial
-            document.addEventListener('DOMContentLoaded', applyAll);
-            // On theme toggle
-            document.addEventListener('themechange', applyAll);
+            // Expose helpers so we can push charts as we create them
+            window.__ANALYTICS_CHARTS__ = charts;
+            window.__APPLY_ANALYTICS_THEME__ = applyThemeToAll;
+            // Apply on theme change
+            window.addEventListener('themechange', applyThemeToAll);
+            // Initial application
+            document.addEventListener('DOMContentLoaded', applyThemeToAll);
         })();
 
         // Room Status Chart
-        new Chart(document.getElementById('roomStatusChart'), {
+        (function(){ const ch = new Chart(document.getElementById('roomStatusChart'), {
             type: 'doughnut',
             data: {
                 labels: ['Vacant', 'Occupied', 'Maintenance'],
@@ -545,10 +592,10 @@ $revPAR = $roomStats['total_rooms'] > 0 ?
                     legend: { position: 'bottom' }
                 }
             }
-        });
+        }); window.__ANALYTICS_CHARTS__.push(ch); __APPLY_ANALYTICS_THEME__(); })();
 
         // Room Type Chart
-        new Chart(document.getElementById('roomTypeChart'), {
+        (function(){ const ch = new Chart(document.getElementById('roomTypeChart'), {
             type: 'bar',
             data: {
                 labels: ['Single', 'Double', 'Deluxe', 'Suite'],
@@ -573,10 +620,10 @@ $revPAR = $roomStats['total_rooms'] > 0 ?
                     y: { beginAtZero: true }
                 }
             }
-        });
+        }); window.__ANALYTICS_CHARTS__.push(ch); __APPLY_ANALYTICS_THEME__(); })();
 
         // Reservation Status Chart
-        new Chart(document.getElementById('reservationStatusChart'), {
+        (function(){ const ch = new Chart(document.getElementById('reservationStatusChart'), {
             type: 'pie',
             data: {
                 labels: ['Pending', 'Checked In', 'Checked Out', 'Cancelled'],
@@ -597,10 +644,10 @@ $revPAR = $roomStats['total_rooms'] > 0 ?
                     legend: { position: 'bottom' }
                 }
             }
-        });
+        }); window.__ANALYTICS_CHARTS__.push(ch); __APPLY_ANALYTICS_THEME__(); })();
 
         // Monthly Reservations Trend
-        new Chart(document.getElementById('monthlyReservationsChart'), {
+        (function(){ const ch = new Chart(document.getElementById('monthlyReservationsChart'), {
             type: 'line',
             data: {
                 labels: [<?php 
@@ -631,10 +678,10 @@ $revPAR = $roomStats['total_rooms'] > 0 ?
                     y: { beginAtZero: true }
                 }
             }
-        });
+        }); window.__ANALYTICS_CHARTS__.push(ch); __APPLY_ANALYTICS_THEME__(); })();
 
         // Monthly Revenue Trend
-        new Chart(document.getElementById('monthlyRevenueChart'), {
+        (function(){ const ch = new Chart(document.getElementById('monthlyRevenueChart'), {
             type: 'line',
             data: {
                 labels: [<?php 
@@ -665,10 +712,10 @@ $revPAR = $roomStats['total_rooms'] > 0 ?
                     y: { beginAtZero: true }
                 }
             }
-        });
+        }); window.__ANALYTICS_CHARTS__.push(ch); __APPLY_ANALYTICS_THEME__(); })();
 
         // Payment Method Chart
-        new Chart(document.getElementById('paymentMethodChart'), {
+        (function(){ const ch = new Chart(document.getElementById('paymentMethodChart'), {
             type: 'doughnut',
             data: {
                 labels: [<?php 
@@ -692,10 +739,10 @@ $revPAR = $roomStats['total_rooms'] > 0 ?
                     legend: { position: 'bottom' }
                 }
             }
-        });
+        }); window.__ANALYTICS_CHARTS__.push(ch); __APPLY_ANALYTICS_THEME__(); })();
 
         // Guest Loyalty Chart
-        new Chart(document.getElementById('guestLoyaltyChart'), {
+        (function(){ const ch = new Chart(document.getElementById('guestLoyaltyChart'), {
             type: 'bar',
             data: {
                 labels: ['Regular', 'Iron', 'Gold', 'Diamond'],
@@ -720,10 +767,10 @@ $revPAR = $roomStats['total_rooms'] > 0 ?
                     y: { beginAtZero: true }
                 }
             }
-        });
+        }); window.__ANALYTICS_CHARTS__.push(ch); __APPLY_ANALYTICS_THEME__(); })();
 
         // Channel Revenue Chart
-        new Chart(document.getElementById('channelRevenueChart'), {
+        (function(){ const ch = new Chart(document.getElementById('channelRevenueChart'), {
             type: 'horizontalBar',
             data: {
                 labels: [<?php 
@@ -752,10 +799,10 @@ $revPAR = $roomStats['total_rooms'] > 0 ?
                     x: { beginAtZero: true }
                 }
             }
-        });
+        }); window.__ANALYTICS_CHARTS__.push(ch); __APPLY_ANALYTICS_THEME__(); })();
 
         // Housekeeping Chart
-        new Chart(document.getElementById('housekeepingChart'), {
+        (function(){ const ch = new Chart(document.getElementById('housekeepingChart'), {
             type: 'doughnut',
             data: {
                 labels: ['Pending', 'In Progress', 'Completed'],
@@ -775,10 +822,10 @@ $revPAR = $roomStats['total_rooms'] > 0 ?
                     legend: { position: 'bottom' }
                 }
             }
-        });
+        }); window.__ANALYTICS_CHARTS__.push(ch); __APPLY_ANALYTICS_THEME__(); })();
 
         // Event Status Chart
-        new Chart(document.getElementById('eventStatusChart'), {
+        (function(){ const ch = new Chart(document.getElementById('eventStatusChart'), {
             type: 'pie',
             data: {
                 labels: ['Pending', 'Active', 'Completed'],
@@ -798,7 +845,7 @@ $revPAR = $roomStats['total_rooms'] > 0 ?
                     legend: { position: 'bottom' }
                 }
             }
-        });
+        }); window.__ANALYTICS_CHARTS__.push(ch); __APPLY_ANALYTICS_THEME__(); })();
     </script>
 </body>
 </html>

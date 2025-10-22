@@ -17,14 +17,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_HX_REQUEST']))
             switch ($action) {
                 case 'create':
                     // Create new room
-                    $stmt = $conn->prepare("INSERT INTO rooms (room_number, room_type, room_floor, room_status, room_max_guests, room_amenities, room_maintenance_notes) VALUES (?, ?, ?, ?, ?, ?, ?)");
+                    $stmt = $conn->prepare("INSERT INTO rooms (room_number, room_type, room_floor, room_status, room_maintenance_notes) VALUES (?, ?, ?, ?, ?)");
                     $stmt->execute([
                         $_POST['room_number'],
                         $_POST['room_type'],
                         $_POST['room_floor'],
                         $_POST['room_status'],
-                        $_POST['room_max_guests'] ?: 2,
-                        $_POST['room_amenities'] ?: null,
                         $_POST['room_maintenance_notes'] ?: null
                     ]);
                     echo json_encode(['success' => true, 'message' => 'Room created successfully']);
@@ -56,14 +54,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_HX_REQUEST']))
 
                 case 'update':
                     // Update room
-                    $stmt = $conn->prepare("UPDATE rooms SET room_number=?, room_type=?, room_floor=?, room_status=?, room_max_guests=?, room_amenities=?, room_maintenance_notes=? WHERE id=?");
+                    $stmt = $conn->prepare("UPDATE rooms SET room_number=?, room_type=?, room_floor=?, room_status=?, room_maintenance_notes=? WHERE id=?");
                     $stmt->execute([
                         $_POST['room_number'],
                         $_POST['room_type'],
                         $_POST['room_floor'],
                         $_POST['room_status'],
-                        $_POST['room_max_guests'] ?: 2,
-                        $_POST['room_amenities'] ?: null,
                         $_POST['room_maintenance_notes'] ?: null,
                         $_POST['id']
                     ]);
@@ -521,79 +517,76 @@ $occupancyRate = $stats['total_rooms'] > 0 ? round(($stats['occupied_rooms'] / $
     </div>
 
     <!-- Room Modal -->
-    <div class="modal fade" id="roomModal" tabindex="-1" style="--cui-modal-border-radius: 16px; --cui-modal-box-shadow: 0 10px 40px rgba(0,0,0,0.3); --cui-modal-bg: #2d3748; --cui-modal-border-color: #4a5568;">
-        <div class="modal-dialog ">
+    <div class="modal fade" id="roomModal" tabindex="-1">
+        <div class="modal-dialog" style="max-width: 50vw;">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="modalTitle">Add Room</h5>
                     <button type="button" class="btn-close" data-coreui-dismiss="modal"></button>
                 </div>
-                <div class="modal-body">
-                    <form id="roomForm">
-                        <input type="hidden" name="action" id="formAction" value="create">
-                        <input type="hidden" name="id" id="roomId">
-
-                        <div class="row g-2">
-                            <div class="col-md-6">
-                                <div class="input-group input-group-sm">
-                                    <span class="input-group-text"><i class="cil-home"></i></span>
-                                    <input type="text" class="form-control" id="room_number" name="room_number" placeholder="Room Number *">
+                <form id="roomForm">
+                    <input type="hidden" name="action" id="formAction" value="create">
+                    <input type="hidden" name="id" id="roomId">
+                    <div class="modal-body">
+                        <div class="row g-3 align-items-start">
+                            <div class="col-lg-7">
+                                <div class="rounded-3 border p-3">
+                                    <div class="row g-2 mb-2">
+                                        <div class="col-6">
+                                            <label class="form-label small">Room Number *</label>
+                                            <input type="text" class="form-control form-control-sm" id="room_number" name="room_number" placeholder="Room Number *">
+                                        </div>
+                                        <div class="col-6">
+                                            <label class="form-label small">Floor *</label>
+                                            <select class="form-select form-select-sm" id="room_floor" name="room_floor">
+                                                <option value="1">Floor 1</option>
+                                                <option value="2">Floor 2</option>
+                                                <option value="3">Floor 3</option>
+                                                <option value="4">Floor 4</option>
+                                                <option value="5">Floor 5</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="row g-2 mb-2">
+                                        <div class="col-6">
+                                            <label class="form-label small">Room Type *</label>
+                                            <select class="form-select form-select-sm" id="room_type" name="room_type">
+                                                <option value="Single">Single</option>
+                                                <option value="Double">Double</option>
+                                                <option value="Deluxe">Deluxe</option>
+                                                <option value="Suite">Suite</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-6">
+                                            <label class="form-label small">Status *</label>
+                                            <select class="form-select form-select-sm" id="room_status" name="room_status">
+                                                <option value="Vacant">Vacant</option>
+                                                <option value="Occupied">Occupied</option>
+                                                <option value="Cleaning">Cleaning</option>
+                                                <option value="Maintenance">Maintenance</option>
+                                                <option value="Reserved">Reserved</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <!-- Max Guests is virtual and calculated based on room_type -->
                                 </div>
                             </div>
-                            <div class="col-md-6">
-                                <div class="input-group input-group-sm">
-                                    <span class="input-group-text"><i class="cil-arrow-up"></i></span>
-                                    <input type="text" class="form-control" id="room_floor" name="room_floor" placeholder="Floor *">
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="input-group input-group-sm">
-                                    <span class="input-group-text"><i class="cil-bed"></i></span>
-                                    <select class="form-select" id="room_type" name="room_type">
-                                        <option value="Single">Single</option>
-                                        <option value="Double">Double</option>
-                                        <option value="Deluxe">Deluxe</option>
-                                        <option value="Suite">Suite</option>
-                                    </select>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="input-group input-group-sm">
-                                    <span class="input-group-text"><i class="cil-check-circle"></i></span>
-                                    <select class="form-select" id="room_status" name="room_status">
-                                        <option value="Vacant">Vacant</option>
-                                        <option value="Occupied">Occupied</option>
-                                        <option value="Cleaning">Cleaning</option>
-                                        <option value="Maintenance">Maintenance</option>
-                                        <option value="Reserved">Reserved</option>
-                                    </select>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="input-group input-group-sm">
-                                    <span class="input-group-text"><i class="cil-people"></i></span>
-                                    <input type="number" class="form-control" id="room_max_guests" name="room_max_guests" min="1" value="2" placeholder="Max Guests">
-                                </div>
-                            </div>
-                            <div class="col-12">
-                                <div class="input-group input-group-sm">
-                                    <span class="input-group-text"><i class="cil-star"></i></span>
-                                    <textarea class="form-control" id="room_amenities" name="room_amenities" rows="2" placeholder="Amenities (e.g., TV, Air Conditioning, Bathroom, Kitchen)"></textarea>
-                                </div>
-                            </div>
-                            <div class="col-12">
-                                <div class="input-group input-group-sm">
-                                    <span class="input-group-text"><i class="cil-wrench"></i></span>
-                                    <textarea class="form-control" id="room_maintenance_notes" name="room_maintenance_notes" rows="2" placeholder="Maintenance Notes"></textarea>
+                            <div class="col-lg-5">
+                                <div class="rounded-3 border p-3">
+                 
+                                    <div class="mb-2">
+                                        <label class="form-label small">Maintenance Notes</label>
+                                        <textarea class="form-control form-control-sm" id="room_maintenance_notes" name="room_maintenance_notes" rows="3" placeholder="Maintenance Notes"></textarea>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                    </form>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-coreui-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-primary" onclick="submitRoomForm()">Save</button>
-                </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-coreui-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-primary" onclick="submitRoomForm()">Save</button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
@@ -622,18 +615,29 @@ $occupancyRate = $stats['total_rooms'] > 0 ? round(($stats['occupied_rooms'] / $
                 },
                 body: 'action=get&id=' + id
             })
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok: ' + response.statusText);
+                }
+                return response.json();
+            })
             .then(data => {
+                if (data.error) {
+                    throw new Error(data.error);
+                }
                 document.getElementById('roomId').value = data.id;
                 document.getElementById('room_number').value = data.room_number;
                 document.getElementById('room_floor').value = data.room_floor;
                 document.getElementById('room_type').value = data.room_type;
                 document.getElementById('room_status').value = data.room_status;
-                document.getElementById('room_max_guests').value = data.room_max_guests;
-                document.getElementById('room_amenities').value = data.room_amenities || '';
+                // room_max_guests is virtual, no need to set it
                 document.getElementById('room_maintenance_notes').value = data.room_maintenance_notes || '';
 
                 new coreui.Modal(document.getElementById('roomModal')).show();
+            })
+            .catch(error => {
+                console.error('Error fetching room data:', error);
+                alert('Error loading room data: ' + error.message);
             });
         }
 
@@ -669,14 +673,26 @@ $occupancyRate = $stats['total_rooms'] > 0 ? round(($stats['occupied_rooms'] / $
                 },
                 body: formData
             })
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok: ' + response.statusText);
+                }
+                return response.json();
+            })
             .then(data => {
                 if (data.success) {
+                    const action = document.getElementById('formAction').value;
+                    const message = action === 'create' ? 'Room created successfully!' : 'Room updated successfully!';
+                    showAlert(message, 'success');
                     new coreui.Modal(document.getElementById('roomModal')).hide();
                     location.reload();
                 } else {
-                    alert('Error: ' + data.message);
+                    throw new Error(data.message || 'Unknown error occurred');
                 }
+            })
+            .catch(error => {
+                console.error('Error submitting room form:', error);
+                alert('Error: ' + error.message);
             });
         }
 
@@ -807,4 +823,5 @@ $occupancyRate = $stats['total_rooms'] > 0 ? round(($stats['occupied_rooms'] / $
         }
     </script>
 </body>
+</html>
 </html>
