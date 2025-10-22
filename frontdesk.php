@@ -365,7 +365,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                     </div>
                 </div>
                 <div class="card-footer text-end p-2">
-                    <a class="btn btn-sm btn-outline-secondary" href="reservations.php?status=Pending"><i class="cil-external-link me-1"></i>View all</a>
+                    <a class="btn btn-sm btn-outline-secondary" href="?page=reservations&status=Pending"><i class="cil-external-link me-1"></i>View all</a>
                 </div>
             </div>
 
@@ -392,7 +392,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                     </div>
                 </div>
                 <div class="card-footer text-end p-2">
-                    <a class="btn btn-sm btn-outline-secondary" href="reservations.php?status=Checked%20In"><i class="cil-external-link me-1"></i>View all</a>
+                    <a class="btn btn-sm btn-outline-secondary" href="?page=reservations&status=Checked%20In"><i class="cil-external-link me-1"></i>View all</a>
                 </div>
             </div>
 
@@ -414,7 +414,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                     </ul>
                 </div>
                 <div class="card-footer text-end p-2">
-                    <a class="btn btn-sm btn-outline-secondary" href="reservations.php"><i class="cil-external-link me-1"></i>Open reservations</a>
+                    <a class="btn btn-sm btn-outline-secondary" href="?page=reservations"><i class="cil-external-link me-1"></i>Open reservations</a>
                 </div>
             </div>
         </div>
