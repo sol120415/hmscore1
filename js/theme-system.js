@@ -100,6 +100,16 @@ class ThemeManager {
         // Add to page
         document.body.appendChild(this.themeToggle);
         
+        // Add click animation
+        this.themeToggle.addEventListener('click', (e) => {
+            e.preventDefault();
+            // Add click animation
+            this.themeToggle.style.transform = 'scale(0.95)';
+            setTimeout(() => {
+                this.themeToggle.style.transform = '';
+            }, 150);
+        });
+        
         // Update icon
         this.updateToggleIcon();
     }
