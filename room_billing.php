@@ -14,13 +14,18 @@ if (isset($_GET['action']) && $_GET['action'] === 'export_pdf') {
     $billings = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     require_once 'vendor/autoload.php';
-    $dompdf = new \Dompdf\Dompdf();
+    $options = new \Dompdf\Options();
+    $options->set('isHtml5ParserEnabled', true);
+    $options->set('isRemoteEnabled', true);
+    $options->set('defaultFont', 'DejaVu Sans');
+    $dompdf = new \Dompdf\Dompdf($options);
 
     $html = '
     <html>
     <head>
+        <meta charset="UTF-8">
         <style>
-            body { font-family: Arial, sans-serif; }
+            body { font-family: DejaVu Sans, Arial, sans-serif; }
             table { width: 100%; border-collapse: collapse; }
             th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
             th { background-color: #f2f2f2; }
@@ -47,8 +52,8 @@ if (isset($_GET['action']) && $_GET['action'] === 'export_pdf') {
         $html .= '<tr>
             <td>' . htmlspecialchars($billing['id']) . '</td>
             <td>' . htmlspecialchars($billing['transaction_type']) . '</td>
-            <td>$' . number_format($billing['payment_amount'], 2) . '</td>
-            <td>$' . number_format($billing['balance'], 2) . '</td>
+            <td>₱' . number_format($billing['payment_amount'], 2) . '</td>
+            <td>₱' . number_format($billing['balance'], 2) . '</td>
             <td>' . htmlspecialchars($billing['payment_method']) . '</td>
             <td>' . htmlspecialchars($billing['billing_status']) . '</td>
             <td>' . htmlspecialchars(date('Y-m-d H:i', strtotime($billing['transaction_date']))) . '</td>
@@ -137,8 +142,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_HX_REQUEST']))
                         <tr>
                             <td><?php echo htmlspecialchars($billing['id']); ?></td>
                             <td><?php echo htmlspecialchars($billing['transaction_type']); ?></td>
-                            <td>$<?php echo number_format($billing['payment_amount'], 2); ?></td>
-                            <td>$<?php echo number_format($billing['balance'], 2); ?></td>
+                            <td>₱<?php echo number_format($billing['payment_amount'], 2); ?></td>
+                            <td>₱<?php echo number_format($billing['balance'], 2); ?></td>
                             <td><?php echo htmlspecialchars($billing['payment_method']); ?></td>
                             <td>
                                 <span class="badge bg-<?php
@@ -305,7 +310,7 @@ $recentTransactions = array_slice($billings, 0, 10);
                                         </div>
                                         <div class="d-flex flex-column gap-1">
                                             <span class="badge bg-warning">Pending</span>
-                                            <small class="text-muted">Balance: $<?php echo number_format($billing['discounted_balance'], 2); ?></small>
+                                            <small class="text-muted">Balance: ₱<?php echo number_format($billing['discounted_balance'], 2); ?></small>
                                             <?php if ($billing['loyalty_status'] !== 'Regular'): ?>
                                             <small class="text-success">Discounted (<?php echo $billing['loyalty_status']; ?>)</small>
                                             <?php endif; ?>
@@ -356,8 +361,8 @@ $recentTransactions = array_slice($billings, 0, 10);
                             <tr>
                                 <td><?php echo htmlspecialchars($billing['id']); ?></td>
                                 <td><?php echo htmlspecialchars($billing['transaction_type']); ?></td>
-                                <td>$<?php echo number_format($billing['payment_amount'], 2); ?></td>
-                                <td>$<?php echo number_format($billing['balance'], 2); ?></td>
+                                <td>₱<?php echo number_format($billing['payment_amount'], 2); ?></td>
+                                <td>₱<?php echo number_format($billing['balance'], 2); ?></td>
                                 <td><?php echo htmlspecialchars($billing['payment_method']); ?></td>
                                 <td>
                                     <span class="badge bg-<?php
@@ -417,7 +422,7 @@ $recentTransactions = array_slice($billings, 0, 10);
                         </div>
 
                         <div class="mb-3">
-                            <label class="form-label">Balance: <span id="balance_display">$0.00</span> | Change: <span id="change_display">$0.00</span></label>
+                            <label class="form-label">Balance: <span id="balance_display">₱0.00</span> | Change: <span id="change_display">₱0.00</span></label>
                             <input type="hidden" id="balance" name="balance" step="0.01" readonly>
                             <input type="hidden" id="change" name="change" step="0.01" readonly>
                         </div>
@@ -468,7 +473,7 @@ $recentTransactions = array_slice($billings, 0, 10);
             const paymentAmount = parseFloat(document.getElementById('payment_amount').value) || 0;
             const newBalance = balanceAmount - paymentAmount;
             document.getElementById('balance').value = newBalance.toFixed(2);
-            document.getElementById('balance_display').textContent = '$' + newBalance.toFixed(2);
+            document.getElementById('balance_display').textContent = '₱' + newBalance.toFixed(2);
         }
 
         // Calculate change
@@ -478,10 +483,10 @@ $recentTransactions = array_slice($billings, 0, 10);
             if (paymentAmount > balance) {
                 const change = paymentAmount - balance;
                 document.getElementById('change').value = change.toFixed(2);
-                document.getElementById('change_display').textContent = '$' + change.toFixed(2);
+                document.getElementById('change_display').textContent = '₱' + change.toFixed(2);
             } else {
                 document.getElementById('change').value = '0.00';
-                document.getElementById('change_display').textContent = '$0.00';
+                document.getElementById('change_display').textContent = '₱0.00';
             }
         }
 
@@ -546,7 +551,7 @@ $recentTransactions = array_slice($billings, 0, 10);
             document.getElementById('reservation_id').value = reservationId;
             document.getElementById('room_id').value = roomId;
             document.getElementById('balance').value = discountedBalance.toFixed(2);
-            document.getElementById('balance_display').textContent = '$' + discountedBalance.toFixed(2);
+            document.getElementById('balance_display').textContent = '₱' + discountedBalance.toFixed(2);
             document.getElementById('billing_description_display').textContent = 'Room charge for ' + roomNumber + ' - ' + guestName;
             // document.getElementById('payment_amount').value = '';
             calculateChange();

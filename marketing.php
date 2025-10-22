@@ -40,7 +40,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'get_promotions_page') {
                                         <?php if ($promo['discount_percentage']): ?>
                                             <?php echo $promo['discount_percentage']; ?>%
                                         <?php elseif ($promo['discount_value']): ?>
-                                            $<?php echo number_format($promo['discount_value'], 2); ?>
+                                            ₱<?php echo number_format($promo['discount_value'], 2); ?>
                                         <?php else: ?>
                                             Special
                                         <?php endif; ?>
@@ -318,7 +318,7 @@ $stats = $conn->query("
                 </div>
                 <div>
                     <small class="text-muted d-block">Total Revenue</small>
-                    <span class="fw-bold text-info">$<?php echo number_format($stats['total_revenue'] ?: 0, 2); ?></span>
+                    <span class="fw-bold text-info">₱<?php echo number_format($stats['total_revenue'] ?: 0, 2); ?></span>
                 </div>
                 <div>
                     <small class="text-muted d-block">Avg ROI</small>

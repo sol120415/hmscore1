@@ -291,7 +291,7 @@ $stats = $conn->query("
                                     </div>
                                     <div class="mt-2">
                                         <small class="text-muted d-block">Current: <?php echo htmlspecialchars($supply['current_stock']); ?> | Min: <?php echo htmlspecialchars($supply['minimum_stock_level']); ?></small>
-                                        <small class="text-muted d-block">Cost/Unit: $<?php echo number_format($supply['cost_per_unit'], 2); ?></small>
+                                        <small class="text-muted d-block">Cost/Unit: ₱<?php echo number_format($supply['cost_per_unit'], 2); ?></small>
                                         <?php if ($supply['supplier']): ?>
                                         <small class="text-muted d-block">Supplier: <?php echo htmlspecialchars($supply['supplier']); ?></small>
                                         <?php endif; ?>

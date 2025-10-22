@@ -265,7 +265,7 @@ $recentBookings = $conn->query("
                                 <td><?php echo htmlspecialchars($booking['booking_reference']); ?></td>
                                 <td><?php echo htmlspecialchars($booking['guest_name']); ?></td>
                                 <td><?php echo date('M d, Y', strtotime($booking['check_in_date'])); ?></td>
-                                <td>$<?php echo number_format($booking['total_amount'], 2); ?></td>
+                                <td>₱<?php echo number_format($booking['total_amount'], 2); ?></td>
                                 <td>
                                     <span class="badge bg-<?php
                                         echo $booking['booking_status'] === 'Confirmed' ? 'success' :

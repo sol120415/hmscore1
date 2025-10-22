@@ -769,7 +769,7 @@ $stats = $conn->query("
                                             </div>
                                             <div class="d-flex flex-column gap-1">
                                                 <span class="badge bg-warning">Pending</span>
-                                                <small class="text-muted">Balance: $<?php echo number_format($billing['calculated_balance'], 2); ?></small>
+                                                <small class="text-muted">Balance: ₱<?php echo number_format($billing['calculated_balance'], 2); ?></small>
                                             </div>
                                         </div>
                                     </div>
@@ -1210,7 +1210,7 @@ $stats = $conn->query("
             document.getElementById('reservation_id').value = reservationId;
             document.getElementById('venue_id').value = venueId;
             document.getElementById('balance').value = calculatedBalance.toFixed(2);
-            document.getElementById('balance_display').textContent = '$' + calculatedBalance.toFixed(2);
+            document.getElementById('balance_display').textContent = '₱' + calculatedBalance.toFixed(2);
             document.getElementById('billing_description_display').textContent = 'Event charge for ' + venueName + ' - ' + organizerName;
 
             new coreui.Modal(document.getElementById('billingModal')).show();
