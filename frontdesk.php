@@ -63,6 +63,10 @@ try {
     // Vacant rooms for Walk-in form
     $vacantRoomsStmt = $conn->query("SELECT id, room_number, room_type FROM rooms WHERE room_status = 'Vacant' ORDER BY CAST(room_number AS UNSIGNED), room_number");
     $vacantRoomsList = $vacantRoomsStmt->fetchAll(PDO::FETCH_ASSOC);
+
+    // Get guests and rooms for reservation modal
+    $guests = $conn->query("SELECT id, first_name, last_name, email FROM guests WHERE guest_status = 'Active' ORDER BY first_name, last_name")->fetchAll(PDO::FETCH_ASSOC);
+    $rooms = $conn->query("SELECT id, room_number, room_type, room_status FROM rooms ORDER BY room_number")->fetchAll(PDO::FETCH_ASSOC);
 } catch (Throwable $e) {
     // Soft-fail the dashboard but keep the page usable
     error_log('Front desk metrics error: ' . $e->getMessage());
@@ -71,6 +75,8 @@ try {
     $revenueToday = 0.0;
     $rooms = $upcomingArrivals = $upcomingDepartures = $recentReservations = [];
     $vacantRoomsList = [];
+    $guests = [];
+    $rooms = [];
 }
 
 // Helper: percent occupancy
@@ -272,7 +278,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     <!-- Quick Actions -->
     <div class="card mb-3">
         <div class="card-body d-flex flex-wrap gap-2">
-            <a class="btn btn-primary btn-sm" href="reservations.php"><i class="cil-plus me-1"></i> New Reservation</a>
+            <button class="btn btn-outline-primary btn-sm" data-coreui-toggle="modal" data-coreui-target="#reservationModal" onclick="openCreateModal()">
+                <i class="cil-plus me-1"></i>New Reservation
+            </button>
             <a class="btn btn-success btn-sm" href="reservations.php?status=Checked In"><i class="cil-check me-1"></i> In-house</a>
             <a class="btn btn-secondary btn-sm" href="guests.php"><i class="cil-people me-1"></i> Guests</a>
             <a class="btn btn-warning btn-sm" href="housekeeping.php"><i class="cil-broom me-1"></i> Housekeeping</a>
@@ -408,8 +416,155 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         </div>
     </div>
 </div>
-</body>
-</html>
+
+<!-- Reservation Modal -->
+<div class="modal fade" id="reservationModal" tabindex="-1" style="--cui-modal-border-radius: 16px; --cui-modal-box-shadow: 0 10px 40px rgba(0,0,0,0.3); --cui-modal-bg: #2d3748; --cui-modal-border-color: #4a5568;">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalTitle">Add Reservation</h5>
+                <button type="button" class="btn-close" data-coreui-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="reservationForm" hx-post="reservations.php" hx-target="#htmx-response" hx-swap="innerHTML" hx-on:htmx:after-request="handleReservationResponse(event)">
+                    <input type="hidden" name="action" id="formAction" value="create">
+
+                    <!-- Guest Selection -->
+                    <div class="mb-3">
+                        <label class="form-label small mb-2">Guest *</label>
+                        <ul class="nav nav-tabs nav-fill mb-3" id="guestTabs" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link active" id="existing-guest-tab" data-coreui-toggle="tab" data-coreui-target="#existing-guest" type="button" role="tab">Existing Guest</button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="new-guest-tab" data-coreui-toggle="tab" data-coreui-target="#new-guest" type="button" role="tab">New Guest</button>
+                            </li>
+                        </ul>
+
+                        <div class="tab-content">
+                            <!-- Existing Guest Tab -->
+                            <div class="tab-pane fade show active" id="existing-guest" role="tabpanel">
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="cil-user"></i></span>
+                                    <select class="form-select" id="guest_id" name="guest_id">
+                                        <option value="">Choose a guest...</option>
+                                        <?php foreach ($guests as $guest): ?>
+                                        <option value="<?php echo $guest['id']; ?>"><?php echo htmlspecialchars($guest['first_name'] . ' ' . $guest['last_name'] . ' (' . $guest['email'] . ')'); ?></option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- New Guest Tab -->
+                            <div class="tab-pane fade" id="new-guest" role="tabpanel">
+                                <div class="row g-2">
+                                    <div class="col-md-6">
+                                        <input type="text" class="form-control form-control-sm" id="new_first_name" name="new_first_name" placeholder="First Name *">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <input type="text" class="form-control form-control-sm" id="new_last_name" name="new_last_name" placeholder="Last Name *">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <input type="email" class="form-control form-control-sm" id="new_email" name="new_email" placeholder="Email *">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <input type="tel" class="form-control form-control-sm" id="new_phone" name="new_phone" placeholder="Phone" inputmode="numeric" maxlength="11" oninput="this.value=this.value.replace(/\\D/g,'').slice(0,11)" onkeypress="return /[0-9]/.test(event.key)">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <select class="form-select form-select-sm" id="new_id_type" name="new_id_type">
+                                            <option value="Passport">Passport</option>
+                                            <option value="Driver License">Driver License</option>
+                                            <option value="National ID">National ID</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <input type="text" class="form-control form-control-sm" id="new_id_number" name="new_id_number" placeholder="ID Number *">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <input type="date" class="form-control form-control-sm" id="new_date_of_birth" name="new_date_of_birth" placeholder="Date of Birth">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Reservation Details -->
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label small mb-1">Room *</label>
+                            <div class="input-group input-group-sm">
+                                <span class="input-group-text"><i class="cil-home"></i></span>
+                                <select class="form-select" id="room_id" name="room_id" required>
+                                    <option value="">Select a room first</option>
+                                    <?php foreach ($rooms as $room): ?>
+                                    <option value="<?php echo $room['id']; ?>" data-status="<?php echo $room['room_status']; ?>">
+                                        <?php echo htmlspecialchars($room['room_number'] . ' - ' . $room['room_type']); ?>
+                                        <small class="text-muted">(<?php echo $room['room_status']; ?>)</small>
+                                    </option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small mb-1">Check-in Date & Time *</label>
+                            <div class="input-group input-group-sm">
+                                <span class="input-group-text"><i class="cil-calendar-check"></i></span>
+                                <input type="datetime-local" class="form-control" id="check_in_date" name="check_in_date" disabled required>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label small mb-2">Duration *</label>
+                            <div class="d-flex gap-2 align-items-center">
+                                <div class="btn-group btn-group-sm flex-shrink-0" role="group">
+                                    <input type="radio" class="btn-check" id="hours_8" name="reservation_hour_count" value="8" autocomplete="off">
+                                    <label class="btn btn-outline-primary" for="hours_8">
+                                        <i class="cil-clock me-1"></i>8h
+                                    </label>
+                                    <input type="radio" class="btn-check" id="hours_16" name="reservation_hour_count" value="16" autocomplete="off">
+                                    <label class="btn btn-outline-primary" for="hours_16">
+                                        <i class="cil-clock me-1"></i>16h
+                                    </label>
+                                </div>
+                                <select class="form-select form-select-sm" id="reservation_days_count" name="reservation_hour_count" style="width: 100px;">
+                                    <option value="">Days</option>
+                                    <option value="1">1</option>
+                                    <option value="2">2</option>
+                                    <option value="3">3</option>
+                                    <option value="4">4</option>
+                                    <option value="5">5</option>
+                                    <option value="6">6</option>
+                                    <option value="7">7</option>
+                                    <option value="14">14</option>
+                                    <option value="21">21</option>
+                                    <option value="30">30</option>
+                                    <option value="60">60</option>
+                                    <option value="90">90</option>
+                                    <option value="120">120</option>
+                                    <option value="150">150</option>
+                                    <option value="180">180</option>
+                                    <option value="210">210</option>
+                                    <option value="240">240</option>
+                                    <option value="270">270</option>
+                                    <option value="300">300</option>
+                                    <option value="330">330</option>
+                                    <option value="365">365</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="modal-footer mt-3">
+                        <button type="button" class="btn btn-secondary" data-coreui-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Create Reservation</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- HTMX Response Target -->
+<div id="htmx-response" class="d-none"></div>
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
@@ -472,6 +627,363 @@ function submitWalkIn(e) {
       .catch(() => fdShowAlert('Network error. Please try again.', 'danger'))
       .finally(() => { btn.disabled = false; btn.innerHTML = original; });
 }
+
+function openCreateModal() {
+    document.getElementById('modalTitle').textContent = 'Add Reservation';
+    document.getElementById('formAction').value = 'create';
+    document.getElementById('reservationId').value = '';
+    document.getElementById('reservationForm').reset();
+
+    // Reset to existing guest tab
+    const existingTab = document.getElementById('existing-guest-tab');
+    const newTab = document.getElementById('new-guest-tab');
+    existingTab.classList.add('active');
+    newTab.classList.remove('active');
+    document.getElementById('existing-guest').classList.add('show', 'active');
+    document.getElementById('new-guest').classList.remove('show', 'active');
+
+    // Disable date and duration initially, enable room selection
+    document.getElementById('room_id').disabled = false;
+    document.getElementById('check_in_date').disabled = true;
+    document.querySelectorAll('input[name="reservation_hour_count"]').forEach(radio => radio.disabled = true);
+    document.getElementById('reservation_days_count').disabled = true;
+}
+
+function updateRoomSelection() {
+    const roomId = document.getElementById('room_id').value;
+
+    if (roomId) {
+        // Room selected, enable date and duration
+        document.getElementById('check_in_date').disabled = false;
+        document.querySelectorAll('input[name="reservation_hour_count"]').forEach(radio => radio.disabled = false);
+        document.getElementById('reservation_days_count').disabled = false;
+    } else {
+        // No room selected, disable date and duration
+        document.getElementById('check_in_date').disabled = true;
+        document.getElementById('check_in_date').value = '';
+        document.querySelectorAll('input[name="reservation_hour_count"]').forEach(radio => {
+            radio.disabled = true;
+            radio.checked = false;
+        });
+        document.getElementById('reservation_days_count').disabled = true;
+        document.getElementById('reservation_days_count').value = '';
+    }
+}
+
+function updateAvailableRooms() {
+    const checkInDate = document.getElementById('check_in_date').value;
+    const hoursChecked = document.querySelector('input[name="reservation_hour_count"]:checked');
+    const daysSelected = document.getElementById('reservation_days_count').value;
+
+    // Determine the duration value
+    let durationValue = 0;
+    if (hoursChecked) {
+        durationValue = hoursChecked.value;
+    } else if (daysSelected) {
+        durationValue = daysSelected;
+    }
+
+    if (checkInDate && durationValue > 0) {
+        const formData = new FormData();
+        formData.append('action', 'get_available_rooms');
+        formData.append('check_in_date', checkInDate);
+        formData.append('reservation_hour_count', durationValue);
+
+        fetch('reservations.php', {
+            method: 'POST',
+            headers: {
+                'HX-Request': 'true'
+            },
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log('Available rooms:', data);
+            const roomSelect = document.getElementById('room_id');
+            const roomOptions = roomSelect.querySelectorAll('option[data-status]');
+
+            // First, hide all room options except the "No room assignment" option
+            roomOptions.forEach(option => {
+                if (option.value !== '') {
+                    option.style.display = 'none';
+                }
+            });
+
+            // Show only available rooms
+            const availableRoomIds = data.map(room => room.id.toString());
+            console.log('Available room IDs:', availableRoomIds);
+            roomOptions.forEach(option => {
+                if (availableRoomIds.includes(option.value)) {
+                    option.style.display = 'block';
+                }
+            });
+
+            roomSelect.disabled = false;
+            // Update the placeholder to show available count
+            const placeholderOption = document.querySelector('#room_id option[value=""]');
+            if (placeholderOption) {
+                placeholderOption.textContent = `No room assignment (${data.length} available)`;
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching available rooms:', error);
+        });
+    } else {
+        // Show all rooms when no date/duration is selected
+        const roomSelect = document.getElementById('room_id');
+        const roomOptions = roomSelect.querySelectorAll('option[data-status]');
+        roomOptions.forEach(option => option.style.display = 'block');
+        roomSelect.disabled = false;
+        const placeholderOption = document.querySelector('#room_id option[value=""]');
+        if (placeholderOption) {
+            placeholderOption.textContent = 'Select a room first';
+        }
+    }
+}
+
+function validateForm() {
+    const form = document.getElementById('reservationForm');
+    let isValid = true;
+    const errors = [];
+
+    // Clear previous validation states
+    form.querySelectorAll('.is-invalid').forEach(el => el.classList.remove('is-invalid'));
+    form.querySelectorAll('.invalid-feedback').forEach(el => el.remove());
+
+    // Check if guest selection is made
+    const guestId = form.querySelector('#guest_id').value;
+    const newFirstName = form.querySelector('#new_first_name').value;
+
+    if (!guestId && !newFirstName) {
+        errors.push('Please select an existing guest or fill in the new guest information.');
+        isValid = false;
+    }
+
+    // Validate existing guest selection
+    if (guestId && newFirstName) {
+        errors.push('Please select either an existing guest OR create a new guest, not both.');
+        isValid = false;
+    }
+
+    // Ensure required fields are present in POST data
+    if (!guestId && newFirstName) {
+        // Check for new guest required fields
+        const requiredNewGuestFields = ['new_first_name', 'new_last_name', 'new_email', 'new_id_type', 'new_id_number'];
+        requiredNewGuestFields.forEach(field => {
+            if (!form.querySelector('#' + field).value.trim()) {
+                errors.push(field.replace('new_', '').replace('_', ' ').toUpperCase() + ' is required for new guest.');
+                isValid = false;
+            }
+        });
+    }
+
+    // Validate new guest fields if creating new guest
+    if (!guestId && newFirstName) {
+        const requiredFields = [
+            { id: 'new_first_name', name: 'First Name' },
+            { id: 'new_last_name', name: 'Last Name' },
+            { id: 'new_email', name: 'Email' },
+            { id: 'new_id_type', name: 'ID Type' },
+            { id: 'new_id_number', name: 'ID Number' },
+            { id: 'new_date_of_birth', name: 'Date of Birth' }
+        ];
+
+        requiredFields.forEach(field => {
+            const element = form.querySelector('#' + field.id);
+            if (!element.value.trim()) {
+                element.classList.add('is-invalid');
+                const feedback = document.createElement('div');
+                feedback.className = 'invalid-feedback';
+                feedback.textContent = field.name + ' is required.';
+                element.parentNode.appendChild(feedback);
+                isValid = false;
+            }
+        });
+
+        // Email validation
+        const emailField = form.querySelector('#new_email');
+        if (emailField.value && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailField.value)) {
+            emailField.classList.add('is-invalid');
+            const feedback = document.createElement('div');
+            feedback.className = 'invalid-feedback';
+            feedback.textContent = 'Please enter a valid email address.';
+            emailField.parentNode.appendChild(feedback);
+            isValid = false;
+        }
+
+        // Date of birth validation (must be at least 18 years old)
+        const dobField = form.querySelector('#new_date_of_birth');
+        if (dobField.value) {
+            const dob = new Date(dobField.value);
+            const today = new Date();
+            const age = today.getFullYear() - dob.getFullYear();
+            if (age < 18) {
+                dobField.classList.add('is-invalid');
+                const feedback = document.createElement('div');
+                feedback.className = 'invalid-feedback';
+                feedback.textContent = 'Guest must be at least 18 years old.';
+                dobField.parentNode.appendChild(feedback);
+                isValid = false;
+            }
+        }
+    }
+
+    // Validate reservation fields
+    const checkInDate = form.querySelector('#check_in_date').value;
+    if (!checkInDate) {
+        const element = form.querySelector('#check_in_date');
+        element.classList.add('is-invalid');
+        const feedback = document.createElement('div');
+        feedback.className = 'invalid-feedback';
+        feedback.textContent = 'Check-in date and time are required.';
+        element.parentNode.appendChild(feedback);
+        isValid = false;
+    } else {
+        // Check if check-in date is not in the past (allow some buffer for form submission time)
+        const checkIn = new Date(checkInDate);
+        const now = new Date();
+        const bufferTime = 5 * 60 * 1000; // 5 minutes buffer
+        if (checkIn < (now - bufferTime)) {
+            showAlert('Check-in date and time cannot be in the past.', 'warning');
+            const element = form.querySelector('#check_in_date');
+            element.classList.add('is-invalid');
+            const feedback = document.createElement('div');
+            feedback.className = 'invalid-feedback';
+            feedback.textContent = 'Check-in date cannot be in the past.';
+            element.parentNode.appendChild(feedback);
+            isValid = false;
+        }
+    }
+
+    // Validate room selection is required
+    const roomId = form.querySelector('#room_id').value;
+    if (!roomId) {
+        showAlert('Room selection is required.', 'warning');
+        const element = form.querySelector('#room_id');
+        element.classList.add('is-invalid');
+        const feedback = document.createElement('div');
+        feedback.className = 'invalid-feedback';
+        feedback.textContent = 'Please select a room.';
+        element.parentNode.appendChild(feedback);
+        isValid = false;
+    }
+
+    // Validate duration - either hours (8 or 16) OR days must be selected
+    const hoursChecked = form.querySelector('input[name="reservation_hour_count"]:checked');
+    const daysSelected = form.querySelector('#reservation_days_count').value;
+
+    if (!hoursChecked && !daysSelected) {
+        errors.push('Please select either hours or days for the reservation duration.');
+        isValid = false;
+    }
+
+    // Ensure duration values are sent in POST
+    if (hoursChecked) {
+        // Add hidden input for hours if not already present
+        let hiddenHours = form.querySelector('input[name="reservation_hour_count"][type="hidden"]');
+        if (!hiddenHours) {
+            hiddenHours = document.createElement('input');
+            hiddenHours.type = 'hidden';
+            hiddenHours.name = 'reservation_hour_count';
+            form.appendChild(hiddenHours);
+        }
+        hiddenHours.value = hoursChecked.value;
+    }
+    if (daysSelected) {
+        // Days dropdown uses the same name as hours, so set it properly
+        const daysInput = form.querySelector('#reservation_days_count');
+        if (daysInput && daysInput.value) {
+            // Override the radio button selection with days value
+            let hiddenHours = form.querySelector('input[name="reservation_hour_count"][type="hidden"]');
+            if (!hiddenHours) {
+                hiddenHours = document.createElement('input');
+                hiddenHours.type = 'hidden';
+                hiddenHours.name = 'reservation_hour_count';
+                form.appendChild(hiddenHours);
+            }
+            hiddenHours.value = daysInput.value;
+        }
+    }
+
+    if (!isValid && errors.length > 0) {
+        errors.forEach(error => showAlert(error, 'warning'));
+    }
+
+    return isValid;
+}
+
+function handleReservationResponse(event) {
+    const xhr = event.detail.xhr;
+    const response = xhr.responseText;
+
+    try {
+        const data = JSON.parse(response);
+        if (data.success) {
+            showAlert('Reservation created successfully!', 'success');
+            new coreui.Modal(document.getElementById('reservationModal')).hide();
+            setTimeout(() => location.reload(), 1000);
+        } else {
+            showAlert(data.message || 'An error occurred while creating the reservation.', 'danger');
+        }
+    } catch (e) {
+        showAlert('Server returned invalid response: ' + response, 'danger');
+        console.error('JSON parse error:', e);
+        console.error('Response:', response);
+    }
+}
+
+function showAlert(message, type = 'danger') {
+    const alertContainer = document.getElementById('alertContainer') || createAlertContainer();
+    const alertId = 'alert-' + Date.now();
+
+    const alertHTML = `
+        <div id="${alertId}" class="alert alert-${type} alert-dismissible fade show" role="alert">
+            <i class="cil-${type === 'success' ? 'check-circle' : 'exclamation-circle'} me-2"></i>
+            ${message}
+            <button type="button" class="btn-close" data-coreui-dismiss="alert" aria-label="Close"></button>
+        </div>
+    `;
+
+    alertContainer.insertAdjacentHTML('beforeend', alertHTML);
+
+    // Auto-dismiss after 5 seconds
+    setTimeout(() => {
+        const alert = document.getElementById(alertId);
+        if (alert) {
+            alert.remove();
+        }
+    }, 5000);
+}
+
+function createAlertContainer() {
+    const container = document.createElement('div');
+    container.id = 'alertContainer';
+    container.className = 'position-fixed top-0 end-0 p-3';
+    container.style.zIndex = '9999';
+    document.body.appendChild(container);
+    return container;
+}
+
+// Add event listeners for date/time and duration changes
+document.addEventListener('DOMContentLoaded', function() {
+    document.getElementById('room_id').addEventListener('change', updateRoomSelection);
+    document.getElementById('check_in_date').addEventListener('change', updateAvailableRooms);
+    // Listen for radio button changes for hours
+    document.querySelectorAll('input[name="reservation_hour_count"]').forEach(radio => {
+        radio.addEventListener('change', updateAvailableRooms);
+    });
+    document.getElementById('reservation_days_count').addEventListener('change', updateAvailableRooms);
+
+    const reservationForm = document.getElementById('reservationForm');
+    if (reservationForm) {
+        reservationForm.addEventListener('submit', function(e) {
+            if (!validateForm()) {
+                e.preventDefault();
+                return false;
+            }
+        });
+    }
+});
 </script>
 
 <!-- Walk-in Guest Modal -->
