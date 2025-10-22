@@ -866,7 +866,7 @@ $stats = $conn->query("
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label for="event_organizer_contact" class="form-label">Organizer Contact *</label>
-                                <input type="text" class="form-control" id="event_organizer_contact" name="event_organizer_contact" required>
+                                <input type="tel" class="form-control numeric-only" id="event_organizer_contact" name="event_organizer_contact" inputmode="numeric" maxlength="11" oninput="this.value=this.value.replace(/\D/g,'').slice(0,11)" onkeypress="return /[0-9]/.test(event.key)" required>
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label for="event_expected_attendees" class="form-label">Expected Attendees *</label>

@@ -321,7 +321,7 @@ $recentBookings = $conn->query("
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label for="contact_phone" class="form-label">Contact Phone</label>
-                                <input type="tel" class="form-control" id="contact_phone" name="contact_phone">
+                                <input type="tel" class="form-control" id="contact_phone" name="contact_phone" inputmode="numeric" maxlength="11" oninput="this.value=this.value.replace(/\\D/g,'').slice(0,11)" onkeypress="return /[0-9]/.test(event.key)">
                             </div>
                         </div>
 
