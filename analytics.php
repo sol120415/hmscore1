@@ -153,6 +153,7 @@ $revPAR = $roomStats['total_rooms'] > 0 ?
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Analytics - Hotel Management System</title>
+    <script>(function(){try{var s=localStorage.getItem('theme-preference');var t=(s==='light'||s==='dark')?s:(window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');document.documentElement.setAttribute('data-theme',t);document.documentElement.setAttribute('data-coreui-theme',t);var bg=t==='dark'?'#1a1a1a':'#ffffff';document.documentElement.style.backgroundColor=bg;document.documentElement.style.background=bg;var st=document.createElement('style');st.id='early-theme-bg';st.textContent='html,body{background:'+bg+' !important;}';document.head.appendChild(st);}catch(e){}})();</script>
 
     <!-- CoreUI CSS -->
     <link href="css/coreui.min.css" rel="stylesheet">
