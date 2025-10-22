@@ -14,13 +14,18 @@ if (isset($_GET['action']) && $_GET['action'] === 'export_pdf') {
     $billings = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     require_once 'vendor/autoload.php';
-    $dompdf = new \Dompdf\Dompdf();
+    $options = new \Dompdf\Options();
+    $options->set('isHtml5ParserEnabled', true);
+    $options->set('isRemoteEnabled', true);
+    $options->set('defaultFont', 'DejaVu Sans');
+    $dompdf = new \Dompdf\Dompdf($options);
 
     $html = '
     <html>
     <head>
+        <meta charset="UTF-8">
         <style>
-            body { font-family: Arial, sans-serif; }
+            body { font-family: DejaVu Sans, Arial, sans-serif; }
             table { width: 100%; border-collapse: collapse; }
             th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
             th { background-color: #f2f2f2; }

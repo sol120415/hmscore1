@@ -311,8 +311,32 @@ $recentTransactions = array_slice($billings, 0, 10);
                                         <div class="d-flex flex-column gap-1">
                                             <span class="badge bg-warning">Pending</span>
                                             <small class="text-muted">Balance: ₱<?php echo number_format($billing['discounted_balance'], 2); ?></small>
-                                            <?php if ($billing['loyalty_status'] !== 'Regular'): ?>
-                                            <small class="text-success">Discounted (<?php echo $billing['loyalty_status']; ?>)</small>
+                                            <?php
+                                                $discountPercent = 0;
+                                                if (!empty($billing['calculated_balance']) && $billing['calculated_balance'] > 0) {
+                                                    $discountPercent = round((1 - ($billing['discounted_balance'] / $billing['calculated_balance'])) * 100);
+                                                }
+                                                if ($discountPercent > 0):
+                                                    $tierLabel = '';
+                                                    if (isset($billing['loyalty_status']) && trim($billing['loyalty_status']) !== '' && strtolower(trim($billing['loyalty_status'])) !== 'regular') {
+                                                        $tierLabel = trim($billing['loyalty_status']);
+                                                    } else {
+                                                        switch ($discountPercent) {
+                                                            case 25:
+                                                                $tierLabel = 'Diamond';
+                                                                break;
+                                                            case 15:
+                                                                $tierLabel = 'Gold';
+                                                                break;
+                                                            case 10:
+                                                                $tierLabel = 'Iron';
+                                                                break;
+                                                            default:
+                                                                $tierLabel = 'Regular';
+                                                        }
+                                                    }
+                                            ?>
+                                            <small class="text-success">-<?php echo $discountPercent; ?>% (<?php echo htmlspecialchars($tierLabel); ?>)</small>
                                             <?php endif; ?>
                                         </div>
                                     </div>
