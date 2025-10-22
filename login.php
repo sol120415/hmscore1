@@ -1,5 +1,6 @@
 <?php
 include_once 'db.php';
+require_once 'google_oauth_config.php';
 // Redirect if already logged in
 if (isset($_SESSION['email'])) {
     header('Location: dashboard.php');
@@ -142,6 +143,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             width: 300px;
             max-width: 400px;
         }
+        .btn-google {
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.15);
+            color: #e2e8f0;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            backdrop-filter: blur(2px);
+        }
+        .btn-google:hover { background: rgba(255,255,255,0.12); }
+        .gmail-icon {
+            width: 18px;
+            height: 18px;
+            display: inline-block;
+            background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48"><path fill="%23FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.8 32.9 29.3 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34.9 6.1 29.7 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20c10 0 19-7.3 19-20 0-1.3-.1-2.3-.4-3.5z"/><path fill="%234CAF50" d="M6.3 14.7l6.6 4.8C14.7 16.2 18.9 12 24 12c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34.9 6.1 29.7 4 24 4 16 4 8.9 8.4 6.3 14.7z"/><path fill="%232196F3" d="M24 44c5.2 0 10-1.8 13.6-4.9l-6.3-5.2C29.2 35.7 26.7 36 24 36c-5.2 0-9.6-3.5-11.2-8.2l-6.6 5.1C8.9 39.6 15.9 44 24 44z"/><path fill="%23F44336" d="M43.6 20.5H42V20H24v8h11.3c-1.9 4.9-6.4 8-11.3 8-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34.9 6.1 29.7 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20c10 0 19-7.3 19-20 0-1.3-.1-2.3-.4-3.5z"/></svg>') no-repeat center/contain;
+        }
     </style>
 </head>
 <body>
@@ -228,6 +246,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                                 <hr class="my-4">
 
+                                <div class="text-center text-muted mb-3">OR</div>
+
+                                <div class="d-grid mb-3">
+                                    <button type="button" id="googleLoginBtn" class="btn btn-google">Login via Gmail</button>
+                                </div>
+
                                 <div class="text-center">
                                     <small class="text-muted">
                                         Don't have an account?
@@ -276,6 +300,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <script src="js/coreui.bundle.js"></script>
     <script src="js/bootstrap.bundle.js"></script>
     <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
@@ -403,6 +428,38 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }, 5000);
             }
         });
+
+        // Trigger Google One Tap chooser on custom button
+        document.addEventListener('click', function(e){
+            if (e.target && (e.target.id === 'googleLoginBtn' || e.target.closest('#googleLoginBtn'))) {
+                if (window.google && window.google.accounts && window.google.accounts.id) {
+                    google.accounts.id.initialize({
+                        client_id: '<?php echo defined('GOOGLE_CLIENT_ID') ? GOOGLE_CLIENT_ID : 'YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com'; ?>',
+                        callback: handleGoogleSignIn,
+                        ux_mode: 'popup',
+                    });
+                    google.accounts.id.prompt(); // shows account chooser
+                }
+            }
+        });
+
+        // Google Sign-In callback
+        function handleGoogleSignIn(response) {
+            const formData = new URLSearchParams();
+            formData.append('credential', response.credential);
+            fetch('google_callback.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: formData.toString()
+            }).then(r => r.json())
+              .then(data => {
+                  if (data && data.success) {
+                      window.location.href = 'dashboard.php';
+                  } else {
+                      showToast('Google sign-in failed.', 'error');
+                  }
+              }).catch(() => showToast('Google sign-in failed.', 'error'));
+        }
     </script>
 
     <style>
