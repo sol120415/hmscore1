@@ -207,119 +207,7 @@ html .theme-toggle {
   background: #f8f9fa !important;
 }
 
-/* Fix login button to be theme-aware */
-[data-theme="dark"] .btn-primary {
-  background-color: #0d6efd !important;
-  border-color: #0d6efd !important;
-  color: #ffffff !important;
-}
 
-[data-theme="dark"] .btn-primary:hover {
-  background-color: #0b5ed7 !important;
-  border-color: #0a58ca !important;
-  color: #ffffff !important;
-}
-
-[data-theme="light"] .btn-primary {
-  background-color: #0d6efd !important;
-  border-color: #0d6efd !important;
-  color: #ffffff !important;
-}
-
-[data-theme="light"] .btn-primary:hover {
-  background-color: #0b5ed7 !important;
-  border-color: #0a58ca !important;
-  color: #ffffff !important;
-}
-
-/* Override any white background on login button */
-[data-theme="dark"] .btn {
-  background-color: #0d6efd !important;
-  border-color: #0d6efd !important;
-  color: #ffffff !important;
-}
-
-[data-theme="dark"] .btn:hover {
-  background-color: #0b5ed7 !important;
-  border-color: #0a58ca !important;
-  color: #ffffff !important;
-}
-
-/* Make Login via Gmail more visible in light mode */
-[data-theme="light"] .login-card .btn-outline-light,
-[data-theme="light"] .login-card .btn-outline-secondary,
-[data-theme="light"] .login-card .btn-light {
-  color: #333 !important;
-  border-color: #666 !important;
-  background-color: #f8f9fa !important;
-}
-
-[data-theme="light"] .login-card .btn-outline-light:hover,
-[data-theme="light"] .login-card .btn-outline-secondary:hover,
-[data-theme="light"] .login-card .btn-light:hover {
-  color: #000 !important;
-  border-color: #333 !important;
-  background-color: #e9ecef !important;
-}
-
-/* Target any Gmail login text specifically */
-[data-theme="light"] .login-card a[href*="gmail"],
-[data-theme="light"] .login-card .gmail-login,
-[data-theme="light"] .login-card .social-login {
-  color: #333 !important;
-  border: 1px solid #666 !important;
-  background-color: #f8f9fa !important;
-  padding: 8px 16px !important;
-  border-radius: 4px !important;
-  text-decoration: none !important;
-  display: inline-block !important;
-}
-
-[data-theme="light"] .login-card a[href*="gmail"]:hover,
-[data-theme="light"] .login-card .gmail-login:hover,
-[data-theme="light"] .login-card .social-login:hover {
-  color: #000 !important;
-  border-color: #333 !important;
-  background-color: #e9ecef !important;
-}
-
-/* Make Login via Gmail more visible in dark mode */
-[data-theme="dark"] .login-card .btn-outline-light,
-[data-theme="dark"] .login-card .btn-outline-secondary,
-[data-theme="dark"] .login-card .btn-light {
-  color: #000 !important;
-  border-color: #000 !important;
-  background-color: #ffffff !important;
-}
-
-[data-theme="dark"] .login-card .btn-outline-light:hover,
-[data-theme="dark"] .login-card .btn-outline-secondary:hover,
-[data-theme="dark"] .login-card .btn-light:hover {
-  color: #000 !important;
-  border-color: #000 !important;
-  background-color: #f8f9fa !important;
-}
-
-/* Target any Gmail login text specifically in dark mode */
-[data-theme="dark"] .login-card a[href*="gmail"],
-[data-theme="dark"] .login-card .gmail-login,
-[data-theme="dark"] .login-card .social-login {
-  color: #000 !important;
-  border: 1px solid #000 !important;
-  background-color: #ffffff !important;
-  padding: 8px 16px !important;
-  border-radius: 4px !important;
-  text-decoration: none !important;
-  display: inline-block !important;
-}
-
-[data-theme="dark"] .login-card a[href*="gmail"]:hover,
-[data-theme="dark"] .login-card .gmail-login:hover,
-[data-theme="dark"] .login-card .social-login:hover {
-  color: #000 !important;
-  border-color: #000 !important;
-  background-color: #f8f9fa !important;
-}
 
 /* Make modals consistent with light theme */
 [data-theme="light"] .modal {
@@ -467,6 +355,54 @@ html .theme-toggle {
   color: #212529 !important;
 }
 
+/* More specific hover overrides for arrivals and departures */
+[data-theme="light"] .card .table tbody tr:hover {
+  background-color: #f8f9fa !important;
+  color: #212529 !important;
+}
+
+[data-theme="light"] .card .table tbody tr:hover td {
+  background-color: #f8f9fa !important;
+  color: #212529 !important;
+}
+
+[data-theme="light"] .card .table tbody tr:hover th {
+  background-color: #f8f9fa !important;
+  color: #212529 !important;
+}
+
+/* Override any dark hover states in cards */
+[data-theme="light"] .card .table tbody tr {
+  background-color: #ffffff !important;
+  color: #212529 !important;
+}
+
+[data-theme="light"] .card .table tbody tr td {
+  background-color: #ffffff !important;
+  color: #212529 !important;
+}
+
+[data-theme="light"] .card .table tbody tr th {
+  background-color: #ffffff !important;
+  color: #212529 !important;
+}
+
+/* Force light hover for all table rows in light mode */
+[data-theme="light"] tr:hover {
+  background-color: #f8f9fa !important;
+  color: #212529 !important;
+}
+
+[data-theme="light"] tr:hover td {
+  background-color: #f8f9fa !important;
+  color: #212529 !important;
+}
+
+[data-theme="light"] tr:hover th {
+  background-color: #f8f9fa !important;
+  color: #212529 !important;
+}
+
 /* Body and main containers */
 body {
   background-color: var(--theme-bg-primary);
@@ -556,32 +492,6 @@ body {
   color: var(--theme-text-primary);
 }
 
-/* Buttons */
-.btn {
-  transition: all 0.3s ease;
-}
-
-.btn-primary {
-  background-color: var(--theme-accent);
-  border-color: var(--theme-accent);
-}
-
-.btn-primary:hover {
-  background-color: var(--theme-accent-hover);
-  border-color: var(--theme-accent-hover);
-}
-
-.btn-outline-light {
-  color: var(--theme-text-primary);
-  border-color: var(--theme-border-color);
-  background-color: transparent;
-}
-
-.btn-outline-light:hover {
-  background-color: var(--theme-bg-secondary);
-  border-color: var(--theme-border-color);
-  color: var(--theme-text-primary);
-}
 
 /* Navigation */
 .navbar {

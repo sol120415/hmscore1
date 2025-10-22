@@ -329,6 +329,22 @@ class ThemeManager {
             control.style.removeProperty('border-color');
         });
         
+        // Force table hover states for light theme
+        if (theme === 'light') {
+            const tableRows = document.querySelectorAll('tr');
+            tableRows.forEach(row => {
+                row.style.setProperty('background-color', '#ffffff', 'important');
+                row.style.setProperty('color', '#212529', 'important');
+            });
+            
+            const tableCells = document.querySelectorAll('td, th');
+            tableCells.forEach(cell => {
+                cell.style.setProperty('background-color', '#ffffff', 'important');
+                cell.style.setProperty('color', '#212529', 'important');
+            });
+        }
+        
+        
         // Force text colors - Only apply to authentication pages (excluding validation error text)
         const authTextElements = document.querySelectorAll('.login-card .text-muted, .login-card .text-white, .login-card .text-primary, .login-card .text-decoration-none, .register-card .text-muted, .register-card .text-white, .register-card .text-primary, .register-card .text-decoration-none, .forgot-card .text-muted, .forgot-card .text-white, .forgot-card .text-primary, .forgot-card .text-decoration-none, .verify-card .text-muted, .verify-card .text-white, .verify-card .text-primary, .verify-card .text-decoration-none');
         authTextElements.forEach(element => {
