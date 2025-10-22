@@ -399,7 +399,7 @@ $occupancyRate = $stats['total_rooms'] > 0 ? round(($stats['occupied_rooms'] / $
                                         <i class="cil-settings text-dark"></i>
                                     </button>
                                 </div>
-                                <?php elseif ($hasHousekeeper): ?>
+                                <?php elseif ($hasHousekeeper && $room['room_status'] !== 'Cleaning'): ?>
                                 <div class="position-absolute top-0 end-0" style="margin-top: -8px; margin-right: -8px;">
                                     <button class="btn btn-info btn-sm rounded-circle shadow" onclick="event.stopPropagation(); openHousekeepingModal(<?php echo $room['id']; ?>, '<?php echo htmlspecialchars($room['room_number']); ?>')" title="View Housekeeping Task">
                                         <i class="cil-broom text-white"></i>
