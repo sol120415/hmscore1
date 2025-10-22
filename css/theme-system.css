@@ -176,12 +176,111 @@ html .theme-toggle {
   transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
 }
 
-/* Improve visibility of highlighted text on the login page in light mode */
-[data-theme="light"] .login-card *::selection {
+/* Make CORE text black in light mode for better visibility */
+[data-theme="light"] .login-card .hotel-logo .logo-text {
   color: #000 !important;
 }
-[data-theme="light"] .login-card *::-moz-selection {
+
+[data-theme="light"] .login-card .logo-container .logo-text {
   color: #000 !important;
+}
+
+/* Target CORE text specifically in login card */
+[data-theme="light"] .login-card .hotel-logo {
+  color: #000 !important;
+}
+
+[data-theme="light"] .login-card .logo-container {
+  color: #000 !important;
+}
+
+/* Make Login via Gmail button black in light mode - same approach as CORE text */
+[data-theme="light"] .login-card .btn-google {
+  color: #000 !important;
+  border-color: #000 !important;
+  background: #ffffff !important;
+}
+
+[data-theme="light"] .login-card .btn-google:hover {
+  color: #000 !important;
+  border-color: #000 !important;
+  background: #f8f9fa !important;
+}
+
+/* Make Login via Gmail more visible in light mode */
+[data-theme="light"] .login-card .btn-outline-light,
+[data-theme="light"] .login-card .btn-outline-secondary,
+[data-theme="light"] .login-card .btn-light {
+  color: #333 !important;
+  border-color: #666 !important;
+  background-color: #f8f9fa !important;
+}
+
+[data-theme="light"] .login-card .btn-outline-light:hover,
+[data-theme="light"] .login-card .btn-outline-secondary:hover,
+[data-theme="light"] .login-card .btn-light:hover {
+  color: #000 !important;
+  border-color: #333 !important;
+  background-color: #e9ecef !important;
+}
+
+/* Target any Gmail login text specifically */
+[data-theme="light"] .login-card a[href*="gmail"],
+[data-theme="light"] .login-card .gmail-login,
+[data-theme="light"] .login-card .social-login {
+  color: #333 !important;
+  border: 1px solid #666 !important;
+  background-color: #f8f9fa !important;
+  padding: 8px 16px !important;
+  border-radius: 4px !important;
+  text-decoration: none !important;
+  display: inline-block !important;
+}
+
+[data-theme="light"] .login-card a[href*="gmail"]:hover,
+[data-theme="light"] .login-card .gmail-login:hover,
+[data-theme="light"] .login-card .social-login:hover {
+  color: #000 !important;
+  border-color: #333 !important;
+  background-color: #e9ecef !important;
+}
+
+/* Make Login via Gmail more visible in dark mode */
+[data-theme="dark"] .login-card .btn-outline-light,
+[data-theme="dark"] .login-card .btn-outline-secondary,
+[data-theme="dark"] .login-card .btn-light {
+  color: #000 !important;
+  border-color: #000 !important;
+  background-color: #ffffff !important;
+}
+
+[data-theme="dark"] .login-card .btn-outline-light:hover,
+[data-theme="dark"] .login-card .btn-outline-secondary:hover,
+[data-theme="dark"] .login-card .btn-light:hover {
+  color: #000 !important;
+  border-color: #000 !important;
+  background-color: #f8f9fa !important;
+}
+
+/* Target any Gmail login text specifically in dark mode */
+[data-theme="dark"] .login-card a[href*="gmail"],
+[data-theme="dark"] .login-card .gmail-login,
+[data-theme="dark"] .login-card .social-login {
+  color: #000 !important;
+  border: 1px solid #000 !important;
+  background-color: #ffffff !important;
+  padding: 8px 16px !important;
+  border-radius: 4px !important;
+  text-decoration: none !important;
+  display: inline-block !important;
+}
+
+[data-theme="dark"] .login-card a[href*="gmail"]:hover,
+[data-theme="dark"] .login-card .gmail-login:hover,
+[data-theme="dark"] .login-card .social-login:hover {
+  color: #000 !important;
+  border-color: #000 !important;
+  background-color: #f8f9fa !important;
 }
 
 /* Body and main containers */
