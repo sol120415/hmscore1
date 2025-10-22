@@ -422,147 +422,142 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 </div>
 
 <!-- Reservation Modal -->
-<div class="modal fade" id="reservationModal" tabindex="-1" style="--cui-modal-border-radius: 16px; --cui-modal-box-shadow: 0 10px 40px rgba(0,0,0,0.3); --cui-modal-bg: #2d3748; --cui-modal-border-color: #4a5568;">
-    <div class="modal-dialog modal-lg">
+<div class="modal fade" id="reservationModal" tabindex="-1">
+    <div class="modal-dialog modal-lg" style="max-width: 50vw;">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="modalTitle">Add Reservation</h5>
                 <button type="button" class="btn-close" data-coreui-dismiss="modal"></button>
             </div>
-            <div class="modal-body">
-                <form id="reservationForm" hx-post="reservations.php" hx-target="#htmx-response" hx-swap="innerHTML" hx-on:htmx:after-request="handleReservationResponse(event)">
-                    <input type="hidden" name="action" id="formAction" value="create">
-
-                    <!-- Guest Selection -->
-                    <div class="mb-3">
-                        <label class="form-label small mb-2">Guest *</label>
-                        <ul class="nav nav-tabs nav-fill mb-3" id="guestTabs" role="tablist">
-                            <li class="nav-item" role="presentation">
-                                <button class="nav-link active" id="existing-guest-tab" data-coreui-toggle="tab" data-coreui-target="#existing-guest" type="button" role="tab">Existing Guest</button>
-                            </li>
-                            <li class="nav-item" role="presentation">
-                                <button class="nav-link" id="new-guest-tab" data-coreui-toggle="tab" data-coreui-target="#new-guest" type="button" role="tab">New Guest</button>
-                            </li>
-                        </ul>
-
-                        <div class="tab-content">
-                            <!-- Existing Guest Tab -->
-                            <div class="tab-pane fade show active" id="existing-guest" role="tabpanel">
-                                <div class="input-group">
-                                    <span class="input-group-text"><i class="cil-user"></i></span>
-                                    <select class="form-select" id="guest_id" name="guest_id">
-                                        <option value="">Choose a guest...</option>
-                                        <?php foreach ($guests as $guest): ?>
-                                        <option value="<?php echo $guest['id']; ?>"><?php echo htmlspecialchars($guest['first_name'] . ' ' . $guest['last_name'] . ' (' . $guest['email'] . ')'); ?></option>
+            <form id="reservationForm" hx-post="reservations.php" hx-target="#htmx-response" hx-swap="innerHTML" hx-on:htmx:after-request="handleReservationResponse(event)">
+                <input type="hidden" name="action" id="formAction" value="create">
+                <input type="hidden" id="reservationId" name="reservation_id" value="">
+                <div class="modal-body">
+                    <div class="row g-3 align-items-start">
+                        <div class="col-lg-7">
+                            <div class="rounded-3 border p-3">
+                                <label class="form-label small mb-2">Guest *</label>
+                                <ul class="nav nav-tabs nav-fill mb-3" id="guestTabs" role="tablist">
+                                    <li class="nav-item" role="presentation">
+                                        <button class="nav-link active" id="existing-guest-tab" data-coreui-toggle="tab" data-coreui-target="#existing-guest" type="button" role="tab">Existing Guest</button>
+                                    </li>
+                                    <li class="nav-item" role="presentation">
+                                        <button class="nav-link" id="new-guest-tab" data-coreui-toggle="tab" data-coreui-target="#new-guest" type="button" role="tab">New Guest</button>
+                                    </li>
+                                </ul>
+                                <div class="tab-content">
+                                    <div class="tab-pane fade show active" id="existing-guest" role="tabpanel">
+                                        <div class="mb-2">
+                                            <select class="form-select form-select-sm" id="guest_id" name="guest_id">
+                                                <option value="">Choose a guest...</option>
+                                                <?php foreach ($guests as $guest): ?>
+                                                <option value="<?php echo $guest['id']; ?>"><?php echo htmlspecialchars($guest['first_name'] . ' ' . $guest['last_name'] . ' (' . $guest['email'] . ')'); ?></option>
+                                                <?php endforeach; ?>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="tab-pane fade" id="new-guest" role="tabpanel">
+                                        <div class="row g-2">
+                                            <div class="col-md-6">
+                                                <label class="form-label small">First Name *</label>
+                                                <input type="text" class="form-control form-control-sm" id="new_first_name" name="new_first_name" placeholder="First Name *">
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label class="form-label small">Last Name *</label>
+                                                <input type="text" class="form-control form-control-sm" id="new_last_name" name="new_last_name" placeholder="Last Name *">
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label class="form-label small">Email *</label>
+                                                <input type="email" class="form-control form-control-sm" id="new_email" name="new_email" placeholder="Email *">
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label class="form-label small">Phone</label>
+                                                <input type="tel" class="form-control form-control-sm" id="new_phone" name="new_phone" placeholder="Phone" inputmode="numeric" maxlength="11" oninput="this.value=this.value.replace(/\\D/g,'').slice(0,11)" onkeypress="return /[0-9]/.test(event.key)">
+                                            </div>
+                                            <div class="col-md-4">
+                                                <label class="form-label small">ID Type *</label>
+                                                <select class="form-select form-select-sm" id="new_id_type" name="new_id_type">
+                                                    <option value="Passport">Passport</option>
+                                                    <option value="Driver License">Driver License</option>
+                                                    <option value="National ID">National ID</option>
+                                                </select>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <label class="form-label small">ID Number *</label>
+                                                <input type="text" class="form-control form-control-sm" id="new_id_number" name="new_id_number" placeholder="ID Number *">
+                                            </div>
+                                            <div class="col-md-4">
+                                                <label class="form-label small">Date of Birth *</label>
+                                                <input type="date" class="form-control form-control-sm" id="new_date_of_birth" name="new_date_of_birth" placeholder="Date of Birth">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-5">
+                            <div class="rounded-3 border p-3">
+                                <div class="mb-2">
+                                    <label class="form-label small">Room *</label>
+                                    <select class="form-select form-select-sm" id="room_id" name="room_id" required>
+                                        <option value="">Select a room first</option>
+                                        <?php foreach ($rooms as $room): ?>
+                                            <option value="<?php echo $room['id']; ?>" data-status="<?php echo $room['room_status']; ?>">#<?php echo htmlspecialchars($room['room_number']); ?> • <?php echo htmlspecialchars($room['room_type']); ?> (<?php echo $room['room_status']; ?>)</option>
                                         <?php endforeach; ?>
                                     </select>
                                 </div>
-                            </div>
-
-                            <!-- New Guest Tab -->
-                            <div class="tab-pane fade" id="new-guest" role="tabpanel">
-                                <div class="row g-2">
-                                    <div class="col-md-6">
-                                        <input type="text" class="form-control form-control-sm" id="new_first_name" name="new_first_name" placeholder="First Name *">
+                                <div class="mb-2">
+                                    <label class="form-label small">Duration *</label>
+                                    <div class="row g-2">
+                                        <div class="col-6">
+                                            <div class="btn-group btn-group-sm w-100" role="group">
+                                                <input type="radio" class="btn-check" id="hours_8" name="reservation_hour_count" value="8" autocomplete="off">
+                                                <label class="btn btn-outline-primary" for="hours_8">8h</label>
+                                                <input type="radio" class="btn-check" id="hours_16" name="reservation_hour_count" value="16" autocomplete="off">
+                                                <label class="btn btn-outline-primary" for="hours_16">16h</label>
+                                            </div>
+                                        </div>
+                                        <div class="col-6">
+                                            <select class="form-select form-select-sm" id="reservation_days_count" name="reservation_hour_count">
+                                                <option value="">Days</option>
+                                                <option value="1">1</option>
+                                                <option value="2">2</option>
+                                                <option value="3">3</option>
+                                                <option value="4">4</option>
+                                                <option value="5">5</option>
+                                                <option value="6">6</option>
+                                                <option value="7">7</option>
+                                                <option value="14">14</option>
+                                                <option value="21">21</option>
+                                                <option value="30">30</option>
+                                                <option value="60">60</option>
+                                                <option value="90">90</option>
+                                                <option value="120">120</option>
+                                                <option value="150">150</option>
+                                                <option value="180">180</option>
+                                                <option value="210">210</option>
+                                                <option value="240">240</option>
+                                                <option value="270">270</option>
+                                                <option value="300">300</option>
+                                                <option value="330">330</option>
+                                                <option value="365">365</option>
+                                            </select>
+                                        </div>
                                     </div>
-                                    <div class="col-md-6">
-                                        <input type="text" class="form-control form-control-sm" id="new_last_name" name="new_last_name" placeholder="Last Name *">
-                                    </div>
-                                    <div class="col-md-6">
-                                        <input type="email" class="form-control form-control-sm" id="new_email" name="new_email" placeholder="Email *">
-                                    </div>
-                                    <div class="col-md-6">
-                                        <input type="tel" class="form-control form-control-sm" id="new_phone" name="new_phone" placeholder="Phone" inputmode="numeric" maxlength="11" oninput="this.value=this.value.replace(/\\D/g,'').slice(0,11)" onkeypress="return /[0-9]/.test(event.key)">
-                                    </div>
-                                    <div class="col-md-4">
-                                        <select class="form-select form-select-sm" id="new_id_type" name="new_id_type">
-                                            <option value="Passport">Passport</option>
-                                            <option value="Driver License">Driver License</option>
-                                            <option value="National ID">National ID</option>
-                                        </select>
-                                    </div>
-                                    <div class="col-md-4">
-                                        <input type="text" class="form-control form-control-sm" id="new_id_number" name="new_id_number" placeholder="ID Number *">
-                                    </div>
-                                    <div class="col-md-4">
-                                        <input type="date" class="form-control form-control-sm" id="new_date_of_birth" name="new_date_of_birth" placeholder="Date of Birth">
-                                    </div>
+                                </div>
+                                <div class="mb-2">
+                                    <label class="form-label small">Check-in Date & Time *</label>
+                                    <input type="datetime-local" class="form-control form-control-sm" id="check_in_date" name="check_in_date" disabled required>
                                 </div>
                             </div>
                         </div>
                     </div>
-
-                    <!-- Reservation Details -->
-                    <div class="row g-3">
-                        <div class="col-md-6">
-                            <label class="form-label small mb-1">Room *</label>
-                            <div class="input-group input-group-sm">
-                                <span class="input-group-text"><i class="cil-home"></i></span>
-                                <select class="form-select" id="room_id" name="room_id" required>
-                                    <option value="">Select a room first</option>
-                                    <?php foreach ($rooms as $room): ?>
-                                    <option value="<?php echo $room['id']; ?>" data-status="<?php echo $room['room_status']; ?>">
-                                        <?php echo htmlspecialchars($room['room_number'] . ' - ' . $room['room_type']); ?>
-                                        <small class="text-muted">(<?php echo $room['room_status']; ?>)</small>
-                                    </option>
-                                    <?php endforeach; ?>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label small mb-1">Check-in Date & Time *</label>
-                            <div class="input-group input-group-sm">
-                                <span class="input-group-text"><i class="cil-calendar-check"></i></span>
-                                <input type="datetime-local" class="form-control" id="check_in_date" name="check_in_date" disabled required>
-                            </div>
-                        </div>
-                        <div class="col-12">
-                            <label class="form-label small mb-2">Duration *</label>
-                            <div class="d-flex gap-2 align-items-center">
-                                <div class="btn-group btn-group-sm flex-shrink-0" role="group">
-                                    <input type="radio" class="btn-check" id="hours_8" name="reservation_hour_count" value="8" autocomplete="off">
-                                    <label class="btn btn-outline-primary" for="hours_8">
-                                        <i class="cil-clock me-1"></i>8h
-                                    </label>
-                                    <input type="radio" class="btn-check" id="hours_16" name="reservation_hour_count" value="16" autocomplete="off">
-                                    <label class="btn btn-outline-primary" for="hours_16">
-                                        <i class="cil-clock me-1"></i>16h
-                                    </label>
-                                </div>
-                                <select class="form-select form-select-sm" id="reservation_days_count" name="reservation_hour_count" style="width: 100px;">
-                                    <option value="">Days</option>
-                                    <option value="1">1</option>
-                                    <option value="2">2</option>
-                                    <option value="3">3</option>
-                                    <option value="4">4</option>
-                                    <option value="5">5</option>
-                                    <option value="6">6</option>
-                                    <option value="7">7</option>
-                                    <option value="14">14</option>
-                                    <option value="21">21</option>
-                                    <option value="30">30</option>
-                                    <option value="60">60</option>
-                                    <option value="90">90</option>
-                                    <option value="120">120</option>
-                                    <option value="150">150</option>
-                                    <option value="180">180</option>
-                                    <option value="210">210</option>
-                                    <option value="240">240</option>
-                                    <option value="270">270</option>
-                                    <option value="300">300</option>
-                                    <option value="330">330</option>
-                                    <option value="365">365</option>
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="modal-footer mt-3">
-                        <button type="button" class="btn btn-secondary" data-coreui-dismiss="modal">Cancel</button>
-                        <button type="submit" class="btn btn-primary">Create Reservation</button>
-                    </div>
-                </form>
-            </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-coreui-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Create Reservation</button>
+                </div>
+            </form>
         </div>
     </div>
 </div>
