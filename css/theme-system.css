@@ -894,3 +894,32 @@ a:hover {
 [data-theme="dark"] td,
 [data-theme="dark"] .card-title,
 [data-theme="dark"] .card-text { color: #ffffff !important; }
+
+/* Dark mode fixes for lingering white areas (tables/cards) */
+[data-theme="dark"] .table > :not(caption) > * > * {
+  background-color: #1a1a1a !important;
+  color: #ffffff !important;
+  border-color: #495057 !important;
+}
+[data-theme="dark"] .table thead > tr > th,
+[data-theme="dark"] .table thead > tr > td {
+  background-color: #2d2d2d !important;
+  color: #ffffff !important;
+  border-color: #495057 !important;
+}
+[data-theme="dark"] .table-light,
+[data-theme="dark"] .table-light > :not(caption) > * > * {
+  background-color: #2d2d2d !important;
+  color: #ffffff !important;
+  border-color: #495057 !important;
+}
+/* Any explicit white backgrounds inside cards/tables */
+[data-theme="dark"] .card .bg-white,
+[data-theme="dark"] .table .bg-white,
+[data-theme="dark"] .card [style*="background: #fff"],
+[data-theme="dark"] .card [style*="background-color: #fff"],
+[data-theme="dark"] .table [style*="background: #fff"],
+[data-theme="dark"] .table [style*="background-color: #fff"] {
+  background-color: #1a1a1a !important;
+  color: #ffffff !important;
+}
