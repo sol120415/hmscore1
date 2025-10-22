@@ -22,6 +22,28 @@ CREATE TABLE IF NOT EXISTS items (
     INDEX idx_item_status (item_status)
 );
 
+-- SUPPLIERS TABLE
+CREATE TABLE IF NOT EXISTS suppliers (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    supplier_name VARCHAR(255) NOT NULL,
+    contact_person VARCHAR(255),
+    email VARCHAR(255),
+    phone VARCHAR(50),
+    address TEXT,
+    city VARCHAR(100),
+    state VARCHAR(100),
+    postal_code VARCHAR(20),
+    country VARCHAR(100),
+    payment_terms VARCHAR(100),
+    supplier_status ENUM('Active', 'Inactive') DEFAULT 'Active',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+    INDEX idx_supplier_name (supplier_name),
+    INDEX idx_supplier_status (supplier_status),
+    INDEX idx_email (email)
+);
+
 -- INVENTORY MOVEMENTS TABLE
 CREATE TABLE IF NOT EXISTS inventory_movements (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -38,3 +60,6 @@ CREATE TABLE IF NOT EXISTS inventory_movements (
     INDEX idx_movement_type (movement_type),
     FOREIGN KEY (item_id) REFERENCES items(id) ON DELETE CASCADE
 );
+
+-- Add foreign key to items table for suppliers
+ALTER TABLE items ADD CONSTRAINT fk_supplier_id FOREIGN KEY (supplier_id) REFERENCES suppliers(id) ON DELETE SET NULL;
