@@ -6,7 +6,7 @@ CREATE TABLE IF NOT EXISTS rooms (
     room_number VARCHAR(10) NOT NULL,
     room_type ENUM('Single', 'Double', 'Deluxe', 'Suite') DEFAULT 'Single',
     room_floor VARCHAR(10) NOT NULL,
-    room_status ENUM('Vacant', 'Occupied', 'Maintenance') DEFAULT 'Vacant',
+    room_status ENUM('Vacant', 'Occupied', 'Maintenance', 'Cleaning') DEFAULT 'Vacant',
     room_rate DECIMAL(10,2) AS (CASE room_type
         WHEN 'Single' THEN 1500.00
         WHEN 'Double' THEN 2500.00

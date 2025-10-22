@@ -207,6 +207,44 @@ html .theme-toggle {
   background: #f8f9fa !important;
 }
 
+/* Fix login button to be theme-aware */
+[data-theme="dark"] .btn-primary {
+  background-color: #0d6efd !important;
+  border-color: #0d6efd !important;
+  color: #ffffff !important;
+}
+
+[data-theme="dark"] .btn-primary:hover {
+  background-color: #0b5ed7 !important;
+  border-color: #0a58ca !important;
+  color: #ffffff !important;
+}
+
+[data-theme="light"] .btn-primary {
+  background-color: #0d6efd !important;
+  border-color: #0d6efd !important;
+  color: #ffffff !important;
+}
+
+[data-theme="light"] .btn-primary:hover {
+  background-color: #0b5ed7 !important;
+  border-color: #0a58ca !important;
+  color: #ffffff !important;
+}
+
+/* Override any white background on login button */
+[data-theme="dark"] .btn {
+  background-color: #0d6efd !important;
+  border-color: #0d6efd !important;
+  color: #ffffff !important;
+}
+
+[data-theme="dark"] .btn:hover {
+  background-color: #0b5ed7 !important;
+  border-color: #0a58ca !important;
+  color: #ffffff !important;
+}
+
 /* Make Login via Gmail more visible in light mode */
 [data-theme="light"] .login-card .btn-outline-light,
 [data-theme="light"] .login-card .btn-outline-secondary,
@@ -374,6 +412,59 @@ html .theme-toggle {
 
 [data-theme="light"] .card .table thead tr {
   background-color: #f8f9fa !important;
+}
+
+/* Fix dark hover states for light theme */
+[data-theme="light"] .table tbody tr:hover {
+  background-color: #f8f9fa !important;
+  color: #212529 !important;
+}
+
+[data-theme="light"] .table tbody tr:hover td {
+  background-color: #f8f9fa !important;
+  color: #212529 !important;
+}
+
+[data-theme="light"] .table tbody tr:hover th {
+  background-color: #f8f9fa !important;
+  color: #212529 !important;
+}
+
+/* Fix specific dark rows in departures and reservations */
+[data-theme="light"] .table tbody tr {
+  background-color: #ffffff !important;
+  color: #212529 !important;
+}
+
+[data-theme="light"] .table tbody tr td {
+  background-color: #ffffff !important;
+  color: #212529 !important;
+}
+
+[data-theme="light"] .table tbody tr th {
+  background-color: #ffffff !important;
+  color: #212529 !important;
+}
+
+/* Override any dark table row classes */
+[data-theme="light"] .table-dark tbody tr {
+  background-color: #ffffff !important;
+  color: #212529 !important;
+}
+
+[data-theme="light"] .table-dark tbody tr:hover {
+  background-color: #f8f9fa !important;
+  color: #212529 !important;
+}
+
+[data-theme="light"] .table-dark tbody tr td {
+  background-color: #ffffff !important;
+  color: #212529 !important;
+}
+
+[data-theme="light"] .table-dark tbody tr:hover td {
+  background-color: #f8f9fa !important;
+  color: #212529 !important;
 }
 
 /* Body and main containers */
