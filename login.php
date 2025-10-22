@@ -237,19 +237,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                     <button type="submit" class="btn btn-outline-light">Login</button>
                                 </div>
 
-                                <!-- Links -->
-                                <div class="text-center">
-                                    <a href="forgot_password.php" class="text-decoration-none">
-                                        <small>Forgot password?</small>
-                                    </a>
-                                </div>
-
                                 <hr class="my-4">
 
                                 <div class="text-center text-muted mb-3">OR</div>
 
                                 <div class="d-grid mb-3">
                                     <button type="button" id="googleLoginBtn" class="btn btn-google">Login via Gmail</button>
+                                </div>
+
+                                <div class="text-center mb-2">
+                                    <a href="forgot_password.php" class="text-decoration-none">
+                                        <small>Forgot password?</small>
+                                    </a>
                                 </div>
 
                                 <div class="text-center">
