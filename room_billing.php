@@ -73,6 +73,203 @@ if (isset($_GET['action']) && $_GET['action'] === 'export_pdf') {
     exit;
 }
 
+// Handle GET requests for invoice PDF
+if (isset($_GET['action']) && $_GET['action'] === 'generate_invoice') {
+    $billingId = $_GET['billing_id'];
+
+    // Get billing details with related data
+    $stmt = $conn->prepare("
+        SELECT rb.*, r.room_number, r.room_rate, res.reservation_type, res.reservation_hour_count,
+               g.first_name, g.last_name, g.email, g.id_type, g.id_number, g.loyalty_status, g.stay_count
+        FROM room_billing rb
+        LEFT JOIN reservations res ON rb.reservation_id = res.id
+        LEFT JOIN rooms r ON rb.room_id = r.id
+        LEFT JOIN guests g ON res.guest_id = g.id
+        WHERE rb.id = ?
+    ");
+    $stmt->execute([$billingId]);
+    $billing = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    if (!$billing) {
+        die('Invoice not found');
+    }
+
+    require_once 'vendor/autoload.php';
+    $options = new \Dompdf\Options();
+    $options->set('isHtml5ParserEnabled', true);
+    $options->set('isRemoteEnabled', true);
+    $options->set('defaultFont', 'DejaVu Sans');
+    $dompdf = new \Dompdf\Dompdf($options);
+
+    // Calculate original amount and discounts
+    $hours = $billing['reservation_hour_count'] ?: 8;
+    $originalAmount = ($hours / 8) * ($billing['room_rate'] ?: 0);
+
+    // Calculate discount
+    $discountPercent = 0;
+    $tierLabel = 'Regular';
+    if (!empty($billing['stay_count'])) {
+        if ($billing['stay_count'] >= 50) {
+            $discountPercent = 25;
+            $tierLabel = 'Diamond';
+        } elseif ($billing['stay_count'] >= 20) {
+            $discountPercent = 15;
+            $tierLabel = 'Gold';
+        } elseif ($billing['stay_count'] >= 5) {
+            $discountPercent = 10;
+            $tierLabel = 'Iron';
+        }
+    }
+
+    $discountedAmount = $originalAmount * (1 - $discountPercent / 100);
+    $change = $billing['payment_amount'] - $billing['balance'];
+
+    $html = '
+    <html>
+    <head>
+        <meta charset="UTF-8">
+        <style>
+            body { font-family: DejaVu Sans, Arial, sans-serif; font-size: 12px; }
+            .header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #333; padding-bottom: 20px; }
+            .invoice-details { margin-bottom: 20px; }
+            .guest-details { margin-bottom: 20px; }
+            .billing-details { margin-bottom: 20px; }
+            table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+            th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+            th { background-color: #f2f2f2; }
+            .total { font-weight: bold; background-color: #e9ecef; }
+            .discount { color: #28a745; }
+            .change { color: #007bff; }
+            .footer { margin-top: 50px; text-align: center; font-size: 10px; color: #666; border-top: 1px solid #ddd; padding-top: 20px; }
+            .summary { margin-top: 30px; }
+        </style>
+    </head>
+    <body>
+        <div class="header">
+            <h1>Hotel Invoice</h1>
+            <h2>GrokFast Hotel Management</h2>
+            <p>Invoice #' . htmlspecialchars($billing['id']) . ' | Date: ' . htmlspecialchars(date('Y-m-d H:i', strtotime($billing['transaction_date']))) . '</p>
+        </div>
+
+        <div class="guest-details">
+            <h3>Guest Information</h3>
+            <table>
+                <tr>
+                    <td width="30%"><strong>Name:</strong></td>
+                    <td>' . htmlspecialchars(($billing['first_name'] ?: '') . ' ' . ($billing['last_name'] ?: '')) . '</td>
+                </tr>
+                <tr>
+                    <td><strong>Email:</strong></td>
+                    <td>' . htmlspecialchars($billing['email'] ?: 'N/A') . '</td>
+                </tr>
+                <tr>
+                    <td><strong>ID:</strong></td>
+                    <td>' . htmlspecialchars(($billing['id_type'] ?: '') . ' - ' . ($billing['id_number'] ?: '')) . '</td>
+                </tr>
+                <tr>
+                    <td><strong>Loyalty Tier:</strong></td>
+                    <td>' . htmlspecialchars($tierLabel) . ' (' . $billing['stay_count'] . ' stays)</td>
+                </tr>
+            </table>
+        </div>
+
+        <div class="billing-details">
+            <h3>Reservation Details</h3>
+            <table>
+                <tr>
+                    <td width="30%"><strong>Room:</strong></td>
+                    <td>Room ' . htmlspecialchars($billing['room_number'] ?: 'N/A') . '</td>
+                </tr>
+                <tr>
+                    <td><strong>Reservation Type:</strong></td>
+                    <td>' . htmlspecialchars($billing['reservation_type'] ?: 'N/A') . '</td>
+                </tr>
+                <tr>
+                    <td><strong>Duration:</strong></td>
+                    <td>' . htmlspecialchars($hours) . ' hours</td>
+                </tr>
+                <tr>
+                    <td><strong>Payment Method:</strong></td>
+                    <td>' . htmlspecialchars($billing['payment_method']) . '</td>
+                </tr>
+                <tr>
+                    <td><strong>Status:</strong></td>
+                    <td>' . htmlspecialchars($billing['billing_status']) . '</td>
+                </tr>
+            </table>
+        </div>
+
+        <div class="summary">
+            <h3>Payment Summary</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Description</th>
+                        <th style="text-align: right;">Amount</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Room Charge - ' . htmlspecialchars($hours) . ' hours @ ₱' . number_format($billing['room_rate'], 2) . '/night</td>
+                        <td style="text-align: right;">₱' . number_format($originalAmount, 2) . '</td>
+                    </tr>';
+
+    if ($discountPercent > 0) {
+        $html .= '<tr class="discount">
+                        <td>Loyalty Discount (' . $discountPercent . '% - ' . $tierLabel . ')</td>
+                        <td style="text-align: right;">-₱' . number_format($originalAmount * ($discountPercent / 100), 2) . '</td>
+                    </tr>';
+    }
+
+    $html .= '<tr class="total">
+                        <td><strong>Subtotal</strong></td>
+                        <td style="text-align: right;"><strong>₱' . number_format($discountedAmount, 2) . '</strong></td>
+                    </tr>
+                    <tr>
+                        <td>Amount Paid</td>
+                        <td style="text-align: right;">₱' . number_format($billing['payment_amount'], 2) . '</td>
+                    </tr>';
+
+    if ($change > 0) {
+        $html .= '<tr class="change">
+                        <td>Change</td>
+                        <td style="text-align: right;">₱' . number_format($change, 2) . '</td>
+                    </tr>';
+    }
+
+    $html .= '<tr class="total">
+                        <td><strong>Balance</strong></td>
+                        <td style="text-align: right;"><strong>₱' . number_format($billing['balance'], 2) . '</strong></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>';
+
+    if (!empty($billing['notes'])) {
+        $html .= '<div style="margin-top: 20px;">
+            <h4>Notes</h4>
+            <p>' . htmlspecialchars($billing['notes']) . '</p>
+        </div>';
+    }
+
+    $html .= '<div class="footer">
+            <p>Thank you for choosing GrokFast Hotel Management!</p>
+            <p>This is a computer-generated invoice. No signature required.</p>
+        </div>
+    </body>
+    </html>';
+
+    $dompdf->loadHtml($html);
+    $dompdf->setPaper('A4', 'portrait');
+    $dompdf->render();
+
+    // Output PDF to browser in new tab (inline display)
+    header('Content-Type: application/pdf');
+    header('Content-Disposition: inline; filename="invoice_' . $billingId . '.pdf"');
+    echo $dompdf->output();
+    exit;
+}
+
 // Handle HTMX requests
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_HX_REQUEST'])) {
     header('Content-Type: application/json');
@@ -95,7 +292,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_HX_REQUEST']))
                         $_POST['billing_status'],
                         $_POST['notes'] ?: null
                     ]);
-                    echo json_encode(['success' => true, 'message' => 'Billing transaction created successfully']);
+                    $billingId = $conn->lastInsertId();
+                    echo json_encode(['success' => true, 'message' => 'Billing transaction created successfully', 'billing_id' => $billingId]);
                     break;
 
                 case 'update':
@@ -455,6 +653,13 @@ $recentTransactions = array_slice($billings, 0, 10);
                             <label for="notes" class="form-label">Notes</label>
                             <textarea class="form-control" id="notes" name="notes" rows="3"></textarea>
                         </div>
+
+                        <div class="mb-3 form-check">
+                            <input class="form-check-input" type="checkbox" id="generate_invoice" name="generate_invoice">
+                            <label class="form-check-label" for="generate_invoice">
+                                Generate Invoice
+                            </label>
+                        </div>
                     </form>
                 </div>
                 <div class="modal-footer">
@@ -643,6 +848,7 @@ $recentTransactions = array_slice($billings, 0, 10);
 
             const form = document.getElementById('billingForm');
             const formData = new FormData(form);
+            const generateInvoice = document.getElementById('generate_invoice').checked;
 
             fetch('room_billing.php', {
                 method: 'POST',
@@ -655,6 +861,12 @@ $recentTransactions = array_slice($billings, 0, 10);
             .then(data => {
                 if (data.success) {
                     new coreui.Modal(document.getElementById('billingModal')).hide();
+
+                    // Generate invoice if checkbox was checked
+                    if (generateInvoice && data.billing_id) {
+                        window.open('room_billing.php?action=generate_invoice&billing_id=' + data.billing_id, '_blank');
+                    }
+
                     location.reload();
                 } else {
                     alert('Error: ' + data.message);
