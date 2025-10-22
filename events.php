@@ -355,6 +355,7 @@ $stats = $conn->query("
 
     <!-- HTMX -->
     <script src="js/htmx.min.js"></script>
+    <script src="js/page-loader.js"></script>
 
     <!-- Popper.js for popovers -->
     <script src="js/popper.min.js"></script>

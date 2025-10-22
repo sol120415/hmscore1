@@ -133,6 +133,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     <script src="js/htmx.min.js"></script>
     <script src="/js/htmx.min.js"></script>
+    <script src="js/page-loader.js"></script>
 
     <style>
         .login-container {
