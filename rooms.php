@@ -93,7 +93,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_HX_REQUEST']))
 }
 
 // Handle HTMX filter requests (GET requests)
-if (isset($_GET['floor']) || isset($_GET['status']) || isset($_GET['type'])) {
+if (isset($_SERVER['HTTP_HX_REQUEST']) && $_SERVER['REQUEST_METHOD'] === 'GET') {
     $floor = $_GET['floor'] ?? '';
     $status = $_GET['status'] ?? '';
     $type = $_GET['type'] ?? '';
@@ -150,7 +150,8 @@ if (isset($_GET['floor']) || isset($_GET['status']) || isset($_GET['type'])) {
                     <h5 class="card-title mb-1"><?php echo htmlspecialchars($room['room_number']); ?></h5>
                     <p class="card-text mb-2"><?php echo htmlspecialchars($room['room_type']); ?></p>
                     <span class="badge bg-light text-dark"><?php echo htmlspecialchars($room['room_status']); ?></span>
-                    <br><small class="mt-2 d-block"><?php echo htmlspecialchars($room['room_max_guests']); ?> guests max</small>
+                    <br><small class=""><?php echo htmlspecialchars($room['room_max_guests']); ?> guests max</small>
+                    <br><small class="">₱<?php echo number_format($room['room_rate'], 2); ?>/night</small>
                 </div>
             </div>
         </div>
