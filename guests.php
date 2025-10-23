@@ -218,10 +218,7 @@ $recentGuests = array_slice($guests, 0, 10);
                     <small class="text-muted d-block">Total</small>
                     <span class="fw-bold text-primary"><?php echo $stats['total_guests']; ?></span>
                 </div>
-                <div>
-                    <small class="text-muted d-block">VIP</small>
-                    <span class="fw-bold text-warning"><?php echo $stats['vip_guests']; ?></span>
-                </div>
+
                 <div>
                     <small class="text-muted d-block">Filipino</small>
                     <span class="fw-bold text-success"><?php echo $stats['filipino_guests']; ?></span>
