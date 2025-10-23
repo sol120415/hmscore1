@@ -416,6 +416,10 @@ $stats = $conn->query("
             background: linear-gradient(135deg, #0c5460, #062a30);
             color: #d1ecf1;
         }
+        /* Ensure button icons follow button text color */
+        .btn .icon,
+        .btn i[class^="cil-"],
+        .btn i[class*=" cil-"] { color: currentColor !important; }
     </style>
 </head>
 <body>
@@ -463,7 +467,7 @@ $stats = $conn->query("
                         <i class="cil-building me-1"></i>View Venues
                     </button>
                     <button class="btn btn-sm btn-outline-warning" onclick="window.location.href='?page=event_billing'">
-                        <i class="cil-dollar me-1"></i>Event Billing
+                        <span class="me-1" aria-hidden="true">₱</span>Event Billing
                     </button>
                 </div>
             </div>

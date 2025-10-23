@@ -248,6 +248,10 @@ $recentTransactions = array_slice($billings, 0, 10);
         .billing-card:hover .billing-actions {
             display: flex;
         }
+        /* Ensure button icons follow button text color */
+        .btn .icon,
+        .btn i[class^="cil-"],
+        .btn i[class*=" cil-"] { color: currentColor !important; }
     </style>
 </head>
 <body>

@@ -89,7 +89,7 @@ if (isset($_GET['page']) && $_GET['page'] === 'logout') {
     </li>
     <li class="nav-item">
       <a class="nav-link" href="?page=room_billing">
-        <i class="nav-icon cil-dollar"></i>Room Billing
+        <span class="nav-icon" aria-hidden="true">₱</span>Room Billing
       </a>
     </li>
     <li class="nav-item">
