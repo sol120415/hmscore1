@@ -154,7 +154,6 @@ $recentGuests = array_slice($guests, 0, 10);
     <!-- CoreUI JS -->
     <script src="js/coreui.bundle.js"></script>
     <script src="js/bootstrap.bundle.js"></script>
-    <script src="js/app-modal.js?v=<?php echo @filemtime('js/app-modal.js'); ?>"></script>
 
     <style>
         .stats-card {
@@ -213,8 +212,8 @@ $recentGuests = array_slice($guests, 0, 10);
         <!-- Header with Stats -->
         <div class="mb-4">
             <div class="d-flex justify-content-between gap-3 text-center">
-                <div class="flex-grow-1 text-start">
-                    <h2>Guests</h2>
+                <div class="text-center flex-grow-1">
+                <?php include 'gueststitle.html'; ?>
                 </div>
                 <div>
                     <small class="text-muted d-block">Total</small>
@@ -251,7 +250,7 @@ $recentGuests = array_slice($guests, 0, 10);
                     <button class="btn btn-sm btn-success" onclick="generateReport()">
                         <i class="cil-file-pdf me-1"></i>Report
                     </button>
-                    <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#guestModal" onclick="openCreateModal()">
+                    <button class="btn btn-sm btn-outline-primary" onclick="openCreateModal()">
                         <i class="cil-plus me-1"></i>Add Guest
                     </button>
                 </div>
@@ -433,99 +432,99 @@ $recentGuests = array_slice($guests, 0, 10);
         </div>
     </div>
 
-        <!-- Guest Modal -->
-        <div class="modal fade" id="guestModal" tabindex="-1">
-        <div class="modal-dialog" style="max-width: 60vw;">
+    <!-- Guest Modal -->
+    <div class="modal fade" id="guestModal" tabindex="-1">
+        <div class="modal-dialog modal-xl">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="modalTitle">Add Guest</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    <button type="button" class="btn-close" data-coreui-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
                     <form id="guestForm">
                         <input type="hidden" name="action" id="formAction" value="create">
                         <input type="hidden" name="id" id="guestId">
 
-                        <div class="row g-3 align-items-start">
-                            <div class="col-lg-7">
-                                <div class="rounded-3 border p-3">
-                                    <div class="row g-2 mb-2">
-                                        <div class="col-6">
-                                            <label class="form-label small">First Name *</label>
-                                            <input type="text" class="form-control form-control-sm" id="first_name" name="first_name" required>
-                                        </div>
-                                        <div class="col-6">
-                                            <label class="form-label small">Last Name *</label>
-                                            <input type="text" class="form-control form-control-sm" id="last_name" name="last_name" required>
-                                        </div>
-                                    </div>
-                                    <div class="row g-2 mb-2">
-                                        <div class="col-6">
-                                            <label class="form-label small">Email *</label>
-                                            <input type="email" class="form-control form-control-sm" id="email" name="email" required>
-                                        </div>
-                                        <div class="col-6">
-                                            <label class="form-label small">Phone</label>
-                                            <input type="tel" class="form-control form-control-sm" id="phone" name="phone" inputmode="numeric" maxlength="11" oninput="this.value=this.value.replace(/\D/g,'').slice(0,11)" onkeypress="return /[0-9]/.test(event.key)">
-                                        </div>
-                                    </div>
-                                    <div class="mb-2">
-                                        <label class="form-label small">Address</label>
-                                        <textarea class="form-control form-control-sm" id="address" name="address" rows="2"></textarea>
-                                    </div>
-                                </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="first_name" class="form-label">First Name *</label>
+                                <input type="text" class="form-control" id="first_name" name="first_name" required>
                             </div>
-                            <div class="col-lg-5">
-                                <div class="rounded-3 border p-3">
-                                    <div class="row g-2 mb-2">
-                                        <div class="col-6">
-                                            <label class="form-label small">City</label>
-                                            <input type="text" class="form-control form-control-sm" id="city" name="city">
-                                        </div>
-                                        <div class="col-6">
-                                            <label class="form-label small">Country</label>
-                                            <input type="text" class="form-control form-control-sm" id="country" name="country">
-                                        </div>
-                                    </div>
-                                    <div class="row g-2 mb-2">
-                                        <div class="col-6">
-                                            <label class="form-label small">ID Type *</label>
-                                            <select class="form-select form-select-sm" id="id_type" name="id_type" required>
-                                                <option value="Passport">Passport</option>
-                                                <option value="Driver License">Driver License</option>
-                                                <option value="National ID">National ID</option>
-                                            </select>
-                                        </div>
-                                        <div class="col-6">
-                                            <label class="form-label small">ID Number *</label>
-                                            <input type="text" class="form-control form-control-sm" id="id_number" name="id_number" required>
-                                        </div>
-                                    </div>
-                                    <div class="row g-2 mb-2">
-                                        <div class="col-6">
-                                            <label class="form-label small">Date of Birth *</label>
-                                            <input type="date" class="form-control form-control-sm" id="date_of_birth" name="date_of_birth" required>
-                                        </div>
-                                        <div class="col-6">
-                                            <label class="form-label small">Nationality</label>
-                                            <input type="text" class="form-control form-control-sm" id="nationality" name="nationality">
-                                        </div>
-                                    </div>
-                                    <div class="row g-2">
-                                     
-                                    
-                                    </div>
-                                    <div class="mt-2">
-                                        <label class="form-label small">Notes</label>
-                                        <textarea class="form-control form-control-sm" id="notes" name="notes" rows="3"></textarea>
-                                    </div>
-                                </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="last_name" class="form-label">Last Name *</label>
+                                <input type="text" class="form-control" id="last_name" name="last_name" required>
                             </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="email" class="form-label">Email *</label>
+                                <input type="email" class="form-control" id="email" name="email" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="phone" class="form-label">Phone</label>
+                                 <input type="tel" class="form-control" id="phone" name="phone" inputmode="numeric" maxlength="11" oninput="this.value=this.value.replace(/\\D/g,'').slice(0,11)" onkeypress="return /[0-9]/.test(event.key)">
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="address" class="form-label">Address</label>
+                            <textarea class="form-control" id="address" name="address" rows="2"></textarea>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="city" class="form-label">City</label>
+                                <input type="text" class="form-control" id="city" name="city">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="country" class="form-label">Country</label>
+                                <input type="text" class="form-control" id="country" name="country">
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label for="id_type" class="form-label">ID Type *</label>
+                                <select class="form-select" id="id_type" name="id_type" required>
+                                    <option value="Passport">Passport</option>
+                                    <option value="Driver License">Driver License</option>
+                                    <option value="National ID">National ID</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="id_number" class="form-label">ID Number *</label>
+                                <input type="text" class="form-control" id="id_number" name="id_number" required>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="date_of_birth" class="form-label">Date of Birth *</label>
+                                <input type="date" class="form-control" id="date_of_birth" name="date_of_birth" required>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="nationality" class="form-label">Nationality</label>
+                                <input type="text" class="form-control" id="nationality" name="nationality">
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <label for="stay_count" class="form-label">Stay Count</label>
+                                <input type="number" class="form-control" id="stay_count" name="stay_count" min="0" value="0">
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <label for="total_spend" class="form-label">Total Spend ($)</label>
+                                <input type="number" class="form-control" id="total_spend" name="total_spend" min="0" step="0.01" value="0.00">
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="notes" class="form-label">Notes</label>
+                            <textarea class="form-control" id="notes" name="notes" rows="3"></textarea>
                         </div>
                     </form>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-secondary" data-coreui-dismiss="modal">Cancel</button>
                     <button type="button" class="btn btn-primary" onclick="submitGuestForm()">Save</button>
                 </div>
             </div>
@@ -574,12 +573,12 @@ $recentGuests = array_slice($guests, 0, 10);
                 document.getElementById('total_spend').value = data.total_spend || 0.00;
                 document.getElementById('notes').value = data.notes || '';
 
-                new bootstrap.Modal(document.getElementById('guestModal')).show();
+                new coreui.Modal(document.getElementById('guestModal')).show();
             });
         }
 
         function deleteGuest(id, name) {
-            AppModal.confirm('Are you sure you want to delete the guest "' + name + '"? This action cannot be undone.','localhost says').then(function(yes){ if(!yes) return; 
+            if (confirm('Are you sure you want to delete the guest "' + name + '"? This action cannot be undone.')) {
                 fetch('guests.php', {
                     method: 'POST',
                     headers: {
@@ -596,7 +595,7 @@ $recentGuests = array_slice($guests, 0, 10);
                         alert('Error: ' + data.message);
                     }
                 });
-            });
+            }
         }
 
         function submitGuestForm() {
@@ -613,7 +612,7 @@ $recentGuests = array_slice($guests, 0, 10);
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    new bootstrap.Modal(document.getElementById('guestModal')).hide();
+                    new coreui.Modal(document.getElementById('guestModal')).hide();
                     location.reload();
                 } else {
                     alert('Error: ' + data.message);
@@ -622,7 +621,7 @@ $recentGuests = array_slice($guests, 0, 10);
         }
 
         function archiveGuest(id, name) {
-            AppModal.confirm('Are you sure you want to archive the guest "' + name + '"? They will be moved to the archived list.','localhost says').then(function(yes){ if(!yes) return; 
+            if (confirm('Are you sure you want to archive the guest "' + name + '"? They will be moved to the archived list.')) {
                 fetch('guests.php', {
                     method: 'POST',
                     headers: {
@@ -639,11 +638,11 @@ $recentGuests = array_slice($guests, 0, 10);
                         alert('Error: ' + data.message);
                     }
                 });
-            });
+            }
         }
 
         function restoreGuest(id, name) {
-            AppModal.confirm('Are you sure you want to restore the guest "' + name + '"? They will be moved back to active guests.','localhost says').then(function(yes){ if(!yes) return; 
+            if (confirm('Are you sure you want to restore the guest "' + name + '"? They will be moved back to active guests.')) {
                 fetch('guests.php', {
                     method: 'POST',
                     headers: {
@@ -660,7 +659,7 @@ $recentGuests = array_slice($guests, 0, 10);
                         alert('Error: ' + data.message);
                     }
                 });
-            });
+            }
         }
 
         function generateReport() {
@@ -713,13 +712,11 @@ $recentGuests = array_slice($guests, 0, 10);
                     <div class="modal-dialog modal-lg">
                         <div class="modal-content">
                             <div class="modal-header">
-                                <h5 class="modal-title">
-                                    <i class="cil-gift text-warning me-2"></i>Loyalty Rewards - ${guestName}
-                                </h5>
-                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                <h5 class="modal-title">Loyalty Rewards - ${guestName}</h5>
+                                <button type="button" class="btn-close" data-coreui-dismiss="modal"></button>
                             </div>
                             <div class="modal-body">
-                                <div class="alert alert-info mb-3">
+                                <div class="alert alert-info">
                                     <strong>Current Tier: ${currentTier}</strong> (${stayCount} stays)
                                 </div>
                                 <div class="mb-3">
@@ -766,44 +763,44 @@ $recentGuests = array_slice($guests, 0, 10);
             }
 
             modalHtml += `
-                                <div class="row g-3">
+                                <div class="table-responsive">
+                                <div class="table-responsive">
+                                    <table class="table table-striped">
+                                        <thead>
+                                            <tr>
+                                                <th>Tier</th>
+                                                <th>Nights to Unlock</th>
+                                                <th>Discounts & Rewards</th>
+                                                <th>Status</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
             `;
 
             rewardsData.forEach(reward => {
                 const isCurrentTier = reward.tier === currentTier;
-                const bgColor = reward.tier === 'Diamond' ? 'bg-light' :
-                               (reward.tier === 'Gold' ? 'bg-warning' :
-                               (reward.tier === 'Iron' ? 'bg-secondary' : 'bg-light'));
-                const textColor = reward.tier === 'Diamond' ? 'text-primary' :
+                const statusIcon = isCurrentTier ? '<i class="cil-check-circle text-success"></i>' : '<i class="cil-circle text-muted"></i>';
+                const tierColor = reward.tier === 'Diamond' ? 'text-primary' :
                                  (reward.tier === 'Gold' ? 'text-warning' :
-                                 (reward.tier === 'Iron' ? 'text-secondary' : 'text-secondary'));
-                const borderClass = isCurrentTier ? 'border' : 'border';
-                const borderStyle = isCurrentTier ? 'style="border-width: 3px !important; border-color: #ffd700 !important;"' : '';
-                const badge = reward.tier === 'Diamond' ? '<span class="badge bg-primary text-white">Premium</span>' : '';
+                                 (reward.tier === 'Iron' ? 'text-info' : 'text-secondary'));
 
                 modalHtml += `
-                    <div class="col-md-6 col-lg-3">
-                        <div class="card h-100 ${borderClass}" ${borderStyle}>
-                            <div class="card-header text-center ${bgColor} ${textColor}">
-                                <h6 class="mb-0">${reward.tier}</h6>
-                                ${badge}
-                            </div>
-                            <div class="card-body text-center">
-                                <div class="small text-muted mb-2">${reward.nights} nights to unlock</div>
-                                <div class="small">
-                                    ${reward.rewards.split('; ').map(item => `<div>${item}</div>`).join('')}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                    <tr class="${isCurrentTier ? 'table-primary' : ''}">
+                        <td><strong class="${tierColor}">${reward.tier}</strong></td>
+                        <td>${reward.nights}</td>
+                        <td>${reward.rewards}</td>
+                        <td class="text-center">${statusIcon}</td>
+                    </tr>
                 `;
             });
 
             modalHtml += `
+                                        </tbody>
+                                    </table>
                                 </div>
                             </div>
                             <div class="modal-footer">
-                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                <button type="button" class="btn btn-secondary" data-coreui-dismiss="modal">Close</button>
                             </div>
                         </div>
                     </div>
@@ -820,7 +817,7 @@ $recentGuests = array_slice($guests, 0, 10);
             document.body.insertAdjacentHTML('beforeend', modalHtml);
 
             // Show modal
-            const modal = new bootstrap.Modal(document.getElementById('rewardsModal'));
+            const modal = new coreui.Modal(document.getElementById('rewardsModal'));
             modal.show();
         }
     </script>
