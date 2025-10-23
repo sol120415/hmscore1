@@ -70,26 +70,40 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_HX_REQUEST']))
                     break;
 
                 case 'add_movement':
-                    // Add inventory movement
-                    $stmt = $conn->prepare("INSERT INTO inventory_movements (item_id, movement_type, quantity, reason, user_id, reference_id) VALUES (?, ?, ?, ?, ?, ?)");
-                    $stmt->execute([
-                        $_POST['item_id'],
-                        $_POST['movement_type'],
-                        $_POST['quantity'],
-                        $_POST['reason'] ?: null,
-                        1, // Default user ID
-                        $_POST['reference_id'] ?: null
-                    ]);
+                    // Start transaction
+                    $conn->beginTransaction();
 
-                    // Update item stock
-                    if ($_POST['movement_type'] === 'IN') {
-                        $stmt = $conn->prepare("UPDATE items SET current_stock = current_stock + ? WHERE id=?");
-                    } else {
-                        $stmt = $conn->prepare("UPDATE items SET current_stock = GREATEST(0, current_stock - ?) WHERE id=?");
+                    try {
+                        // Add inventory movement
+                        $stmt = $conn->prepare("INSERT INTO inventory_movements (item_id, movement_type, quantity, reason, user_id, reference_id) VALUES (?, ?, ?, ?, ?, ?)");
+                        $stmt->execute([
+                            $_POST['item_id'],
+                            $_POST['movement_type'],
+                            $_POST['quantity'],
+                            $_POST['reason'] ?: null,
+                            1, // Default user ID
+                            $_POST['reference_id'] ?: null
+                        ]);
+
+                        // Update item stock
+                        if ($_POST['movement_type'] === 'IN') {
+                            $stmt = $conn->prepare("UPDATE items SET current_stock = current_stock + ? WHERE id=?");
+                        } else {
+                            $stmt = $conn->prepare("UPDATE items SET current_stock = GREATEST(0, current_stock - ?) WHERE id=?");
+                        }
+                        $stmt->execute([$_POST['quantity'], $_POST['item_id']]);
+
+                        // Check if stock update affected any rows
+                        if ($stmt->rowCount() == 0) {
+                            throw new Exception('Item not found or stock update failed');
+                        }
+
+                        $conn->commit();
+                        echo json_encode(['success' => true, 'message' => 'Movement recorded successfully']);
+                    } catch (Exception $e) {
+                        $conn->rollBack();
+                        echo json_encode(['success' => false, 'message' => 'Failed to record movement: ' . $e->getMessage()]);
                     }
-                    $stmt->execute([$_POST['quantity'], $_POST['item_id']]);
-
-                    echo json_encode(['success' => true, 'message' => 'Movement recorded successfully']);
                     break;
 
                 case 'get_movements':
@@ -263,9 +277,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_HX_REQUEST']))
 // Get data for display
 $items = $conn->query("SELECT * FROM items ORDER BY created_at DESC")->fetchAll(PDO::FETCH_ASSOC);
 $movements = $conn->query("
-    SELECT im.*, i.item_name
+    SELECT im.*, COALESCE(i.item_name, 'Deleted Item') as item_name
     FROM inventory_movements im
-    JOIN items i ON im.item_id = i.id
+    LEFT JOIN items i ON im.item_id = i.id
     ORDER BY im.movement_date DESC
     LIMIT 20
 ")->fetchAll(PDO::FETCH_ASSOC);
@@ -276,12 +290,20 @@ $stats = $conn->query("
         COUNT(*) as total_items,
         COUNT(CASE WHEN item_status = 'Active' THEN 1 END) as active_items,
         COUNT(CASE WHEN current_stock <= minimum_stock THEN 1 END) as low_stock_items,
-        SUM(current_stock * unit_cost) as total_value,
+        SUM(current_stock * unit_cost) as total_value
+    FROM items
+")->fetch(PDO::FETCH_ASSOC);
+
+// Get movement statistics separately
+$movement_stats = $conn->query("
+    SELECT
         SUM(CASE WHEN movement_type = 'IN' THEN quantity ELSE 0 END) as total_in,
         SUM(CASE WHEN movement_type = 'OUT' THEN quantity ELSE 0 END) as total_out
-    FROM items
-    LEFT JOIN inventory_movements ON items.id = inventory_movements.item_id
+    FROM inventory_movements
 ")->fetch(PDO::FETCH_ASSOC);
+
+$stats['total_in'] = $movement_stats['total_in'] ?: 0;
+$stats['total_out'] = $movement_stats['total_out'] ?: 0;
 
 // Get categories for filter
 $categories = $conn->query("SELECT DISTINCT item_category FROM items WHERE item_category IS NOT NULL ORDER BY item_category")->fetchAll(PDO::FETCH_COLUMN);
@@ -513,16 +535,16 @@ $payment_terms = ['Net 15', 'Net 30', 'Net 45', 'Net 60', 'COD', 'Due on Receipt
                                             </div>
                                         </div>
                                         <div class="inventory-actions justify-content-center">
-                                            <button class="btn btn-sm btn-outline-primary me-2" onclick="editItem(<?php echo $item['id']; ?>)" title="Edit">
+                                            <button class="btn btn-sm btn-outline-primary me-2" onclick="editItem(<?php echo htmlspecialchars($item['id']); ?>)" title="Edit">
                                                 <i class="cil-pencil me-1"></i>Edit
                                             </button>
-                                            <button class="btn btn-sm btn-outline-info me-2" onclick="viewMovements(<?php echo $item['id']; ?>, '<?php echo htmlspecialchars($item['item_name']); ?>')" title="Movements">
+                                            <button class="btn btn-sm btn-outline-info me-2" onclick="viewMovements(<?php echo htmlspecialchars($item['id']); ?>, '<?php echo htmlspecialchars($item['item_name']); ?>')" title="Movements">
                                                 <i class="cil-history me-1"></i>Movements
                                             </button>
-                                            <button class="btn btn-sm btn-outline-warning me-2" onclick="adjustStock(<?php echo $item['id']; ?>, '<?php echo htmlspecialchars($item['item_name']); ?>')" title="Adjust Stock">
+                                            <button class="btn btn-sm btn-outline-warning me-2" onclick="adjustStock(<?php echo htmlspecialchars($item['id']); ?>, '<?php echo htmlspecialchars($item['item_name']); ?>')" title="Adjust Stock">
                                                 <i class="cil-calculator me-1"></i>Adjust
                                             </button>
-                                            <button class="btn btn-sm btn-outline-danger" onclick="deleteItem(<?php echo $item['id']; ?>, '<?php echo htmlspecialchars($item['item_name']); ?>')" title="Remove">
+                                            <button class="btn btn-sm btn-outline-danger" onclick="deleteItem(<?php echo htmlspecialchars($item['id']); ?>, '<?php echo htmlspecialchars($item['item_name']); ?>')" title="Remove">
                                                 <i class="cil-trash me-1"></i>Remove
                                             </button>
                                         </div>
@@ -567,7 +589,7 @@ $payment_terms = ['Net 15', 'Net 30', 'Net 45', 'Net 60', 'COD', 'Due on Receipt
                                         <td><?php echo htmlspecialchars($movement['reference_id'] ?: 'N/A'); ?></td>
                                         <td><?php echo date('M j, Y H:i', strtotime($movement['movement_date'])); ?></td>
                                         <td>
-                                            <button class="btn btn-sm btn-outline-danger" onclick="deleteMovement(<?php echo $movement['id']; ?>)">
+                                            <button class="btn btn-sm btn-outline-danger" onclick="deleteMovement(<?php echo htmlspecialchars($movement['id']); ?>)">
                                                 <i class="cil-trash"></i>
                                             </button>
                                         </td>
@@ -627,13 +649,13 @@ $payment_terms = ['Net 15', 'Net 30', 'Net 45', 'Net 60', 'COD', 'Due on Receipt
                                                 </div>
                                             </div>
                                             <div class="supplier-actions justify-content-center">
-                                                <button class="btn btn-sm btn-outline-primary me-2" onclick="editSupplier(<?php echo $supplier['id']; ?>)" title="Edit">
+                                                <button class="btn btn-sm btn-outline-primary me-2" onclick="editSupplier(<?php echo htmlspecialchars($supplier['id']); ?>)" title="Edit">
                                                     <i class="cil-pencil me-1"></i>Edit
                                                 </button>
-                                                <button class="btn btn-sm btn-outline-info me-2" onclick="viewSupplierItems(<?php echo $supplier['id']; ?>, '<?php echo htmlspecialchars($supplier['supplier_name']); ?>')" title="Items">
+                                                <button class="btn btn-sm btn-outline-info me-2" onclick="viewSupplierItems(<?php echo htmlspecialchars($supplier['id']); ?>, '<?php echo htmlspecialchars($supplier['supplier_name']); ?>')" title="Items">
                                                     <i class="cil-list me-1"></i>Items
                                                 </button>
-                                                <button class="btn btn-sm btn-outline-danger" onclick="deleteSupplier(<?php echo $supplier['id']; ?>, '<?php echo htmlspecialchars($supplier['supplier_name']); ?>')" title="Remove">
+                                                <button class="btn btn-sm btn-outline-danger" onclick="deleteSupplier(<?php echo htmlspecialchars($supplier['id']); ?>, '<?php echo htmlspecialchars($supplier['supplier_name']); ?>')" title="Remove">
                                                     <i class="cil-trash me-1"></i>Remove
                                                 </button>
                                             </div>
@@ -853,7 +875,7 @@ $payment_terms = ['Net 15', 'Net 30', 'Net 45', 'Net 60', 'COD', 'Due on Receipt
                                                 $suppliers_query = $conn->query("SELECT id, supplier_name, supplier_status FROM suppliers ORDER BY supplier_name");
                                                 $suppliers_list = $suppliers_query->fetchAll(PDO::FETCH_ASSOC);
                                                 foreach ($suppliers_list as $supplier): ?>
-                                                <option value="<?php echo $supplier['id']; ?>" <?php echo $supplier['supplier_status'] === 'Inactive' ? 'style="color: #6c757d;"' : ''; ?>>
+                                                <option value="<?php echo htmlspecialchars($supplier['id']); ?>" <?php echo $supplier['supplier_status'] === 'Inactive' ? 'style="color: #6c757d;"' : ''; ?>>
                                                     <?php echo htmlspecialchars($supplier['supplier_name']); ?>
                                                     <?php echo $supplier['supplier_status'] === 'Inactive' ? ' (Inactive)' : ''; ?>
                                                 </option>
@@ -896,7 +918,7 @@ $payment_terms = ['Net 15', 'Net 30', 'Net 45', 'Net 60', 'COD', 'Due on Receipt
                                             <select class="form-select" id="movement_item_id" name="item_id" required>
                                                 <option value="">Select Item</option>
                                                 <?php foreach ($items as $item): ?>
-                                                <option value="<?php echo $item['id']; ?>"><?php echo htmlspecialchars($item['item_name']); ?> (<?php echo $item['current_stock']; ?> <?php echo $item['unit_of_measure']; ?>)</option>
+                                                <option value="<?php echo $item['id']; ?>"><?php echo htmlspecialchars($item['item_name']); ?> (<?php echo htmlspecialchars($item['current_stock']); ?> <?php echo htmlspecialchars($item['unit_of_measure']); ?>)</option>
                                                 <?php endforeach; ?>
                                             </select>
                                         </div>
@@ -1195,9 +1217,9 @@ $payment_terms = ['Net 15', 'Net 30', 'Net 45', 'Net 60', 'COD', 'Due on Receipt
                                     <div class="form-control" style="max-height: 200px; overflow-y: auto;">
                                         <?php foreach ($items as $item): ?>
                                         <div class="form-check">
-                                            <input class="form-check-input bulk-item-checkbox" type="checkbox" value="<?php echo $item['id']; ?>" id="bulk_<?php echo $item['id']; ?>">
-                                            <label class="form-check-label" for="bulk_<?php echo $item['id']; ?>">
-                                                <?php echo htmlspecialchars($item['item_name']); ?> (<?php echo $item['current_stock']; ?> <?php echo $item['unit_of_measure']; ?>)
+                                            <input class="form-check-input bulk-item-checkbox" type="checkbox" value="<?php echo htmlspecialchars($item['id']); ?>" id="bulk_<?php echo htmlspecialchars($item['id']); ?>">
+                                            <label class="form-check-label" for="bulk_<?php echo htmlspecialchars($item['id']); ?>">
+                                                <?php echo htmlspecialchars($item['item_name']); ?> (<?php echo htmlspecialchars($item['current_stock']); ?> <?php echo htmlspecialchars($item['unit_of_measure']); ?>)
                                             </label>
                                         </div>
                                         <?php endforeach; ?>
