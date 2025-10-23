@@ -580,7 +580,7 @@ $stats = $conn->query("
 
     <!-- Housekeeping Modal -->
     <div class="modal fade" id="housekeepingModal" tabindex="-1" style="--cui-modal-border-radius: 16px; --cui-modal-box-shadow: 0 10px 40px rgba(0,0,0,0.3); --cui-modal-bg: #2d3748; --cui-modal-border-color: #4a5568;">
-        <div class="modal-dialog modal-lg">
+        <div class="modal-dialog" style="max-width: 60vw;">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="housekeepingModalTitle">Assign Housekeeper</h5>
@@ -679,7 +679,7 @@ $stats = $conn->query("
 
     <!-- Venue Modal -->
     <div class="modal fade" id="venueModal" tabindex="-1" style="z-index: 1060;">
-        <div class="modal-dialog modal-lg">
+        <div class="modal-dialog" style="max-width: 60vw;">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="venueModalTitle">Add Venue</h5>
@@ -737,7 +737,7 @@ $stats = $conn->query("
 
     <!-- Event Billing Modal -->
     <div class="modal fade" id="eventBillingModal" tabindex="-1" style="--cui-modal-border-radius: 16px; --cui-modal-box-shadow: 0 10px 40px rgba(0,0,0,0.3); --cui-modal-bg: #2d3748; --cui-modal-border-color: #4a5568;">
-        <div class="modal-dialog modal-xl">
+        <div class="modal-dialog" style="max-width: 60vw;">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title">Event Billing</h5>
@@ -796,7 +796,7 @@ $stats = $conn->query("
 
     <!-- View Venues Modal -->
     <div class="modal fade" id="viewVenuesModal" tabindex="-1" style="--cui-modal-border-radius: 16px; --cui-modal-box-shadow: 0 10px 40px rgba(0,0,0,0.3); --cui-modal-bg: #2d3748; --cui-modal-border-color: #4a5568;">
-        <div class="modal-dialog modal-xl">
+        <div class="modal-dialog" style="max-width: 60vw;">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title">Venue Management</h5>
@@ -844,7 +844,7 @@ $stats = $conn->query("
 
     <!-- Reservation Modal -->
     <div class="modal fade" id="reservationModal" tabindex="-1">
-        <div class="modal-dialog modal-xl">
+        <div class="modal-dialog" style="max-width: 60vw;">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="reservationModalTitle">Add Reservation</h5>
