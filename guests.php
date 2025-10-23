@@ -433,9 +433,9 @@ $recentGuests = array_slice($guests, 0, 10);
         </div>
     </div>
 
-    <!-- Guest Modal -->
-    <div class="modal fade" id="guestModal" tabindex="-1">
-        <div class="modal-dialog modal-xl">
+        <!-- Guest Modal -->
+        <div class="modal fade" id="guestModal" tabindex="-1">
+        <div class="modal-dialog" style="max-width: 60vw;">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="modalTitle">Add Guest</h5>
@@ -446,81 +446,81 @@ $recentGuests = array_slice($guests, 0, 10);
                         <input type="hidden" name="action" id="formAction" value="create">
                         <input type="hidden" name="id" id="guestId">
 
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label for="first_name" class="form-label">First Name *</label>
-                                <input type="text" class="form-control" id="first_name" name="first_name" required>
+                        <div class="row g-3 align-items-start">
+                            <div class="col-lg-7">
+                                <div class="rounded-3 border p-3">
+                                    <div class="row g-2 mb-2">
+                                        <div class="col-6">
+                                            <label class="form-label small">First Name *</label>
+                                            <input type="text" class="form-control form-control-sm" id="first_name" name="first_name" required>
+                                        </div>
+                                        <div class="col-6">
+                                            <label class="form-label small">Last Name *</label>
+                                            <input type="text" class="form-control form-control-sm" id="last_name" name="last_name" required>
+                                        </div>
+                                    </div>
+                                    <div class="row g-2 mb-2">
+                                        <div class="col-6">
+                                            <label class="form-label small">Email *</label>
+                                            <input type="email" class="form-control form-control-sm" id="email" name="email" required>
+                                        </div>
+                                        <div class="col-6">
+                                            <label class="form-label small">Phone</label>
+                                            <input type="tel" class="form-control form-control-sm" id="phone" name="phone" inputmode="numeric" maxlength="11" oninput="this.value=this.value.replace(/\D/g,'').slice(0,11)" onkeypress="return /[0-9]/.test(event.key)">
+                                        </div>
+                                    </div>
+                                    <div class="mb-2">
+                                        <label class="form-label small">Address</label>
+                                        <textarea class="form-control form-control-sm" id="address" name="address" rows="2"></textarea>
+                                    </div>
+                                </div>
                             </div>
-                            <div class="col-md-6 mb-3">
-                                <label for="last_name" class="form-label">Last Name *</label>
-                                <input type="text" class="form-control" id="last_name" name="last_name" required>
+                            <div class="col-lg-5">
+                                <div class="rounded-3 border p-3">
+                                    <div class="row g-2 mb-2">
+                                        <div class="col-6">
+                                            <label class="form-label small">City</label>
+                                            <input type="text" class="form-control form-control-sm" id="city" name="city">
+                                        </div>
+                                        <div class="col-6">
+                                            <label class="form-label small">Country</label>
+                                            <input type="text" class="form-control form-control-sm" id="country" name="country">
+                                        </div>
+                                    </div>
+                                    <div class="row g-2 mb-2">
+                                        <div class="col-6">
+                                            <label class="form-label small">ID Type *</label>
+                                            <select class="form-select form-select-sm" id="id_type" name="id_type" required>
+                                                <option value="Passport">Passport</option>
+                                                <option value="Driver License">Driver License</option>
+                                                <option value="National ID">National ID</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-6">
+                                            <label class="form-label small">ID Number *</label>
+                                            <input type="text" class="form-control form-control-sm" id="id_number" name="id_number" required>
+                                        </div>
+                                    </div>
+                                    <div class="row g-2 mb-2">
+                                        <div class="col-6">
+                                            <label class="form-label small">Date of Birth *</label>
+                                            <input type="date" class="form-control form-control-sm" id="date_of_birth" name="date_of_birth" required>
+                                        </div>
+                                        <div class="col-6">
+                                            <label class="form-label small">Nationality</label>
+                                            <input type="text" class="form-control form-control-sm" id="nationality" name="nationality">
+                                        </div>
+                                    </div>
+                                    <div class="row g-2">
+                                     
+                                    
+                                    </div>
+                                    <div class="mt-2">
+                                        <label class="form-label small">Notes</label>
+                                        <textarea class="form-control form-control-sm" id="notes" name="notes" rows="3"></textarea>
+                                    </div>
+                                </div>
                             </div>
-                        </div>
-
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label for="email" class="form-label">Email *</label>
-                                <input type="email" class="form-control" id="email" name="email" required>
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label for="phone" class="form-label">Phone</label>
-                                <input type="tel" class="form-control" id="phone" name="phone">
-                            </div>
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="address" class="form-label">Address</label>
-                            <textarea class="form-control" id="address" name="address" rows="2"></textarea>
-                        </div>
-
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label for="city" class="form-label">City</label>
-                                <input type="text" class="form-control" id="city" name="city">
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label for="country" class="form-label">Country</label>
-                                <input type="text" class="form-control" id="country" name="country">
-                            </div>
-                        </div>
-
-                        <div class="row">
-                            <div class="col-md-4 mb-3">
-                                <label for="id_type" class="form-label">ID Type *</label>
-                                <select class="form-select" id="id_type" name="id_type" required>
-                                    <option value="Passport">Passport</option>
-                                    <option value="Driver License">Driver License</option>
-                                    <option value="National ID">National ID</option>
-                                </select>
-                            </div>
-                            <div class="col-md-4 mb-3">
-                                <label for="id_number" class="form-label">ID Number *</label>
-                                <input type="text" class="form-control" id="id_number" name="id_number" required>
-                            </div>
-                            <div class="col-md-4 mb-3">
-                                <label for="date_of_birth" class="form-label">Date of Birth *</label>
-                                <input type="date" class="form-control" id="date_of_birth" name="date_of_birth" required>
-                            </div>
-                        </div>
-
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label for="nationality" class="form-label">Nationality</label>
-                                <input type="text" class="form-control" id="nationality" name="nationality">
-                            </div>
-                            <div class="col-md-3 mb-3">
-                                <label for="stay_count" class="form-label">Stay Count</label>
-                                <input type="number" class="form-control" id="stay_count" name="stay_count" min="0" value="0">
-                            </div>
-                            <div class="col-md-3 mb-3">
-                                <label for="total_spend" class="form-label">Total Spend (₱)</label>
-                                <input type="number" class="form-control" id="total_spend" name="total_spend" min="0" step="0.01" value="0.00">
-                            </div>
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="notes" class="form-label">Notes</label>
-                            <textarea class="form-control" id="notes" name="notes" rows="3"></textarea>
                         </div>
                     </form>
                 </div>
