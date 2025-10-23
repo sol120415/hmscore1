@@ -542,17 +542,32 @@ $revPAR = $roomStats['total_rooms'] > 0 ?
             window.addEventListener('themechange', applyThemeToAll);
         })();
 
+        // Helpers to force numeric data and avoid one chart error breaking others
+        function __num(v){ var n = Number(v); return isFinite(n) ? n : 0; }
+        function __nums(arr){ try { return Array.prototype.map.call(arr, function(x){ return __num(x); }); } catch(e){ return []; } }
+        function __chartSafe(factory){
+            try {
+                var ch = factory();
+                if (ch && window.__ANALYTICS_CHARTS__) window.__ANALYTICS_CHARTS__.push(ch);
+                if (typeof window.__APPLY_ANALYTICS_THEME__ === 'function') window.__APPLY_ANALYTICS_THEME__();
+                return ch;
+            } catch(err){
+                try { console.error('Chart error:', err); } catch(_e){}
+                return null;
+            }
+        }
+
         // Room Status Chart
-        (function(){ const ch = new Chart(document.getElementById('roomStatusChart'), {
+        (function(){ const ch = __chartSafe(function(){ return new Chart(document.getElementById('roomStatusChart'), {
             type: 'doughnut',
             data: {
                 labels: ['Vacant', 'Occupied', 'Maintenance'],
                 datasets: [{
-                    data: [
-                        <?php echo $roomStats['vacant_rooms']; ?>,
-                        <?php echo $roomStats['occupied_rooms']; ?>,
-                        <?php echo $roomStats['maintenance_rooms']; ?>
-                    ],
+                    data: __nums([
+                        <?php echo (int)($roomStats['vacant_rooms'] ?? 0); ?>,
+                        <?php echo (int)($roomStats['occupied_rooms'] ?? 0); ?>,
+                        <?php echo (int)($roomStats['maintenance_rooms'] ?? 0); ?>
+                    ]),
                     backgroundColor: ['#28a745', '#dc3545', '#ffc107']
                 }]
             },
@@ -563,21 +578,21 @@ $revPAR = $roomStats['total_rooms'] > 0 ?
                     legend: { position: 'bottom' }
                 }
             }
-        }); window.__ANALYTICS_CHARTS__.push(ch); __APPLY_ANALYTICS_THEME__(); })();
+        }); }); })();
 
         // Room Type Chart
-        (function(){ const ch = new Chart(document.getElementById('roomTypeChart'), {
+        (function(){ const ch = __chartSafe(function(){ return new Chart(document.getElementById('roomTypeChart'), {
             type: 'bar',
             data: {
                 labels: ['Single', 'Double', 'Deluxe', 'Suite'],
                 datasets: [{
                     label: 'Number of Rooms',
-                    data: [
-                        <?php echo $roomStats['single_rooms']; ?>,
-                        <?php echo $roomStats['double_rooms']; ?>,
-                        <?php echo $roomStats['deluxe_rooms']; ?>,
-                        <?php echo $roomStats['suite_rooms']; ?>
-                    ],
+                    data: __nums([
+                        <?php echo (int)($roomStats['single_rooms'] ?? 0); ?>,
+                        <?php echo (int)($roomStats['double_rooms'] ?? 0); ?>,
+                        <?php echo (int)($roomStats['deluxe_rooms'] ?? 0); ?>,
+                        <?php echo (int)($roomStats['suite_rooms'] ?? 0); ?>
+                    ]),
                     backgroundColor: ['#667eea', '#764ba2', '#f093fb', '#4facfe']
                 }]
             },
@@ -591,20 +606,20 @@ $revPAR = $roomStats['total_rooms'] > 0 ?
                     y: { beginAtZero: true }
                 }
             }
-        }); window.__ANALYTICS_CHARTS__.push(ch); __APPLY_ANALYTICS_THEME__(); })();
+        }); }); })();
 
         // Reservation Status Chart
-        (function(){ const ch = new Chart(document.getElementById('reservationStatusChart'), {
+        (function(){ const ch = __chartSafe(function(){ return new Chart(document.getElementById('reservationStatusChart'), {
             type: 'pie',
             data: {
                 labels: ['Pending', 'Checked In', 'Checked Out', 'Cancelled'],
                 datasets: [{
-                    data: [
-                        <?php echo $reservationStats['pending_reservations']; ?>,
-                        <?php echo $reservationStats['checked_in_reservations']; ?>,
-                        <?php echo $reservationStats['checked_out_reservations']; ?>,
-                        <?php echo $reservationStats['cancelled_reservations']; ?>
-                    ],
+                    data: __nums([
+                        <?php echo (int)($reservationStats['pending_reservations'] ?? 0); ?>,
+                        <?php echo (int)($reservationStats['checked_in_reservations'] ?? 0); ?>,
+                        <?php echo (int)($reservationStats['checked_out_reservations'] ?? 0); ?>,
+                        <?php echo (int)($reservationStats['cancelled_reservations'] ?? 0); ?>
+                    ]),
                     backgroundColor: ['#ffc107', '#28a745', '#17a2b8', '#dc3545']
                 }]
             },
@@ -615,10 +630,10 @@ $revPAR = $roomStats['total_rooms'] > 0 ?
                     legend: { position: 'bottom' }
                 }
             }
-        }); window.__ANALYTICS_CHARTS__.push(ch); __APPLY_ANALYTICS_THEME__(); })();
+        }); }); })();
 
         // Monthly Reservations Trend
-        (function(){ const ch = new Chart(document.getElementById('monthlyReservationsChart'), {
+        (function(){ const ch = __chartSafe(function(){ return new Chart(document.getElementById('monthlyReservationsChart'), {
             type: 'line',
             data: {
                 labels: [<?php 
@@ -628,11 +643,11 @@ $revPAR = $roomStats['total_rooms'] > 0 ?
                 ?>],
                 datasets: [{
                     label: 'Reservations',
-                    data: [<?php 
+                    data: __nums([<?php 
                         foreach ($monthlyReservations as $data) {
-                            echo $data['count'] . ',';
+                            echo (int)$data['count'] . ',';
                         }
-                    ?>],
+                    ?>]),
                     borderColor: '#667eea',
                     backgroundColor: 'rgba(102, 126, 234, 0.1)',
                     fill: true,
@@ -649,10 +664,10 @@ $revPAR = $roomStats['total_rooms'] > 0 ?
                     y: { beginAtZero: true }
                 }
             }
-        }); window.__ANALYTICS_CHARTS__.push(ch); __APPLY_ANALYTICS_THEME__(); })();
+        }); }); })();
 
         // Monthly Revenue Trend
-        (function(){ const ch = new Chart(document.getElementById('monthlyRevenueChart'), {
+        (function(){ const ch = __chartSafe(function(){ return new Chart(document.getElementById('monthlyRevenueChart'), {
             type: 'line',
             data: {
                 labels: [<?php 
@@ -662,11 +677,11 @@ $revPAR = $roomStats['total_rooms'] > 0 ?
                 ?>],
                 datasets: [{
                     label: 'Revenue (₱)',
-                    data: [<?php 
+                    data: __nums([<?php 
                         foreach ($monthlyRevenue as $data) {
-                            echo $data['revenue'] . ',';
+                            echo (float)$data['revenue'] . ',';
                         }
-                    ?>],
+                    ?>]),
                     borderColor: '#28a745',
                     backgroundColor: 'rgba(40, 167, 69, 0.1)',
                     fill: true,
@@ -683,10 +698,10 @@ $revPAR = $roomStats['total_rooms'] > 0 ?
                     y: { beginAtZero: true }
                 }
             }
-        }); window.__ANALYTICS_CHARTS__.push(ch); __APPLY_ANALYTICS_THEME__(); })();
+        }); }); })();
 
         // Payment Method Chart
-        (function(){ const ch = new Chart(document.getElementById('paymentMethodChart'), {
+        (function(){ const ch = __chartSafe(function(){ return new Chart(document.getElementById('paymentMethodChart'), {
             type: 'doughnut',
             data: {
                 labels: [<?php 
@@ -695,11 +710,11 @@ $revPAR = $roomStats['total_rooms'] > 0 ?
                     }
                 ?>],
                 datasets: [{
-                    data: [<?php 
+                    data: __nums([<?php 
                         foreach ($paymentMethods as $method) {
-                            echo $method['total'] . ',';
+                            echo (float)$method['total'] . ',';
                         }
-                    ?>],
+                    ?>]),
                     backgroundColor: ['#28a745', '#17a2b8', '#ffc107', '#dc3545']
                 }]
             },
@@ -710,21 +725,21 @@ $revPAR = $roomStats['total_rooms'] > 0 ?
                     legend: { position: 'bottom' }
                 }
             }
-        }); window.__ANALYTICS_CHARTS__.push(ch); __APPLY_ANALYTICS_THEME__(); })();
+        }); }); })();
 
         // Guest Loyalty Chart
-        (function(){ const ch = new Chart(document.getElementById('guestLoyaltyChart'), {
+        (function(){ const ch = __chartSafe(function(){ return new Chart(document.getElementById('guestLoyaltyChart'), {
             type: 'bar',
             data: {
                 labels: ['Regular', 'Iron', 'Gold', 'Diamond'],
                 datasets: [{
                     label: 'Number of Guests',
-                    data: [
-                        <?php echo $guestStats['regular_guests']; ?>,
-                        <?php echo $guestStats['iron_guests']; ?>,
-                        <?php echo $guestStats['gold_guests']; ?>,
-                        <?php echo $guestStats['diamond_guests']; ?>
-                    ],
+                    data: __nums([
+                        <?php echo (int)($guestStats['regular_guests'] ?? 0); ?>,
+                        <?php echo (int)($guestStats['iron_guests'] ?? 0); ?>,
+                        <?php echo (int)($guestStats['gold_guests'] ?? 0); ?>,
+                        <?php echo (int)($guestStats['diamond_guests'] ?? 0); ?>
+                    ]),
                     backgroundColor: ['#6c757d', '#8e9aaf', '#ffd700', '#b9f2ff']
                 }]
             },
@@ -738,11 +753,11 @@ $revPAR = $roomStats['total_rooms'] > 0 ?
                     y: { beginAtZero: true }
                 }
             }
-        }); window.__ANALYTICS_CHARTS__.push(ch); __APPLY_ANALYTICS_THEME__(); })();
+        }); }); })();
 
         // Channel Revenue Chart
-        (function(){ const ch = new Chart(document.getElementById('channelRevenueChart'), {
-            type: 'horizontalBar',
+        (function(){ const ch = __chartSafe(function(){ return new Chart(document.getElementById('channelRevenueChart'), {
+            type: 'bar',
             data: {
                 labels: [<?php 
                     foreach ($channelStats as $channel) {
@@ -751,11 +766,11 @@ $revPAR = $roomStats['total_rooms'] > 0 ?
                 ?>],
                 datasets: [{
                     label: 'Revenue (₱)',
-                    data: [<?php 
+                    data: __nums([<?php 
                         foreach ($channelStats as $channel) {
-                            echo ($channel['total_revenue'] ?? 0) . ',';
+                            echo (float)($channel['total_revenue'] ?? 0) . ',';
                         }
-                    ?>],
+                    ?>]),
                     backgroundColor: '#667eea'
                 }]
             },
@@ -770,19 +785,19 @@ $revPAR = $roomStats['total_rooms'] > 0 ?
                     x: { beginAtZero: true }
                 }
             }
-        }); window.__ANALYTICS_CHARTS__.push(ch); __APPLY_ANALYTICS_THEME__(); })();
+        }); }); })();
 
         // Housekeeping Chart
-        (function(){ const ch = new Chart(document.getElementById('housekeepingChart'), {
+        (function(){ const ch = __chartSafe(function(){ return new Chart(document.getElementById('housekeepingChart'), {
             type: 'doughnut',
             data: {
                 labels: ['Pending', 'In Progress', 'Completed'],
                 datasets: [{
-                    data: [
-                        <?php echo $housekeepingStats['pending_tasks']; ?>,
-                        <?php echo $housekeepingStats['in_progress_tasks']; ?>,
-                        <?php echo $housekeepingStats['completed_tasks']; ?>
-                    ],
+                    data: __nums([
+                        <?php echo (int)($housekeepingStats['pending_tasks'] ?? 0); ?>,
+                        <?php echo (int)($housekeepingStats['in_progress_tasks'] ?? 0); ?>,
+                        <?php echo (int)($housekeepingStats['completed_tasks'] ?? 0); ?>
+                    ]),
                     backgroundColor: ['#ffc107', '#17a2b8', '#28a745']
                 }]
             },
@@ -793,19 +808,19 @@ $revPAR = $roomStats['total_rooms'] > 0 ?
                     legend: { position: 'bottom' }
                 }
             }
-        }); window.__ANALYTICS_CHARTS__.push(ch); __APPLY_ANALYTICS_THEME__(); })();
+        }); }); })();
 
         // Event Status Chart
-        (function(){ const ch = new Chart(document.getElementById('eventStatusChart'), {
+        (function(){ const ch = __chartSafe(function(){ return new Chart(document.getElementById('eventStatusChart'), {
             type: 'pie',
             data: {
                 labels: ['Pending', 'Active', 'Completed'],
                 datasets: [{
-                    data: [
-                        <?php echo $eventStats['pending_events']; ?>,
-                        <?php echo $eventStats['active_events']; ?>,
-                        <?php echo $eventStats['completed_events']; ?>
-                    ],
+                    data: __nums([
+                        <?php echo (int)($eventStats['pending_events'] ?? 0); ?>,
+                        <?php echo (int)($eventStats['active_events'] ?? 0); ?>,
+                        <?php echo (int)($eventStats['completed_events'] ?? 0); ?>
+                    ]),
                     backgroundColor: ['#ffc107', '#28a745', '#17a2b8']
                 }]
             },
@@ -816,7 +831,7 @@ $revPAR = $roomStats['total_rooms'] > 0 ?
                     legend: { position: 'bottom' }
                 }
             }
-        }); window.__ANALYTICS_CHARTS__.push(ch); __APPLY_ANALYTICS_THEME__(); })();
+        }); }); })();
     </script>
 </body>
 </html>
