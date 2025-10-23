@@ -255,8 +255,8 @@ $recentTransactions = array_slice($billings, 0, 10);
         <!-- Header with Stats -->
         <div class="mb-4">
             <div class="d-flex justify-content-between gap-3 text-center">
-                <div class="text-center flex-grow-1">
-                <?php include 'eventstitle.html'; ?>
+                <div class="flex-grow-1 text-start">
+                    <h2>Events Billing</h2>
                 </div>
                 <div>
                     <small class="text-muted d-block">Paid</small>
@@ -304,7 +304,7 @@ $recentTransactions = array_slice($billings, 0, 10);
                                     </div>
                                 </div>
                                 <div class="billing-actions justify-content-center">
-                                    <button class="btn btn-sm btn-outline-primary" data-coreui-toggle="modal" data-coreui-target="#billingModal" onclick="openBillingModal(<?php echo $billing['id']; ?>, <?php echo $billing['calculated_balance']; ?>, '<?php echo htmlspecialchars($billing['venue_name']); ?>', '<?php echo htmlspecialchars($billing['event_organizer']); ?>', <?php echo $billing['venue_id']; ?>)" title="Create Billing">
+                                    <button class="btn btn-sm btn-outline-primary" onclick="openBillingModal(<?php echo $billing['id']; ?>, <?php echo $billing['calculated_balance']; ?>, '<?php echo htmlspecialchars($billing['venue_name']); ?>', '<?php echo htmlspecialchars($billing['event_organizer']); ?>', <?php echo $billing['venue_id']; ?>)" title="Create Billing">
                                         <i class="cil-plus me-1"></i>Create Billing
                                     </button>
                                 </div>
