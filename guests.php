@@ -719,9 +719,7 @@ $recentGuests = array_slice($guests, 0, 10);
                                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                             </div>
                             <div class="modal-body">
-                                <div class="alert alert-info mb-3">
-                                    <strong>Current Tier: ${currentTier}</strong> (${stayCount} stays)
-                                </div>
+                                
                                 <div class="mb-3">
                                     <small class="text-muted">Next tier progress:</small>
                                     <div class="progress" style="height: 8px;">
@@ -771,12 +769,12 @@ $recentGuests = array_slice($guests, 0, 10);
 
             rewardsData.forEach(reward => {
                 const isCurrentTier = reward.tier === currentTier;
-                const bgColor = reward.tier === 'Diamond' ? 'bg-light' :
+                const bgColor = reward.tier === 'Diamond' ? 'bg-info' :
                                (reward.tier === 'Gold' ? 'bg-warning' :
                                (reward.tier === 'Iron' ? 'bg-secondary' : 'bg-light'));
-                const textColor = reward.tier === 'Diamond' ? 'text-primary' :
-                                 (reward.tier === 'Gold' ? 'text-warning' :
-                                 (reward.tier === 'Iron' ? 'text-secondary' : 'text-secondary'));
+                const textColor = reward.tier === 'Diamond' ? 'text-white' :
+                                 (reward.tier === 'Gold' ? 'text-dark' :
+                                 (reward.tier === 'Iron' ? 'text-white' : 'text-dark'));
                 const borderClass = isCurrentTier ? 'border' : 'border';
                 const borderStyle = isCurrentTier ? 'style="border-width: 3px !important; border-color: #ffd700 !important;"' : '';
                 const badge = reward.tier === 'Diamond' ? '<span class="badge bg-primary text-white">Premium</span>' : '';
