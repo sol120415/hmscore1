@@ -47,6 +47,16 @@ if (isset($_GET['page']) && $_GET['page'] === 'logout') {
             padding: 0.375rem 0.75rem;
             font-size: 0.875rem;
         }
+        /* Smooth theme transitions (dashboard scope) */
+        html, body,
+        .sidebar, .sidebar .nav-link, .sidebar .nav-link.active,
+        .card, .card-header, .card-body, .card-footer,
+        .table, .table thead th, .table tbody td,
+        .list-group-item, .badge, .modal-content,
+        .form-control, .form-select, .input-group-text,
+        .btn, .alert, .navbar, #main-content {
+            transition: background-color .22s ease, color .22s ease, border-color .22s ease, box-shadow .22s ease, fill .22s ease, stroke .22s ease;
+        }
     </style>
     <!-- Popper.js for popovers -->
     <script src="js/popper.min.js"></script>
