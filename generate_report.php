@@ -362,6 +362,132 @@ switch ($page) {
         </body></html>';
         break;
 
+    case 'inventory':
+        // Inventory Management Report
+        $stmt = $conn->query("SELECT * FROM items ORDER BY created_at DESC");
+        $items = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        $stmt = $conn->query("
+            SELECT im.*, COALESCE(i.item_name, 'Deleted Item') as item_name
+            FROM inventory_movements im
+            LEFT JOIN items i ON im.item_id = i.id
+            ORDER BY im.movement_date DESC
+            LIMIT 50
+        ");
+        $movements = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        $stats = $conn->query("
+            SELECT
+                COUNT(*) as total_items,
+                COUNT(CASE WHEN item_status = 'Active' THEN 1 END) as active_items,
+                COUNT(CASE WHEN current_stock <= minimum_stock THEN 1 END) as low_stock_items,
+                SUM(current_stock * unit_cost) as total_value
+            FROM items
+        ")->fetch(PDO::FETCH_ASSOC);
+
+        $movement_stats = $conn->query("
+            SELECT
+                SUM(CASE WHEN movement_type = 'IN' THEN quantity ELSE 0 END) as total_in,
+                SUM(CASE WHEN movement_type = 'OUT' THEN quantity ELSE 0 END) as total_out
+            FROM inventory_movements
+        ")->fetch(PDO::FETCH_ASSOC);
+
+        $stats['total_in'] = $movement_stats['total_in'] ?: 0;
+        $stats['total_out'] = $movement_stats['total_out'] ?: 0;
+
+        $html = '
+        <html>
+        <head>
+            <meta charset="UTF-8">
+            <style>
+                body { font-family: DejaVu Sans, Arial, sans-serif; margin: 20px; }
+                h1 { color: #0dcaf0; text-align: center; }
+                h2 { color: #495057; border-bottom: 2px solid #0dcaf0; padding-bottom: 5px; }
+                table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+                th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+                th { background-color: #f8f9fa; font-weight: bold; }
+                .stats { background-color: #e9ecef; padding: 15px; border-radius: 5px; margin-bottom: 20px; }
+                .stat-item { display: inline-block; margin-right: 20px; }
+            </style>
+        </head>
+        <body>
+            <h1>Inventory Management Report</h1>
+            <p><strong>Generated on:</strong> ' . date('F d, Y H:i:s') . '</p>
+
+            <h2>Inventory Statistics</h2>
+            <div class="stats">
+                <div class="stat-item"><strong>Total Items:</strong> ' . $stats['total_items'] . '</div>
+                <div class="stat-item"><strong>Active Items:</strong> ' . $stats['active_items'] . '</div>
+                <div class="stat-item"><strong>Low Stock Items:</strong> ' . $stats['low_stock_items'] . '</div>
+                <div class="stat-item"><strong>Total Value:</strong> ₱' . number_format($stats['total_value'] ?: 0, 2) . '</div>
+                <div class="stat-item"><strong>Total Stock In:</strong> ' . $stats['total_in'] . '</div>
+                <div class="stat-item"><strong>Total Stock Out:</strong> ' . $stats['total_out'] . '</div>
+            </div>
+
+            <h2>Items List</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Item Name</th>
+                        <th>Category</th>
+                        <th>Current Stock</th>
+                        <th>Min Stock</th>
+                        <th>Max Stock</th>
+                        <th>Unit Cost</th>
+                        <th>Unit Price</th>
+                        <th>Total Value</th>
+                        <th>Status</th>
+                        <th>Created Date</th>
+                    </tr>
+                </thead>
+                <tbody>';
+
+        foreach ($items as $item) {
+            $html .= '<tr>
+                <td>' . htmlspecialchars($item['item_name']) . '</td>
+                <td>' . htmlspecialchars($item['item_category'] ?: 'N/A') . '</td>
+                <td>' . htmlspecialchars($item['current_stock']) . ' ' . htmlspecialchars($item['unit_of_measure']) . '</td>
+                <td>' . htmlspecialchars($item['minimum_stock']) . '</td>
+                <td>' . htmlspecialchars($item['maximum_stock']) . '</td>
+                <td>₱' . number_format($item['unit_cost'], 2) . '</td>
+                <td>₱' . number_format($item['unit_price'], 2) . '</td>
+                <td>₱' . number_format($item['current_stock'] * $item['unit_cost'], 2) . '</td>
+                <td>' . htmlspecialchars($item['item_status']) . '</td>
+                <td>' . date('M d, Y', strtotime($item['created_at'])) . '</td>
+            </tr>';
+        }
+
+        $html .= '</tbody></table>
+
+            <h2>Recent Movements</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Item</th>
+                        <th>Type</th>
+                        <th>Quantity</th>
+                        <th>Reason</th>
+                        <th>Reference</th>
+                        <th>Date</th>
+                    </tr>
+                </thead>
+                <tbody>';
+
+        foreach ($movements as $movement) {
+            $html .= '<tr>
+                <td>' . htmlspecialchars($movement['item_name']) . '</td>
+                <td>' . htmlspecialchars($movement['movement_type']) . '</td>
+                <td>' . number_format($movement['quantity'], 2) . '</td>
+                <td>' . htmlspecialchars($movement['reason'] ?: 'N/A') . '</td>
+                <td>' . htmlspecialchars($movement['reference_id'] ?: 'N/A') . '</td>
+                <td>' . date('M d, Y H:i', strtotime($movement['movement_date'])) . '</td>
+            </tr>';
+        }
+
+        $html .= '</tbody></table>
+        </body></html>';
+        break;
+
     default:
         $html = '<html><body><h1>Report Not Available</h1><p>The requested report type is not available.</p></body></html>';
 }
