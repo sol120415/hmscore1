@@ -428,6 +428,7 @@ $recentTransactions = array_slice($billings, 0, 10);
     <!-- CoreUI JS -->
     <script src="js/coreui.bundle.js"></script>
     <script src="js/bootstrap.bundle.js"></script>
+    <script src="js/app-modal.js?v=<?php echo @filemtime('js/app-modal.js'); ?>"></script>
 
     <style>
         .stats-card {
@@ -607,65 +608,76 @@ $recentTransactions = array_slice($billings, 0, 10);
 
     <!-- Billing Modal -->
     <div class="modal fade" id="billingModal" tabindex="-1">
-        <div class="modal-dialog">
+        <div class="modal-dialog" style="max-width: 50vw;">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="modalTitle">Add Billing Transaction</h5>
                     <button type="button" class="btn-close" data-coreui-dismiss="modal"></button>
                 </div>
-                <div class="modal-body">
-                    <form id="billingForm">
-                        <input type="hidden" name="action" id="formAction" value="create">
-                        <input type="hidden" name="id" id="billingId">
+                <form id="billingForm" onsubmit="submitBillingForm(event)">
+                    <div class="modal-body">
+                        <div class="row g-3 align-items-start">
+                            <div class="col-lg-7">
+                                <div class="rounded-3 border p-3">
+                                    <input type="hidden" name="action" id="formAction" value="create">
+                                    <input type="hidden" name="id" id="billingId">
 
-                        <input type="hidden" name="transaction_type" value="Room Charge">
-                        <input type="hidden" name="billing_status" value="Paid">
+                                    <input type="hidden" name="transaction_type" value="Room Charge">
+                                    <input type="hidden" name="billing_status" value="Paid">
 
-                        <div class="mb-3">
-                            <label class="form-label">Description: <span id="billing_description_display"></span></label>
+                                    <div class="mb-3">
+                                        <label class="form-label">Description: <span id="billing_description_display"></span></label>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label for="payment_method" class="form-label">Payment Method *</label>
+                                        <select class="form-select form-select-sm" id="payment_method" name="payment_method" required>
+                                            <option value="Cash">Cash</option>
+                                            <option value="Card">Card</option>
+                                            <option value="GCash">GCash</option>
+                                            <option value="Bank Transfer">Bank Transfer</option>
+                                        </select>
+                                    </div>
+
+                                    <input type="hidden" id="reservation_id" name="reservation_id">
+                                    <input type="hidden" id="room_id" name="room_id">
+
+                                    <div class="mb-3">
+                                        <label for="payment_amount" class="form-label">Payment Amount *</label>
+                                        <input type="number" class="form-control form-control-sm" id="payment_amount" name="payment_amount" min="0" step="0.01" required>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label class="form-label">Balance: <span id="balance_display">₱0.00</span> | Change: <span id="change_display">₱0.00</span></label>
+                                        <input type="hidden" id="balance" name="balance" step="0.01" readonly>
+                                        <input type="hidden" id="change" name="change" step="0.01" readonly>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-lg-5">
+                                <div class="rounded-3 border p-3">
+                                    <div class="mb-3">
+                                        <label for="notes" class="form-label">Notes</label>
+                                        <textarea class="form-control form-control-sm" id="notes" name="notes" rows="3"></textarea>
+                                    </div>
+
+                                    <div class="mb-3 form-check">
+                                        <input class="form-check-input" type="checkbox" id="generate_invoice" name="generate_invoice">
+                                        <label class="form-check-label" for="generate_invoice">
+                                            Generate Invoice
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-
-                        <div class="mb-3">
-                            <label for="payment_method" class="form-label">Payment Method *</label>
-                            <select class="form-select" id="payment_method" name="payment_method" required>
-                                <option value="Cash">Cash</option>
-                                <option value="Card">Card</option>
-                                <option value="GCash">GCash</option>
-                                <option value="Bank Transfer">Bank Transfer</option>
-                            </select>
+                    </div>
+                    <div class="modal-body">
+                        <div class="d-flex justify-content-end gap-2 mt-3">
+                            <button type="button" class="btn btn-secondary btn-sm" data-coreui-dismiss="modal">Cancel</button>
+                            <button type="submit" id="billingSubmit" class="btn btn-primary btn-sm">Save</button>
                         </div>
-
-                        <input type="hidden" id="reservation_id" name="reservation_id">
-                        <input type="hidden" id="room_id" name="room_id">
-
-                        <div class="mb-3">
-                            <label for="payment_amount" class="form-label">Payment Amount *</label>
-                            <input type="number" class="form-control" id="payment_amount" name="payment_amount" min="0" step="0.01" required>
-                        </div>
-
-                        <div class="mb-3">
-                            <label class="form-label">Balance: <span id="balance_display">₱0.00</span> | Change: <span id="change_display">₱0.00</span></label>
-                            <input type="hidden" id="balance" name="balance" step="0.01" readonly>
-                            <input type="hidden" id="change" name="change" step="0.01" readonly>
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="notes" class="form-label">Notes</label>
-                            <textarea class="form-control" id="notes" name="notes" rows="3"></textarea>
-                        </div>
-
-                        <div class="mb-3 form-check">
-                            <input class="form-check-input" type="checkbox" id="generate_invoice" name="generate_invoice">
-                            <label class="form-check-label" for="generate_invoice">
-                                Generate Invoice
-                            </label>
-                        </div>
-                    </form>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-coreui-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-primary" onclick="submitBillingForm()">Save</button>
-                </div>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
@@ -842,12 +854,14 @@ $recentTransactions = array_slice($billings, 0, 10);
             }
         }
 
-        function submitBillingForm() {
+        function submitBillingForm(event) {
+            event.preventDefault();
+
             const paymentAmount = parseFloat(document.getElementById('payment_amount').value) || 0;
             const balance = parseFloat(document.getElementById('balance').value) || 0;
 
             if (paymentAmount < balance) {
-                alert('Payment amount cannot be less than balance');
+                AppModal.alert('Payment amount cannot be less than balance');
                 return;
             }
 
