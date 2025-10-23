@@ -12,7 +12,7 @@
   </a>
 </p>
 
-# CoreUI Icons (1500+ Free icons)- Simply beautiful open source icons
+## CoreUI Icons (1500+ Free icons)- Simply beautiful open source icons
 
 CoreUI Icons is an open-source icon set with more than 1500 icons in multiple formats SVG, PNG, and Webfonts. CoreUI Icons are beautifully crafted symbols for common actions and items. You can use them in your digital products for web or mobile app.
 
