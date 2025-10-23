@@ -318,6 +318,28 @@ $stats = $conn->query("
             background: linear-gradient(135deg, #383d41, #212529);
             color: #e2e3e5;
         }
+        /* Light theme variants: match Rooms page tuned palette */
+        [data-theme="light"] .room-vacant {
+            background: linear-gradient(135deg, #b9f3e8, #41dcbe);
+            color: #103c34;
+        }
+        [data-theme="light"] .room-occupied {
+            background: linear-gradient(135deg, #e9c5cc, #d7a1ad);
+            color: #5a1a21;
+        }
+        [data-theme="light"] .room-cleaning {
+            background: linear-gradient(135deg, #c9f3ff, #00c8ff);
+            color: #0a3552;
+        }
+        [data-theme="light"] .room-maintenance {
+            background: linear-gradient(135deg, #bedee1, #afcfd3);
+            color: #0a3940;
+        }
+        [data-theme="light"] .room-reserved {
+            background: linear-gradient(135deg, #dee2e7, #d2d7df);
+            color: #262a30;
+        }
+        [data-theme="light"] .room-card { border-color: #d3d8e1; }
     </style>
 </head>
 <body>
