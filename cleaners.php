@@ -308,7 +308,7 @@ $stats = $conn->query("
 
     <!-- Housekeeper Modal -->
     <div class="modal fade" id="housekeeperModal" tabindex="-1" style="--cui-modal-border-radius: 16px; --cui-modal-box-shadow: 0 10px 40px rgba(0,0,0,0.3); --cui-modal-bg: #2d3748; --cui-modal-border-color: #4a5568;">
-        <div class="modal-dialog modal-lg">
+        <div class="modal-dialog" style="max-width: 60vw;">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="housekeeperModalTitle">Add Housekeeper</h5>
@@ -319,92 +319,75 @@ $stats = $conn->query("
                         <input type="hidden" name="action" id="housekeeperFormAction" value="create_housekeeper">
                         <input type="hidden" name="id" id="housekeeperId">
 
-                        <div class="row g-3">
-                            <div class="col-md-6">
-                                <label for="first_name" class="form-label fw-bold">First Name *</label>
-                                <div class="input-group input-group-sm">
-                                    <span class="input-group-text"><i class="cil-user"></i></span>
-                                    <input type="text" class="form-control" id="first_name" name="first_name" placeholder="First Name" required>
+                        <div class="row g-3 align-items-start">
+                            <div class="col-lg-7">
+                                <div class="rounded-3 border p-3">
+                                    <div class="row g-2 mb-2">
+                                        <div class="col-6">
+                                            <label for="first_name" class="form-label small">First Name *</label>
+                                            <input type="text" class="form-control form-control-sm" id="first_name" name="first_name" placeholder="First Name" required>
+                                        </div>
+                                        <div class="col-6">
+                                            <label for="last_name" class="form-label small">Last Name *</label>
+                                            <input type="text" class="form-control form-control-sm" id="last_name" name="last_name" placeholder="Last Name" required>
+                                        </div>
+                                    </div>
+                                    <div class="row g-2 mb-2">
+                                        <div class="col-6">
+                                            <label for="employee_id" class="form-label small">Employee ID *</label>
+                                            <input type="text" class="form-control form-control-sm" id="employee_id" name="employee_id" placeholder="Employee ID" required>
+                                        </div>
+                                        <div class="col-6">
+                                            <label for="hire_date" class="form-label small">Hire Date *</label>
+                                            <input type="date" class="form-control form-control-sm" id="hire_date" name="hire_date" required>
+                                        </div>
+                                    </div>
+                                    <div class="row g-2">
+                                        <div class="col-6">
+                                            <label for="phone" class="form-label small">Phone</label>
+                                            <input type="tel" class="form-control form-control-sm" id="phone" name="phone" placeholder="Phone Number" inputmode="numeric" maxlength="11" oninput="this.value=this.value.replace(/\\D/g,'').slice(0,11)" onkeypress="return /[0-9]/.test(event.key)">
+                                        </div>
+                                        <div class="col-6">
+                                            <label for="email" class="form-label small">Email</label>
+                                            <input type="email" class="form-control form-control-sm" id="email" name="email" placeholder="Email Address">
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
-                            <div class="col-md-6">
-                                <label for="last_name" class="form-label fw-bold">Last Name *</label>
-                                <div class="input-group input-group-sm">
-                                    <span class="input-group-text"><i class="cil-user"></i></span>
-                                    <input type="text" class="form-control" id="last_name" name="last_name" placeholder="Last Name" required>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <label for="employee_id" class="form-label fw-bold">Employee ID *</label>
-                                <div class="input-group input-group-sm">
-                                    <span class="input-group-text"><i class="cil-id-card"></i></span>
-                                    <input type="text" class="form-control" id="employee_id" name="employee_id" placeholder="Employee ID" required>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <label for="hire_date" class="form-label fw-bold">Hire Date *</label>
-                                <div class="input-group input-group-sm">
-                                    <span class="input-group-text"><i class="cil-calendar"></i></span>
-                                    <input type="date" class="form-control" id="hire_date" name="hire_date" required>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <label for="phone" class="form-label fw-bold">Phone</label>
-                                <div class="input-group input-group-sm">
-                                    <span class="input-group-text"><i class="cil-phone"></i></span>
-                                     <input type="tel" class="form-control" id="phone" name="phone" placeholder="Phone Number" inputmode="numeric" maxlength="11" oninput="this.value=this.value.replace(/\\D/g,'').slice(0,11)" onkeypress="return /[0-9]/.test(event.key)">
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <label for="email" class="form-label fw-bold">Email</label>
-                                <div class="input-group input-group-sm">
-                                    <span class="input-group-text"><i class="cil-envelope-closed"></i></span>
-                                    <input type="email" class="form-control" id="email" name="email" placeholder="Email Address">
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <label for="specialty" class="form-label fw-bold">Specialty</label>
-                                <div class="input-group input-group-sm">
-                                    <span class="input-group-text"><i class="cil-star"></i></span>
-                                    <input type="text" class="form-control" id="specialty" name="specialty" placeholder="e.g., Deep Cleaning, Maintenance">
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <label for="shift_preference" class="form-label fw-bold">Shift Preference *</label>
-                                <div class="input-group input-group-sm">
-                                    <span class="input-group-text"><i class="cil-clock"></i></span>
-                                    <select class="form-select" id="shift_preference" name="shift_preference" required>
-                                        <option value="Morning">Morning</option>
-                                        <option value="Afternoon">Afternoon</option>
-                                        <option value="Evening">Evening</option>
-                                        <option value="Night">Night</option>
-                                        <option value="Flexible">Flexible</option>
-                                    </select>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <label for="max_rooms_per_day" class="form-label fw-bold">Max Rooms/Day</label>
-                                <div class="input-group input-group-sm">
-                                    <span class="input-group-text"><i class="cil-home"></i></span>
-                                    <input type="number" class="form-control" id="max_rooms_per_day" name="max_rooms_per_day" min="1" value="10" placeholder="Max Rooms">
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <label for="status" class="form-label fw-bold">Status *</label>
-                                <div class="input-group input-group-sm">
-                                    <span class="input-group-text"><i class="cil-check-circle"></i></span>
-                                    <select class="form-select" id="housekeeper_status" name="status" required>
-                                        <option value="Active">Active</option>
-                                        <option value="Inactive">Inactive</option>
-                                        <option value="On Leave">On Leave</option>
-                                    </select>
-                                </div>
-                            </div>
-                            <div class="col-12">
-                                <label for="notes" class="form-label fw-bold">Notes</label>
-                                <div class="input-group input-group-sm">
-                                    <span class="input-group-text"><i class="cil-notes"></i></span>
-                                    <textarea class="form-control" id="housekeeper_notes" name="notes" rows="2" placeholder="Additional notes"></textarea>
+                            <div class="col-lg-5">
+                                <div class="rounded-3 border p-3">
+                                    <div class="mb-2">
+                                        <label for="specialty" class="form-label small">Specialty</label>
+                                        <input type="text" class="form-control form-control-sm" id="specialty" name="specialty" placeholder="e.g., Deep Cleaning, Maintenance">
+                                    </div>
+                                    <div class="mb-2">
+                                        <label for="shift_preference" class="form-label small">Shift Preference *</label>
+                                        <select class="form-select form-select-sm" id="shift_preference" name="shift_preference" required>
+                                            <option value="Morning">Morning</option>
+                                            <option value="Afternoon">Afternoon</option>
+                                            <option value="Evening">Evening</option>
+                                            <option value="Night">Night</option>
+                                            <option value="Flexible">Flexible</option>
+                                        </select>
+                                    </div>
+                                    <div class="row g-2 mb-2">
+                                        <div class="col-6">
+                                            <label for="max_rooms_per_day" class="form-label small">Max Rooms/Day</label>
+                                            <input type="number" class="form-control form-control-sm" id="max_rooms_per_day" name="max_rooms_per_day" min="1" value="10" placeholder="Max Rooms">
+                                        </div>
+                                        <div class="col-6">
+                                            <label for="housekeeper_status" class="form-label small">Status *</label>
+                                            <select class="form-select form-select-sm" id="housekeeper_status" name="status" required>
+                                                <option value="Active">Active</option>
+                                                <option value="Inactive">Inactive</option>
+                                                <option value="On Leave">On Leave</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label for="housekeeper_notes" class="form-label small">Notes</label>
+                                        <textarea class="form-control form-control-sm" id="housekeeper_notes" name="notes" rows="3" placeholder="Additional notes"></textarea>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -420,7 +403,7 @@ $stats = $conn->query("
 
     <!-- Supply Edit Modal -->
     <div class="modal fade" id="supplyModal" tabindex="-1">
-        <div class="modal-dialog modal-lg">
+        <div class="modal-dialog" style="max-width: 60vw;">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title">Update Supply Stock</h5>
@@ -431,42 +414,49 @@ $stats = $conn->query("
                         <input type="hidden" name="action" value="update_supplies">
                         <input type="hidden" name="id" id="supplyId">
 
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label for="supply_name_display" class="form-label">Supply Name</label>
-                                <input type="text" class="form-control" id="supply_name_display" readonly>
+                        <div class="row g-3 align-items-start">
+                            <div class="col-lg-7">
+                                <div class="rounded-3 border p-3">
+                                    <div class="row g-2 mb-2">
+                                        <div class="col-6">
+                                            <label for="supply_name_display" class="form-label small">Supply Name</label>
+                                            <input type="text" class="form-control form-control-sm" id="supply_name_display" readonly>
+                                        </div>
+                                        <div class="col-6">
+                                            <label for="current_stock" class="form-label small">Current Stock *</label>
+                                            <input type="number" class="form-control form-control-sm" id="current_stock" name="current_stock" min="0" step="0.01" required>
+                                        </div>
+                                    </div>
+                                    <div class="row g-2 mb-2">
+                                        <div class="col-6">
+                                            <label for="minimum_stock_level" class="form-label small">Minimum Stock Level *</label>
+                                            <input type="number" class="form-control form-control-sm" id="minimum_stock_level" name="minimum_stock_level" min="0" step="0.01" required>
+                                        </div>
+                                        <div class="col-6">
+                                            <label for="cost_per_unit" class="form-label small">Cost per Unit</label>
+                                            <input type="number" class="form-control form-control-sm" id="cost_per_unit" name="cost_per_unit" min="0" step="0.01">
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
-                            <div class="col-md-6 mb-3">
-                                <label for="current_stock" class="form-label">Current Stock *</label>
-                                <input type="number" class="form-control" id="current_stock" name="current_stock" min="0" step="0.01" required>
+                            <div class="col-lg-5">
+                                <div class="rounded-3 border p-3">
+                                    <div class="row g-2 mb-2">
+                                        <div class="col-6">
+                                            <label for="supplier" class="form-label small">Supplier</label>
+                                            <input type="text" class="form-control form-control-sm" id="supplier" name="supplier">
+                                        </div>
+                                        <div class="col-6">
+                                            <label for="last_restock_date" class="form-label small">Last Restock Date</label>
+                                            <input type="date" class="form-control form-control-sm" id="last_restock_date" name="last_restock_date">
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label for="supply_notes" class="form-label small">Notes</label>
+                                        <textarea class="form-control form-control-sm" id="supply_notes" name="notes" rows="4"></textarea>
+                                    </div>
+                                </div>
                             </div>
-                        </div>
-
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label for="minimum_stock_level" class="form-label">Minimum Stock Level *</label>
-                                <input type="number" class="form-control" id="minimum_stock_level" name="minimum_stock_level" min="0" step="0.01" required>
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label for="cost_per_unit" class="form-label">Cost per Unit</label>
-                                <input type="number" class="form-control" id="cost_per_unit" name="cost_per_unit" min="0" step="0.01">
-                            </div>
-                        </div>
-
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label for="supplier" class="form-label">Supplier</label>
-                                <input type="text" class="form-control" id="supplier" name="supplier">
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label for="last_restock_date" class="form-label">Last Restock Date</label>
-                                <input type="date" class="form-control" id="last_restock_date" name="last_restock_date">
-                            </div>
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="supply_notes" class="form-label">Notes</label>
-                            <textarea class="form-control" id="supply_notes" name="notes" rows="3"></textarea>
                         </div>
                     </form>
                 </div>
