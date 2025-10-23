@@ -172,9 +172,12 @@ class ThemeManager {
             return;
         }
 
-        // Update document attributes
+        // Update document attributes with a micro-task to allow CSS transitions
+        // to pick up start/end values in separate frames
         document.documentElement.setAttribute('data-theme', theme);
-        document.documentElement.setAttribute('data-coreui-theme', theme);
+        requestAnimationFrame(() => {
+            document.documentElement.setAttribute('data-coreui-theme', theme);
+        });
         
         // Update body class
         document.body.className = document.body.className.replace(/theme-\w+/g, '');
@@ -185,6 +188,8 @@ class ThemeManager {
         
         // Force theme application to override any conflicting styles
         this.forceThemeApplication(theme);
+        // Instant sync for known dashboard controls so there is no visual lag
+        this.syncFrontdeskControls(theme);
         
         // Dispatch theme change event
         this.dispatchThemeChangeEvent(theme);
@@ -404,6 +409,26 @@ class ThemeManager {
             alert.style.setProperty('color', theme === 'light' ? '#212529' : '#ffffff', 'important');
             alert.style.setProperty('border-color', theme === 'light' ? '#dee2e6' : '#495057', 'important');
         });
+    }
+
+    /**
+     * Ensure Frontdesk filter/search controls repaint immediately on theme change
+     */
+    syncFrontdeskControls(theme) {
+        try {
+            var ids = ['roomStatusFilter', 'roomSearch'];
+            for (var i = 0; i < ids.length; i++) {
+                var el = document.getElementById(ids[i]);
+                if (!el) continue;
+                // Force a reflow so the new [data-coreui-theme] styles apply in the same frame
+                void el.offsetHeight;
+                // Ensure no leftover inline overrides
+                el.style.removeProperty('background-color');
+                el.style.removeProperty('color');
+                el.style.removeProperty('border-color');
+                el.style.removeProperty('transition');
+            }
+        } catch(e) { /* no-op */ }
     }
 
     /**

@@ -208,6 +208,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             border-color: #667eea;
             box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
         }
+        /* Ensure placeholder and control colors switch immediately */
+        [data-coreui-theme="dark"] #roomSearch::placeholder { color: #94a3b8; }
+        [data-coreui-theme="light"] #roomSearch::placeholder { color: #6b7280; }
+        [data-coreui-theme="dark"] #roomStatusFilter { background-color: #1f2937; color: #e2e8f0; border-color: rgba(255,255,255,0.14); }
+        [data-coreui-theme="dark"] #roomSearch { background-color: #1f2937; color: #e2e8f0; border-color: rgba(255,255,255,0.14); }
         .floor-section {
             margin-bottom: 2rem;
         }
