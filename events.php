@@ -467,7 +467,7 @@ $stats = $conn->query("
                         <i class="cil-building me-1"></i>View Venues
                     </button>
                     <button class="btn btn-sm btn-outline-warning" onclick="window.location.href='?page=event_billing'">
-                        <span class="me-1" aria-hidden="true">₱</span>Event Billing
+                        <span style="color: #EEAD20 !important;" class="me-1" aria-hidden="true">₱</span><span style="color: #EEAD20 !important;">Event Billing</span>
                     </button>
                 </div>
             </div>
