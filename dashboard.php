@@ -27,6 +27,8 @@ if (isset($_GET['page']) && $_GET['page'] === 'logout') {
     <link href="css/coreui-utilities.min.css" rel="stylesheet">
     <link href="css/coreui-forms.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://unpkg.com/@coreui/icons/css/all.min.css">
+    <!-- Font Awesome for peso icon -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
     
     <!-- Theme System CSS -->
     <link href="css/theme-system.css" rel="stylesheet">
@@ -46,6 +48,21 @@ if (isset($_GET['page']) && $_GET['page'] === 'logout') {
         .sidebar-nav .nav-link {
             padding: 0.375rem 0.75rem;
             font-size: 0.875rem;
+        }
+        /* Dim inactive sidebar icons; brighten on hover/active */
+        .sidebar .nav-link .nav-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 1.25rem;
+            opacity: 0.6;
+            color: rgba(255,255,255,0.65);
+            transition: color .2s ease, opacity .2s ease;
+        }
+        .sidebar .nav-link.active .nav-icon,
+        .sidebar .nav-link:hover .nav-icon {
+            opacity: 1;
+            color: #ffffff;
         }
         /* Smooth theme transitions (dashboard scope) */
         html, body,
@@ -89,7 +106,7 @@ if (isset($_GET['page']) && $_GET['page'] === 'logout') {
     </li>
     <li class="nav-item">
       <a class="nav-link" href="?page=room_billing">
-        <span class="nav-icon" aria-hidden="true">₱</span>Room Billing
+        <i class="nav-icon fa-solid fa-peso-sign" aria-hidden="true"></i>Room Billing
       </a>
     </li>
     <li class="nav-item">
