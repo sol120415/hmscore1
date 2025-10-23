@@ -145,8 +145,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             background: linear-gradient(135deg, #2d3748 0%, #1a202c 100%);
         }
         .login-card {
-            width: 300px;
-            max-width: 400px;
+            
+            width: 450px;
         }
         .btn-google {
             background: rgba(255,255,255,0.08);
