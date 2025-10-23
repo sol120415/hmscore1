@@ -416,6 +416,24 @@ $stats = $conn->query("
             background: linear-gradient(135deg, #0c5460, #062a30);
             color: #d1ecf1;
         }
+        /* Event Billing button with readable text in all states */
+        .event-billing-btn {
+            border-color: #EEAD20 !important;
+            color: #EEAD20 !important;
+        }
+        .event-billing-btn .currency, .event-billing-btn .label {
+            color: inherit !important;
+        }
+        .event-billing-btn:hover, .event-billing-btn:focus, .event-billing-btn:active, .event-billing-btn:disabled {
+            background-color: #EEAD20 !important;
+            color: #111111 !important; /* keep text visible on yellow */
+            border-color: #EEAD20 !important;
+        }
+        .event-billing-btn:hover .currency, .event-billing-btn:hover .label,
+        .event-billing-btn:focus .currency, .event-billing-btn:focus .label,
+        .event-billing-btn:active .currency, .event-billing-btn:active .label {
+            color: #111111 !important;
+        }
         /* Ensure button icons follow button text color */
         .btn .icon,
         .btn i[class^="cil-"],
@@ -466,8 +484,8 @@ $stats = $conn->query("
                     <button class="btn btn-sm btn-outline-info" onclick="openViewVenuesModal()">
                         <i class="cil-building me-1"></i>View Venues
                     </button>
-                    <button class="btn btn-sm btn-outline-warning" onclick="window.location.href='?page=event_billing'">
-                        <span style="color: #EEAD20 !important;" class="me-1" aria-hidden="true">₱</span><span style="color: #EEAD20 !important;">Event Billing</span>
+                    <button class="btn btn-sm btn-outline-warning event-billing-btn" onclick="window.location.href='?page=event_billing'">
+                        <span class="currency me-1" aria-hidden="true">₱</span><span class="label">Event Billing</span>
                     </button>
                 </div>
             </div>
