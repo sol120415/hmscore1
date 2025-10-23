@@ -756,7 +756,7 @@ $payment_terms = ['Net 15', 'Net 30', 'Net 45', 'Net 60', 'COD', 'Due on Receipt
 
     <!-- Item Modal -->
     <div class="modal fade" id="itemModal" tabindex="-1" style="--cui-modal-border-radius: 16px; --cui-modal-box-shadow: 0 10px 40px rgba(0,0,0,0.3); --cui-modal-bg: #2d3748; --cui-modal-border-color: #4a5568;">
-        <div class="modal-dialog" style="max-width: 50vw;">
+        <div class="modal-dialog" style="max-width: 60vw;">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="itemModalTitle">Add Item</h5>
@@ -898,7 +898,7 @@ $payment_terms = ['Net 15', 'Net 30', 'Net 45', 'Net 60', 'COD', 'Due on Receipt
 
     <!-- Movement Modal -->
     <div class="modal fade" id="movementModal" tabindex="-1" style="--cui-modal-border-radius: 16px; --cui-modal-box-shadow: 0 10px 40px rgba(0,0,0,0.3); --cui-modal-bg: #2d3748; --cui-modal-border-color: #4a5568;">
-        <div class="modal-dialog" style="max-width: 50vw;">
+        <div class="modal-dialog" style="max-width: 60vw;">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title">Record Inventory Movement</h5>
@@ -1001,7 +1001,7 @@ $payment_terms = ['Net 15', 'Net 30', 'Net 45', 'Net 60', 'COD', 'Due on Receipt
 
     <!-- Stock Adjustment Modal -->
     <div class="modal fade" id="stockAdjustmentModal" tabindex="-1" style="--cui-modal-border-radius: 16px; --cui-modal-box-shadow: 0 10px 40px rgba(0,0,0,0.3); --cui-modal-bg: #2d3748; --cui-modal-border-color: #4a5568;">
-        <div class="modal-dialog" style="max-width: 50vw;">
+        <div class="modal-dialog" style="max-width: 60vw;">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title">Adjust Stock Level</h5>
@@ -1051,7 +1051,7 @@ $payment_terms = ['Net 15', 'Net 30', 'Net 45', 'Net 60', 'COD', 'Due on Receipt
 
     <!-- Supplier Modal -->
     <div class="modal fade" id="supplierModal" tabindex="-1" style="--cui-modal-border-radius: 16px; --cui-modal-box-shadow: 0 10px 40px rgba(0,0,0,0.3); --cui-modal-bg: #2d3748; --cui-modal-border-color: #4a5568;">
-        <div class="modal-dialog" style="max-width: 50vw;">
+        <div class="modal-dialog" style="max-width: 60vw;">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="supplierModalTitle">Add Supplier</h5>
@@ -1179,7 +1179,7 @@ $payment_terms = ['Net 15', 'Net 30', 'Net 45', 'Net 60', 'COD', 'Due on Receipt
 
     <!-- Supplier Items Modal -->
     <div class="modal fade" id="supplierItemsModal" tabindex="-1">
-        <div class="modal-dialog" style="max-width: 50vw;">
+        <div class="modal-dialog" style="max-width: 60vw;">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="supplierItemsModalTitle">Supplier Items</h5>
@@ -1200,7 +1200,7 @@ $payment_terms = ['Net 15', 'Net 30', 'Net 45', 'Net 60', 'COD', 'Due on Receipt
 
     <!-- Bulk Operations Modal -->
     <div class="modal fade" id="bulkOperationsModal" tabindex="-1" style="--cui-modal-border-radius: 16px; --cui-modal-box-shadow: 0 10px 40px rgba(0,0,0,0.3); --cui-modal-bg: #2d3748; --cui-modal-border-color: #4a5568;">
-        <div class="modal-dialog" style="max-width: 50vw;">
+        <div class="modal-dialog" style="max-width: 60vw;">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title">Bulk Operations</h5>
