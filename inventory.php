@@ -154,16 +154,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_HX_REQUEST']))
                     echo json_encode(['success' => true, 'message' => 'Movement deleted and stock reversed']);
                     break;
 
-                case 'bulk_update':
-                    // Bulk update items
-                    $success_count = 0;
-                    foreach ($_POST['items'] as $item_id => $data) {
-                        $stmt = $conn->prepare("UPDATE items SET item_status=?, minimum_stock=?, maximum_stock=? WHERE id=?");
-                        $stmt->execute([$data['status'], $data['min_stock'], $data['max_stock'], $item_id]);
-                        $success_count++;
-                    }
-                    echo json_encode(['success' => true, 'message' => "$success_count items updated successfully"]);
-                    break;
 
                 case 'create_supplier':
                     // Create new supplier
@@ -243,29 +233,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_HX_REQUEST']))
                     echo json_encode(['exists' => $result['count'] > 0]);
                     break;
 
-                case 'get_movement_trends':
-                    // Get movement trends for the last 6 months
-                    $trends = [];
-                    for ($i = 5; $i >= 0; $i--) {
-                        $date = date('Y-m', strtotime("-$i months"));
-                        $monthName = date('M Y', strtotime("-$i months"));
-
-                        // Get stock in for this month
-                        $stmt = $conn->prepare("SELECT COALESCE(SUM(quantity), 0) as total FROM inventory_movements WHERE movement_type = 'IN' AND DATE_FORMAT(movement_date, '%Y-%m') = ?");
-                        $stmt->execute([$date]);
-                        $stockIn = $stmt->fetch(PDO::FETCH_ASSOC)['total'];
-
-                        // Get stock out for this month
-                        $stmt = $conn->prepare("SELECT COALESCE(SUM(quantity), 0) as total FROM inventory_movements WHERE movement_type = 'OUT' AND DATE_FORMAT(movement_date, '%Y-%m') = ?");
-                        $stmt->execute([$date]);
-                        $stockOut = $stmt->fetch(PDO::FETCH_ASSOC)['total'];
-
-                        $trends['labels'][] = $monthName;
-                        $trends['stockIn'][] = (float)$stockIn;
-                        $trends['stockOut'][] = (float)$stockOut;
-                    }
-                    echo json_encode($trends);
-                    break;
             }
         }
     } catch (Exception $e) {
@@ -438,9 +405,6 @@ $payment_terms = ['Net 15', 'Net 30', 'Net 45', 'Net 60', 'COD', 'Due on Receipt
             <li class="nav-item" role="presentation">
                 <button class="nav-link" id="suppliers-tab" data-bs-toggle="tab" data-bs-target="#suppliers" type="button" role="tab" aria-controls="suppliers" aria-selected="false">Suppliers</button>
             </li>
-            <li class="nav-item" role="presentation">
-                <button class="nav-link" id="analytics-tab" data-bs-toggle="tab" data-bs-target="#analytics" type="button" role="tab" aria-controls="analytics" aria-selected="false">Analytics</button>
-            </li>
         </ul>
 
         <!-- Tab Content -->
@@ -453,9 +417,6 @@ $payment_terms = ['Net 15', 'Net 30', 'Net 45', 'Net 60', 'COD', 'Due on Receipt
                         <div class="d-flex gap-2">
                             <button class="btn btn-success btn-sm" onclick="generateReport()">
                                 <i class="cil-file-pdf me-1"></i>Report
-                            </button>
-                            <button class="btn btn-info btn-sm" onclick="openBulkOperationsModal()">
-                                <i class="cil-list me-1"></i>Bulk Operations
                             </button>
                             <button class="btn btn-sm btn-outline-primary" onclick="openCreateItemModal()">
                                 <i class="cil-plus me-1"></i>Add Item
@@ -536,7 +497,7 @@ $payment_terms = ['Net 15', 'Net 30', 'Net 45', 'Net 60', 'COD', 'Due on Receipt
                                         </div>
                                         <div class="inventory-actions justify-content-center">
                                             <button class="btn btn-sm btn-outline-primary me-2" onclick="editItem(<?php echo htmlspecialchars($item['id']); ?>)" title="Edit">
-                                                <i class="cil-pencil me-1"></i>Edit
+                                                <i class="cil-pencil me-1"></i>
                                             </button>
                                             <button class="btn btn-sm btn-outline-info me-2" onclick="viewMovements(<?php echo htmlspecialchars($item['id']); ?>, '<?php echo htmlspecialchars($item['item_name']); ?>')" title="Movements">
                                                 <i class="cil-history me-1"></i>Movements
@@ -677,80 +638,6 @@ $payment_terms = ['Net 15', 'Net 30', 'Net 45', 'Net 60', 'COD', 'Due on Receipt
                 </div>
             </div>
 
-            <!-- Analytics Tab -->
-            <div class="tab-pane fade" id="analytics" role="tabpanel" aria-labelledby="analytics-tab">
-                <div class="row">
-                    <div class="col-md-6 mb-4">
-                        <div class="card">
-                            <div class="card-header">
-                                <h6 class="mb-0">Stock Levels Overview</h6>
-                            </div>
-                            <div class="card-body">
-                                <div class="chart-container">
-                                    <canvas id="stockChart"></canvas>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-6 mb-4">
-                        <div class="card">
-                            <div class="card-header">
-                                <h6 class="mb-0">Movement Trends</h6>
-                            </div>
-                            <div class="card-body">
-                                <div class="chart-container">
-                                    <canvas id="movementChart"></canvas>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-12">
-                        <div class="card">
-                            <div class="card-header">
-                                <h6 class="mb-0">Inventory Valuation</h6>
-                            </div>
-                            <div class="card-body">
-                                <div class="table-responsive">
-                                    <table class="table table-striped">
-                                        <thead>
-                                            <tr>
-                                                <th>Category</th>
-                                                <th>Total Items</th>
-                                                <th>Total Value</th>
-                                                <th>Average Cost</th>
-                                                <th>Low Stock Items</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            <?php
-                                            $valuation = $conn->query("
-                                                SELECT
-                                                    COALESCE(item_category, 'Uncategorized') as category,
-                                                    COUNT(*) as item_count,
-                                                    SUM(current_stock * unit_cost) as total_value,
-                                                    AVG(unit_cost) as avg_cost,
-                                                    SUM(CASE WHEN current_stock <= minimum_stock THEN 1 ELSE 0 END) as low_stock_count
-                                                FROM items
-                                                GROUP BY item_category
-                                                ORDER BY total_value DESC
-                                            ")->fetchAll(PDO::FETCH_ASSOC);
-                                            foreach ($valuation as $val): ?>
-                                            <tr>
-                                                <td><?php echo htmlspecialchars($val['category']); ?></td>
-                                                <td><?php echo $val['item_count']; ?></td>
-                                                <td>₱<?php echo number_format($val['total_value'], 2); ?></td>
-                                                <td>₱<?php echo number_format($val['avg_cost'], 2); ?></td>
-                                                <td><?php echo $val['low_stock_count']; ?></td>
-                                            </tr>
-                                            <?php endforeach; ?>
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
         </div>
     </div>
 
@@ -1198,76 +1085,6 @@ $payment_terms = ['Net 15', 'Net 30', 'Net 45', 'Net 60', 'COD', 'Due on Receipt
         </div>
     </div>
 
-    <!-- Bulk Operations Modal -->
-    <div class="modal fade" id="bulkOperationsModal" tabindex="-1" style="--cui-modal-border-radius: 16px; --cui-modal-box-shadow: 0 10px 40px rgba(0,0,0,0.3); --cui-modal-bg: #2d3748; --cui-modal-border-color: #4a5568;">
-        <div class="modal-dialog" style="max-width: 50vw;">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Bulk Operations</h5>
-                    <button type="button" class="btn-close" data-coreui-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <form id="bulkOperationsForm">
-                        <input type="hidden" name="action" value="bulk_update">
-
-                        <div class="row g-3 align-items-start">
-                            <div class="col-lg-7">
-                                <div class="rounded-3 border p-3">
-                                    <label class="form-label small">Select Items</label>
-                                    <div class="form-control" style="max-height: 200px; overflow-y: auto;">
-                                        <?php foreach ($items as $item): ?>
-                                        <div class="form-check">
-                                            <input class="form-check-input bulk-item-checkbox" type="checkbox" value="<?php echo htmlspecialchars($item['id']); ?>" id="bulk_<?php echo htmlspecialchars($item['id']); ?>">
-                                            <label class="form-check-label" for="bulk_<?php echo htmlspecialchars($item['id']); ?>">
-                                                <?php echo htmlspecialchars($item['item_name']); ?> (<?php echo htmlspecialchars($item['current_stock']); ?> <?php echo htmlspecialchars($item['unit_of_measure']); ?>)
-                                            </label>
-                                        </div>
-                                        <?php endforeach; ?>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-lg-5">
-                                <div class="rounded-3 border p-3">
-                                    <div class="mb-2">
-                                        <label class="form-label small">Status</label>
-                                        <div class="input-group input-group-sm">
-                                            <span class="input-group-text"><i class="cil-check-circle"></i></span>
-                                            <select class="form-select" id="bulk_status" name="bulk_status">
-                                                <option value="">No Status Change</option>
-                                                <?php foreach ($item_statuses as $status): ?>
-                                                <option value="<?php echo htmlspecialchars($status); ?>"><?php echo htmlspecialchars($status); ?></option>
-                                                <?php endforeach; ?>
-                                            </select>
-                                        </div>
-                                    </div>
-                                    <div class="row g-2">
-                                        <div class="col-6">
-                                            <label class="form-label small">Min Stock</label>
-                                            <div class="input-group input-group-sm">
-                                                <span class="input-group-text"><i class="cil-arrow-down"></i></span>
-                                                <input type="number" class="form-control" id="bulk_min_stock" name="bulk_min_stock" min="0" placeholder="Min Stock">
-                                            </div>
-                                        </div>
-                                        <div class="col-6">
-                                            <label class="form-label small">Max Stock</label>
-                                            <div class="input-group input-group-sm">
-                                                <span class="input-group-text"><i class="cil-arrow-up"></i></span>
-                                                <input type="number" class="form-control" id="bulk_max_stock" name="bulk_max_stock" min="0" placeholder="Max Stock">
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </form>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-coreui-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-primary" onclick="submitBulkOperations()">Apply Changes</button>
-                </div>
-            </div>
-        </div>
-    </div>
 
     <!-- HTMX Response Target -->
     <div id="htmx-response" class="d-none"></div>
@@ -1500,49 +1317,6 @@ $payment_terms = ['Net 15', 'Net 30', 'Net 45', 'Net 60', 'COD', 'Due on Receipt
             });
         }
 
-        // Bulk operations
-        function openBulkOperationsModal() {
-            new coreui.Modal(document.getElementById('bulkOperationsModal')).show();
-        }
-
-        function submitBulkOperations() {
-            const selectedItems = document.querySelectorAll('.bulk-item-checkbox:checked');
-            if (selectedItems.length === 0) {
-                alert('Please select at least one item');
-                return;
-            }
-
-            const formData = new FormData();
-            formData.append('action', 'bulk_update');
-
-            const items = {};
-            selectedItems.forEach(checkbox => {
-                const itemId = checkbox.value;
-                items[itemId] = {
-                    status: document.getElementById('bulk_status').value,
-                    min_stock: document.getElementById('bulk_min_stock').value,
-                    max_stock: document.getElementById('bulk_max_stock').value
-                };
-            });
-            formData.append('items', JSON.stringify(items));
-
-            fetch('inventory.php', {
-                method: 'POST',
-                headers: {
-                    'HX-Request': 'true'
-                },
-                body: formData
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    new coreui.Modal(document.getElementById('bulkOperationsModal')).hide();
-                    location.reload();
-                } else {
-                    alert('Error: ' + data.message);
-                }
-            });
-        }
 
         // Delete movement
         function deleteMovement(id) {
@@ -1573,13 +1347,6 @@ $payment_terms = ['Net 15', 'Net 30', 'Net 45', 'Net 60', 'COD', 'Due on Receipt
 
         // Initialize Bootstrap tabs and other functionality
         document.addEventListener('DOMContentLoaded', function() {
-            // Initialize charts when analytics tab is shown
-            const analyticsTab = document.getElementById('analytics-tab');
-            if (analyticsTab) {
-                analyticsTab.addEventListener('shown.bs.tab', function() {
-                    initializeCharts();
-                });
-            }
 
             // Initialize form validation and duplicate checking
             initializeFormValidation();
@@ -1843,112 +1610,6 @@ $payment_terms = ['Net 15', 'Net 30', 'Net 45', 'Net 60', 'COD', 'Due on Receipt
             });
         }
 
-        function initializeCharts() {
-            // Stock levels chart
-            const stockCtx = document.getElementById('stockChart');
-            if (stockCtx) {
-                new Chart(stockCtx, {
-                    type: 'doughnut',
-                    data: {
-                        labels: ['Normal Stock', 'Low Stock', 'Out of Stock'],
-                        datasets: [{
-                            data: [
-                                <?php echo $stats['total_items'] - $stats['low_stock_items']; ?>,
-                                <?php echo $stats['low_stock_items'] - ($conn->query("SELECT COUNT(*) FROM items WHERE current_stock = 0")->fetchColumn()); ?>,
-                                <?php echo $conn->query("SELECT COUNT(*) FROM items WHERE current_stock = 0")->fetchColumn(); ?>
-                            ],
-                            backgroundColor: [
-                                'rgba(25, 135, 84, 0.8)',
-                                'rgba(255, 193, 7, 0.8)',
-                                'rgba(220, 53, 69, 0.8)'
-                            ]
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        plugins: {
-                            title: {
-                                display: true,
-                                text: 'Stock Level Distribution'
-                            }
-                        }
-                    }
-                });
-            }
-
-            // Movement trends chart - get actual data from last 6 months
-            const movementCtx = document.getElementById('movementChart');
-            if (movementCtx) {
-                // Get movement data for the last 6 months
-                fetch('inventory.php', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded',
-                        'HX-Request': 'true'
-                    },
-                    body: 'action=get_movement_trends'
-                })
-                .then(response => response.json())
-                .then(data => {
-                    new Chart(movementCtx, {
-                        type: 'line',
-                        data: {
-                            labels: data.labels,
-                            datasets: [{
-                                label: 'Stock In',
-                                data: data.stockIn,
-                                borderColor: 'rgb(25, 135, 84)',
-                                tension: 0.1
-                            }, {
-                                label: 'Stock Out',
-                                data: data.stockOut,
-                                borderColor: 'rgb(220, 53, 69)',
-                                tension: 0.1
-                            }]
-                        },
-                        options: {
-                            responsive: true,
-                            plugins: {
-                                title: {
-                                    display: true,
-                                    text: 'Movement Trends (Last 6 Months)'
-                                }
-                            }
-                        }
-                    });
-                })
-                .catch(error => {
-                    console.error('Error loading movement trends:', error);
-                    // Fallback to static data
-                    new Chart(movementCtx, {
-                        type: 'line',
-                        data: {
-                            labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
-                            datasets: [{
-                                label: 'Stock In',
-                                data: [50, 75, 60, 80, 90, 70],
-                                borderColor: 'rgb(25, 135, 84)',
-                                tension: 0.1
-                            }, {
-                                label: 'Stock Out',
-                                data: [40, 60, 55, 70, 65, 80],
-                                borderColor: 'rgb(220, 53, 69)',
-                                tension: 0.1
-                            }]
-                        },
-                        options: {
-                            responsive: true,
-                            plugins: {
-                                title: {
-                                    display: true,
-                                    text: 'Movement Trends'
-                                }
-                            }
-                        }
-                    });
-                });
-            }
-        }
     </script>
 </body>
 </html>
