@@ -117,12 +117,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_HX_REQUEST']))
                          $check_out_date,
                          'Pending'
                      ]);
-                     // Update room status to Reserved if a room was selected
-                     if (!empty($_POST['room_id'])) {
-                         $stmt = $conn->prepare("UPDATE rooms SET room_status = 'Reserved' WHERE id = ?");
-                         $stmt->execute([$_POST['room_id']]);
-                     }
-
                      echo json_encode(['success' => true, 'message' => 'Reservation created successfully']);
                      break;
 
