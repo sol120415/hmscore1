@@ -117,8 +117,8 @@ $archivedGuests = $stmt->fetchAll(PDO::FETCH_ASSOC);
 $stats = $conn->query("
     SELECT
         COUNT(*) as total_guests,
-        COUNT(CASE WHEN nationality = 'American' THEN 1 END) as american_guests,
-        COUNT(CASE WHEN nationality = 'Canadian' THEN 1 END) as canadian_guests,
+        COUNT(CASE WHEN nationality = 'Filipino' THEN 1 END) as filipino_guests,
+        COUNT(CASE WHEN nationality != 'Filipino' THEN 1 END) as non_filipino_guests,
         COUNT(CASE WHEN id_type = 'Passport' THEN 1 END) as passport_guests,
         COUNT(CASE WHEN loyalty_status = 'VIP' THEN 1 END) as vip_guests,
         AVG(TIMESTAMPDIFF(YEAR, date_of_birth, CURDATE())) as avg_age
@@ -223,16 +223,16 @@ $recentGuests = array_slice($guests, 0, 10);
                     <span class="fw-bold text-warning"><?php echo $stats['vip_guests']; ?></span>
                 </div>
                 <div>
-                    <small class="text-muted d-block">American</small>
-                    <span class="fw-bold text-success"><?php echo $stats['american_guests']; ?></span>
+                    <small class="text-muted d-block">Filipino</small>
+                    <span class="fw-bold text-success"><?php echo $stats['filipino_guests']; ?></span>
                 </div>
                 <div>
                     <small class="text-muted d-block">Passports</small>
                     <span class="fw-bold text-info"><?php echo $stats['passport_guests']; ?></span>
                 </div>
                 <div>
-                    <small class="text-muted d-block">Canadian</small>
-                    <span class="fw-bold text-danger"><?php echo $stats['canadian_guests']; ?></span>
+                    <small class="text-muted d-block">Non-Filipino</small>
+                    <span class="fw-bold text-danger"><?php echo $stats['non_filipino_guests']; ?></span>
                 </div>
                 <div>
                     <small class="text-muted d-block">Avg Age</small>
