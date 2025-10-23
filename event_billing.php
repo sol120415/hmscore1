@@ -474,8 +474,11 @@ $recentTransactions = array_slice($billings, 0, 10);
             });
         });
 
+        let reportModal;
+
         function openReportModal() {
-            new coreui.Modal(document.getElementById('reportModal')).show();
+            reportModal = new coreui.Modal(document.getElementById('reportModal'));
+            reportModal.show();
         }
 
         function generateReport() {
@@ -488,7 +491,7 @@ $recentTransactions = array_slice($billings, 0, 10);
             // Open PDF in new window/tab
             window.open('event_billing.php?action=export_pdf&date=' + date + '&HX-Request=true', '_blank');
 
-            new coreui.Modal(document.getElementById('reportModal')).hide();
+            reportModal.hide();
         }
 
         function openBillingModal(reservationId, calculatedBalance, venueName, organizerName, venueId) {

@@ -199,9 +199,6 @@ $stats = $conn->query("
             <div class="card-header d-flex justify-content-between align-items-center">
                 <h5 class="mb-0">Cleaners</h5>
                 <div class="d-flex gap-2">
-                    <button class="btn btn-success btn-sm" onclick="generateReport()">
-                        <i class="cil-file-pdf me-1"></i>Report
-                    </button>
                     <button class="btn btn-sm btn-outline-primary" onclick="openCreateHousekeeperModal()">
                         <i class="cil-plus me-1"></i>Add Cleaner
                     </button>
