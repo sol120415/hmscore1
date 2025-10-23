@@ -734,7 +734,7 @@ $payment_terms = ['Net 15', 'Net 30', 'Net 45', 'Net 60', 'COD', 'Due on Receipt
 
     <!-- Item Modal -->
     <div class="modal fade" id="itemModal" tabindex="-1" style="--cui-modal-border-radius: 16px; --cui-modal-box-shadow: 0 10px 40px rgba(0,0,0,0.3); --cui-modal-bg: #2d3748; --cui-modal-border-color: #4a5568;">
-        <div class="modal-dialog modal-xl">
+        <div class="modal-dialog" style="max-width: 50vw;">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="itemModalTitle">Add Item</h5>
@@ -745,97 +745,122 @@ $payment_terms = ['Net 15', 'Net 30', 'Net 45', 'Net 60', 'COD', 'Due on Receipt
                         <input type="hidden" name="action" id="itemFormAction" value="create_item">
                         <input type="hidden" name="id" id="itemId">
 
-                        <div class="row g-2">
-                            <div class="col-md-6">
-                                <div class="input-group input-group-sm">
-                                    <span class="input-group-text"><i class="cil-tag"></i></span>
-                                    <input type="text" class="form-control" id="item_name" name="item_name" placeholder="Item Name *" required>
+                        <div class="row g-3 align-items-start">
+                            <div class="col-lg-7">
+                                <div class="rounded-3 border p-3">
+                                    <div class="mb-2">
+                                        <label class="form-label small">Item Name *</label>
+                                        <div class="input-group input-group-sm">
+                                            <span class="input-group-text"><i class="cil-tag"></i></span>
+                                            <input type="text" class="form-control" id="item_name" name="item_name" placeholder="Item Name *" required>
+                                        </div>
+                                    </div>
+                                    <div class="row g-2 mb-2">
+                                        <div class="col-6">
+                                            <label class="form-label small">Category</label>
+                                            <div class="input-group input-group-sm">
+                                                <span class="input-group-text"><i class="cil-folder"></i></span>
+                                                <select class="form-select" id="item_category" name="item_category">
+                                                    <option value="">Select Category</option>
+                                                    <?php foreach ($item_categories as $category): ?>
+                                                    <option value="<?php echo htmlspecialchars($category); ?>"><?php echo htmlspecialchars($category); ?></option>
+                                                    <?php endforeach; ?>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div class="col-6">
+                                            <label class="form-label small">Unit *</label>
+                                            <div class="input-group input-group-sm">
+                                                <span class="input-group-text"><i class="cil-balance-scale"></i></span>
+                                                <select class="form-select" id="unit_of_measure" name="unit_of_measure" required>
+                                                    <option value="">Select Unit</option>
+                                                    <?php foreach ($unit_measures as $key => $value): ?>
+                                                    <option value="<?php echo htmlspecialchars($key); ?>"><?php echo htmlspecialchars($value); ?></option>
+                                                    <?php endforeach; ?>
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="mb-2">
+                                        <label class="form-label small">Status *</label>
+                                        <div class="input-group input-group-sm">
+                                            <span class="input-group-text"><i class="cil-check-circle"></i></span>
+                                            <select class="form-select" id="item_status" name="item_status" required>
+                                                <option value="">Select Status</option>
+                                                <?php foreach ($item_statuses as $status): ?>
+                                                <option value="<?php echo htmlspecialchars($status); ?>"><?php echo htmlspecialchars($status); ?></option>
+                                                <?php endforeach; ?>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="mb-2">
+                                        <label class="form-label small">Description</label>
+                                        <div class="input-group input-group-sm">
+                                            <span class="input-group-text"><i class="cil-notes"></i></span>
+                                            <textarea class="form-control" id="item_description" name="item_description" rows="3" placeholder="Item Description"></textarea>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
-                            <div class="col-md-6">
-                                <div class="input-group input-group-sm">
-                                    <span class="input-group-text"><i class="cil-folder"></i></span>
-                                    <select class="form-select" id="item_category" name="item_category">
-                                        <option value="">Select Category</option>
-                                        <?php foreach ($item_categories as $category): ?>
-                                        <option value="<?php echo htmlspecialchars($category); ?>"><?php echo htmlspecialchars($category); ?></option>
-                                        <?php endforeach; ?>
-                                    </select>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="input-group input-group-sm">
-                                    <span class="input-group-text"><i class="cil-balance-scale"></i></span>
-                                    <select class="form-select" id="unit_of_measure" name="unit_of_measure" required>
-                                        <option value="">Select Unit</option>
-                                        <?php foreach ($unit_measures as $key => $value): ?>
-                                        <option value="<?php echo htmlspecialchars($key); ?>"><?php echo htmlspecialchars($value); ?></option>
-                                        <?php endforeach; ?>
-                                    </select>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="input-group input-group-sm">
-                                    <span class="input-group-text"><i class="cil-check-circle"></i></span>
-                                    <select class="form-select" id="item_status" name="item_status" required>
-                                        <option value="">Select Status</option>
-                                        <?php foreach ($item_statuses as $status): ?>
-                                        <option value="<?php echo htmlspecialchars($status); ?>"><?php echo htmlspecialchars($status); ?></option>
-                                        <?php endforeach; ?>
-                                    </select>
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="input-group input-group-sm">
-                                    <span class="input-group-text"><i class="cil-chart"></i></span>
-                                    <input type="number" class="form-control" id="current_stock" name="current_stock" min="0" step="0.01" placeholder="Current Stock">
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="input-group input-group-sm">
-                                    <span class="input-group-text"><i class="cil-arrow-down"></i></span>
-                                    <input type="number" class="form-control" id="minimum_stock" name="minimum_stock" min="0" step="0.01" placeholder="Min Stock">
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="input-group input-group-sm">
-                                    <span class="input-group-text"><i class="cil-arrow-up"></i></span>
-                                    <input type="number" class="form-control" id="maximum_stock" name="maximum_stock" min="0" step="0.01" placeholder="Max Stock">
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="input-group input-group-sm">
-                                    <span class="input-group-text">₱</span>
-                                    <input type="number" class="form-control" id="unit_cost" name="unit_cost" placeholder="Unit Cost" min="0" step="0.01">
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="input-group input-group-sm">
-                                    <span class="input-group-text">₱</span>
-                                    <input type="number" class="form-control" id="unit_price" name="unit_price" placeholder="Unit Price" min="0" step="0.01">
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="input-group input-group-sm">
-                                    <span class="input-group-text"><i class="cil-truck"></i></span>
-                                    <select class="form-select" id="supplier_id" name="supplier_id">
-                                        <option value="">Select Supplier</option>
-                                        <?php
-                                        $suppliers_query = $conn->query("SELECT id, supplier_name, supplier_status FROM suppliers ORDER BY supplier_name");
-                                        $suppliers_list = $suppliers_query->fetchAll(PDO::FETCH_ASSOC);
-                                        foreach ($suppliers_list as $supplier): ?>
-                                        <option value="<?php echo $supplier['id']; ?>" <?php echo $supplier['supplier_status'] === 'Inactive' ? 'style="color: #6c757d;"' : ''; ?>>
-                                            <?php echo htmlspecialchars($supplier['supplier_name']); ?>
-                                            <?php echo $supplier['supplier_status'] === 'Inactive' ? ' (Inactive)' : ''; ?>
-                                        </option>
-                                        <?php endforeach; ?>
-                                    </select>
-                                </div>
-                            </div>
-                            <div class="col-12">
-                                <div class="input-group input-group-sm">
-                                    <span class="input-group-text"><i class="cil-notes"></i></span>
-                                    <textarea class="form-control" id="item_description" name="item_description" rows="2" placeholder="Item Description"></textarea>
+                            <div class="col-lg-5">
+                                <div class="rounded-3 border p-3">
+                                    <div class="row g-2 mb-2">
+                                        <div class="col-6">
+                                            <label class="form-label small">Current Stock</label>
+                                            <div class="input-group input-group-sm">
+                                                <span class="input-group-text"><i class="cil-chart"></i></span>
+                                                <input type="number" class="form-control" id="current_stock" name="current_stock" min="0" step="0.01" placeholder="0">
+                                            </div>
+                                        </div>
+                                        <div class="col-6">
+                                            <label class="form-label small">Min Stock</label>
+                                            <div class="input-group input-group-sm">
+                                                <span class="input-group-text"><i class="cil-arrow-down"></i></span>
+                                                <input type="number" class="form-control" id="minimum_stock" name="minimum_stock" min="0" step="0.01" placeholder="0">
+                                            </div>
+                                        </div>
+                                        <div class="col-6">
+                                            <label class="form-label small">Max Stock</label>
+                                            <div class="input-group input-group-sm">
+                                                <span class="input-group-text"><i class="cil-arrow-up"></i></span>
+                                                <input type="number" class="form-control" id="maximum_stock" name="maximum_stock" min="0" step="0.01" placeholder="0">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="row g-2 mb-2">
+                                        <div class="col-6">
+                                            <label class="form-label small">Unit Cost</label>
+                                            <div class="input-group input-group-sm">
+                                                <span class="input-group-text">₱</span>
+                                                <input type="number" class="form-control" id="unit_cost" name="unit_cost" placeholder="0.00" min="0" step="0.01">
+                                            </div>
+                                        </div>
+                                        <div class="col-6">
+                                            <label class="form-label small">Unit Price</label>
+                                            <div class="input-group input-group-sm">
+                                                <span class="input-group-text">₱</span>
+                                                <input type="number" class="form-control" id="unit_price" name="unit_price" placeholder="0.00" min="0" step="0.01">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="mb-2">
+                                        <label class="form-label small">Supplier</label>
+                                        <div class="input-group input-group-sm">
+                                            <span class="input-group-text"><i class="cil-truck"></i></span>
+                                            <select class="form-select" id="supplier_id" name="supplier_id">
+                                                <option value="">Select Supplier</option>
+                                                <?php
+                                                $suppliers_query = $conn->query("SELECT id, supplier_name, supplier_status FROM suppliers ORDER BY supplier_name");
+                                                $suppliers_list = $suppliers_query->fetchAll(PDO::FETCH_ASSOC);
+                                                foreach ($suppliers_list as $supplier): ?>
+                                                <option value="<?php echo $supplier['id']; ?>" <?php echo $supplier['supplier_status'] === 'Inactive' ? 'style="color: #6c757d;"' : ''; ?>>
+                                                    <?php echo htmlspecialchars($supplier['supplier_name']); ?>
+                                                    <?php echo $supplier['supplier_status'] === 'Inactive' ? ' (Inactive)' : ''; ?>
+                                                </option>
+                                                <?php endforeach; ?>
+                                            </select>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -851,7 +876,7 @@ $payment_terms = ['Net 15', 'Net 30', 'Net 45', 'Net 60', 'COD', 'Due on Receipt
 
     <!-- Movement Modal -->
     <div class="modal fade" id="movementModal" tabindex="-1" style="--cui-modal-border-radius: 16px; --cui-modal-box-shadow: 0 10px 40px rgba(0,0,0,0.3); --cui-modal-bg: #2d3748; --cui-modal-border-color: #4a5568;">
-        <div class="modal-dialog modal-lg">
+        <div class="modal-dialog" style="max-width: 50vw;">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title">Record Inventory Movement</h5>
@@ -861,50 +886,63 @@ $payment_terms = ['Net 15', 'Net 30', 'Net 45', 'Net 60', 'COD', 'Due on Receipt
                     <form id="movementForm">
                         <input type="hidden" name="action" value="add_movement">
 
-                        <div class="row g-2">
-                            <div class="col-md-6">
-                                <div class="input-group input-group-sm">
-                                    <span class="input-group-text"><i class="cil-tag"></i></span>
-                                    <select class="form-select" id="movement_item_id" name="item_id" required>
-                                        <option value="">Select Item</option>
-                                        <?php foreach ($items as $item): ?>
-                                        <option value="<?php echo $item['id']; ?>"><?php echo htmlspecialchars($item['item_name']); ?> (<?php echo $item['current_stock']; ?> <?php echo $item['unit_of_measure']; ?>)</option>
-                                        <?php endforeach; ?>
-                                    </select>
+                        <div class="row g-3 align-items-start">
+                            <div class="col-lg-7">
+                                <div class="rounded-3 border p-3">
+                                    <div class="mb-2">
+                                        <label class="form-label small">Item *</label>
+                                        <div class="input-group input-group-sm">
+                                            <span class="input-group-text"><i class="cil-tag"></i></span>
+                                            <select class="form-select" id="movement_item_id" name="item_id" required>
+                                                <option value="">Select Item</option>
+                                                <?php foreach ($items as $item): ?>
+                                                <option value="<?php echo $item['id']; ?>"><?php echo htmlspecialchars($item['item_name']); ?> (<?php echo $item['current_stock']; ?> <?php echo $item['unit_of_measure']; ?>)</option>
+                                                <?php endforeach; ?>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="mb-2">
+                                        <label class="form-label small">Reason</label>
+                                        <div class="input-group input-group-sm">
+                                            <span class="input-group-text"><i class="cil-notes"></i></span>
+                                            <select class="form-select" id="reason" name="reason">
+                                                <option value="">Select Reason</option>
+                                                <?php foreach ($movement_reasons as $reason): ?>
+                                                <option value="<?php echo htmlspecialchars($reason); ?>"><?php echo htmlspecialchars($reason); ?></option>
+                                                <?php endforeach; ?>
+                                            </select>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
-                            <div class="col-md-6">
-                                <div class="input-group input-group-sm">
-                                    <span class="input-group-text"><i class="cil-transfer"></i></span>
-                                    <select class="form-select" id="movement_type" name="movement_type" required>
-                                        <option value="">Select Type</option>
-                                        <?php foreach ($movement_types as $key => $value): ?>
-                                        <option value="<?php echo htmlspecialchars($key); ?>"><?php echo htmlspecialchars($value); ?></option>
-                                        <?php endforeach; ?>
-                                    </select>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="input-group input-group-sm">
-                                    <span class="input-group-text"><i class="cil-chart"></i></span>
-                                    <input type="number" class="form-control" id="quantity" name="quantity" min="0.01" step="0.01" placeholder="Quantity *" required>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="input-group input-group-sm">
-                                    <span class="input-group-text"><i class="cil-link"></i></span>
-                                    <input type="text" class="form-control" id="reference_id" name="reference_id" placeholder="Reference ID (Order/Sale)">
-                                </div>
-                            </div>
-                            <div class="col-12">
-                                <div class="input-group input-group-sm">
-                                    <span class="input-group-text"><i class="cil-notes"></i></span>
-                                    <select class="form-select" id="reason" name="reason">
-                                        <option value="">Select Reason</option>
-                                        <?php foreach ($movement_reasons as $reason): ?>
-                                        <option value="<?php echo htmlspecialchars($reason); ?>"><?php echo htmlspecialchars($reason); ?></option>
-                                        <?php endforeach; ?>
-                                    </select>
+                            <div class="col-lg-5">
+                                <div class="rounded-3 border p-3">
+                                    <div class="mb-2">
+                                        <label class="form-label small">Type *</label>
+                                        <div class="input-group input-group-sm">
+                                            <span class="input-group-text"><i class="cil-transfer"></i></span>
+                                            <select class="form-select" id="movement_type" name="movement_type" required>
+                                                <option value="">Select Type</option>
+                                                <?php foreach ($movement_types as $key => $value): ?>
+                                                <option value="<?php echo htmlspecialchars($key); ?>"><?php echo htmlspecialchars($value); ?></option>
+                                                <?php endforeach; ?>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="mb-2">
+                                        <label class="form-label small">Quantity *</label>
+                                        <div class="input-group input-group-sm">
+                                            <span class="input-group-text"><i class="cil-chart"></i></span>
+                                            <input type="number" class="form-control" id="quantity" name="quantity" min="0.01" step="0.01" placeholder="Quantity *" required>
+                                        </div>
+                                    </div>
+                                    <div class="mb-2">
+                                        <label class="form-label small">Reference</label>
+                                        <div class="input-group input-group-sm">
+                                            <span class="input-group-text"><i class="cil-link"></i></span>
+                                            <input type="text" class="form-control" id="reference_id" name="reference_id" placeholder="Reference ID (Order/Sale)">
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -941,7 +979,7 @@ $payment_terms = ['Net 15', 'Net 30', 'Net 45', 'Net 60', 'COD', 'Due on Receipt
 
     <!-- Stock Adjustment Modal -->
     <div class="modal fade" id="stockAdjustmentModal" tabindex="-1" style="--cui-modal-border-radius: 16px; --cui-modal-box-shadow: 0 10px 40px rgba(0,0,0,0.3); --cui-modal-bg: #2d3748; --cui-modal-border-color: #4a5568;">
-        <div class="modal-dialog modal-lg">
+        <div class="modal-dialog" style="max-width: 50vw;">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title">Adjust Stock Level</h5>
@@ -953,23 +991,29 @@ $payment_terms = ['Net 15', 'Net 30', 'Net 45', 'Net 60', 'COD', 'Due on Receipt
                         <input type="hidden" name="item_id" id="adjustItemId">
                         <input type="hidden" name="current_stock" id="currentStockValue">
 
-                        <div class="row g-2">
-                            <div class="col-12">
-                                <div class="alert alert-info">
-                                    <strong>Item:</strong> <span id="adjustItemName"></span><br>
-                                    <strong>Current Stock:</strong> <span id="currentStockDisplay"></span>
+                        <div class="row g-3 align-items-start">
+                            <div class="col-lg-7">
+                                <div class="rounded-3 border p-3">
+                                    <div class="alert alert-info mb-2">
+                                        <strong>Item:</strong> <span id="adjustItemName"></span><br>
+                                        <strong>Current Stock:</strong> <span id="currentStockDisplay"></span>
+                                    </div>
+                                    <div class="mb-2">
+                                        <label class="form-label small">New Stock Level *</label>
+                                        <div class="input-group input-group-sm">
+                                            <span class="input-group-text"><i class="cil-calculator"></i></span>
+                                            <input type="number" class="form-control" id="new_stock" name="new_stock" min="0" step="0.01" placeholder="New Stock Level *" required>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
-                            <div class="col-12">
-                                <div class="input-group input-group-sm">
-                                    <span class="input-group-text"><i class="cil-calculator"></i></span>
-                                    <input type="number" class="form-control" id="new_stock" name="new_stock" min="0" step="0.01" placeholder="New Stock Level *" required>
-                                </div>
-                            </div>
-                            <div class="col-12">
-                                <div class="input-group input-group-sm">
-                                    <span class="input-group-text"><i class="cil-notes"></i></span>
-                                    <textarea class="form-control" id="adjustment_reason" name="adjustment_reason" rows="3" placeholder="Reason for adjustment (e.g., physical count, damaged goods, etc.)"></textarea>
+                            <div class="col-lg-5">
+                                <div class="rounded-3 border p-3">
+                                    <label class="form-label small">Reason</label>
+                                    <div class="input-group input-group-sm">
+                                        <span class="input-group-text"><i class="cil-notes"></i></span>
+                                        <textarea class="form-control" id="adjustment_reason" name="adjustment_reason" rows="6" placeholder="Reason for adjustment (e.g., physical count, damaged goods, etc.)"></textarea>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -985,7 +1029,7 @@ $payment_terms = ['Net 15', 'Net 30', 'Net 45', 'Net 60', 'COD', 'Due on Receipt
 
     <!-- Supplier Modal -->
     <div class="modal fade" id="supplierModal" tabindex="-1" style="--cui-modal-border-radius: 16px; --cui-modal-box-shadow: 0 10px 40px rgba(0,0,0,0.3); --cui-modal-bg: #2d3748; --cui-modal-border-color: #4a5568;">
-        <div class="modal-dialog modal-xl">
+        <div class="modal-dialog" style="max-width: 50vw;">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="supplierModalTitle">Add Supplier</h5>
@@ -996,81 +1040,108 @@ $payment_terms = ['Net 15', 'Net 30', 'Net 45', 'Net 60', 'COD', 'Due on Receipt
                         <input type="hidden" name="action" id="supplierFormAction" value="create_supplier">
                         <input type="hidden" name="id" id="supplierId">
 
-                        <div class="row g-2">
-                            <div class="col-md-6">
-                                <div class="input-group input-group-sm">
-                                    <span class="input-group-text"><i class="cil-building"></i></span>
-                                    <input type="text" class="form-control" id="supplier_name" name="supplier_name" placeholder="Supplier Name *" required>
+                        <div class="row g-3 align-items-start">
+                            <div class="col-lg-7">
+                                <div class="rounded-3 border p-3">
+                                    <div class="row g-2 mb-2">
+                                        <div class="col-6">
+                                            <label class="form-label small">Supplier Name *</label>
+                                            <div class="input-group input-group-sm">
+                                                <span class="input-group-text"><i class="cil-building"></i></span>
+                                                <input type="text" class="form-control" id="supplier_name" name="supplier_name" placeholder="Supplier Name *" required>
+                                            </div>
+                                        </div>
+                                        <div class="col-6">
+                                            <label class="form-label small">Contact Person</label>
+                                            <div class="input-group input-group-sm">
+                                                <span class="input-group-text"><i class="cil-user"></i></span>
+                                                <input type="text" class="form-control" id="contact_person" name="contact_person" placeholder="Contact Person">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="row g-2 mb-2">
+                                        <div class="col-6">
+                                            <label class="form-label small">Email</label>
+                                            <div class="input-group input-group-sm">
+                                                <span class="input-group-text"><i class="cil-envelope-closed"></i></span>
+                                                <input type="email" class="form-control" id="supplier_email" name="email" placeholder="Email Address">
+                                            </div>
+                                        </div>
+                                        <div class="col-6">
+                                            <label class="form-label small">Phone</label>
+                                            <div class="input-group input-group-sm">
+                                                <span class="input-group-text"><i class="cil-phone"></i></span>
+                                                <input type="tel" class="form-control" id="supplier_phone" name="phone" placeholder="Phone Number">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="mb-2">
+                                        <label class="form-label small">Street Address</label>
+                                        <div class="input-group input-group-sm">
+                                            <span class="input-group-text"><i class="cil-home"></i></span>
+                                            <textarea class="form-control" id="supplier_address" name="address" rows="2" placeholder="Street Address"></textarea>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
-                            <div class="col-md-6">
-                                <div class="input-group input-group-sm">
-                                    <span class="input-group-text"><i class="cil-user"></i></span>
-                                    <input type="text" class="form-control" id="contact_person" name="contact_person" placeholder="Contact Person">
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="input-group input-group-sm">
-                                    <span class="input-group-text"><i class="cil-envelope-closed"></i></span>
-                                    <input type="email" class="form-control" id="supplier_email" name="email" placeholder="Email Address">
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="input-group input-group-sm">
-                                    <span class="input-group-text"><i class="cil-phone"></i></span>
-                                    <input type="tel" class="form-control" id="supplier_phone" name="phone" placeholder="Phone Number">
-                                </div>
-                            </div>
-                            <div class="col-12">
-                                <div class="input-group input-group-sm">
-                                    <span class="input-group-text"><i class="cil-home"></i></span>
-                                    <textarea class="form-control" id="supplier_address" name="address" rows="2" placeholder="Street Address"></textarea>
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="input-group input-group-sm">
-                                    <span class="input-group-text"><i class="cil-location-pin"></i></span>
-                                    <input type="text" class="form-control" id="supplier_city" name="city" placeholder="City">
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="input-group input-group-sm">
-                                    <span class="input-group-text"><i class="cil-map"></i></span>
-                                    <input type="text" class="form-control" id="supplier_state" name="state" placeholder="State/Province">
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="input-group input-group-sm">
-                                    <span class="input-group-text"><i class="cil-envelope-open"></i></span>
-                                    <input type="text" class="form-control" id="supplier_postal_code" name="postal_code" placeholder="Postal Code">
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="input-group input-group-sm">
-                                    <span class="input-group-text"><i class="cil-globe"></i></span>
-                                    <input type="text" class="form-control" id="supplier_country" name="country" placeholder="Country">
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="input-group input-group-sm">
-                                    <span class="input-group-text"><i class="cil-dollar"></i></span>
-                                    <select class="form-select" id="payment_terms" name="payment_terms">
-                                        <option value="">Select Payment Terms</option>
-                                        <?php foreach ($payment_terms as $term): ?>
-                                        <option value="<?php echo htmlspecialchars($term); ?>"><?php echo htmlspecialchars($term); ?></option>
-                                        <?php endforeach; ?>
-                                    </select>
-                                </div>
-                            </div>
-                            <div class="col-12">
-                                <div class="input-group input-group-sm">
-                                    <span class="input-group-text"><i class="cil-check-circle"></i></span>
-                                    <select class="form-select" id="supplier_status" name="supplier_status" required>
-                                        <option value="">Select Status</option>
-                                        <?php foreach ($supplier_statuses as $status): ?>
-                                        <option value="<?php echo htmlspecialchars($status); ?>"><?php echo htmlspecialchars($status); ?></option>
-                                        <?php endforeach; ?>
-                                    </select>
+                            <div class="col-lg-5">
+                                <div class="rounded-3 border p-3">
+                                    <div class="row g-2 mb-2">
+                                        <div class="col-6">
+                                            <label class="form-label small">City</label>
+                                            <div class="input-group input-group-sm">
+                                                <span class="input-group-text"><i class="cil-location-pin"></i></span>
+                                                <input type="text" class="form-control" id="supplier_city" name="city" placeholder="City">
+                                            </div>
+                                        </div>
+                                        <div class="col-6">
+                                            <label class="form-label small">State/Province</label>
+                                            <div class="input-group input-group-sm">
+                                                <span class="input-group-text"><i class="cil-map"></i></span>
+                                                <input type="text" class="form-control" id="supplier_state" name="state" placeholder="State/Province">
+                                            </div>
+                                        </div>
+                                        <div class="col-6">
+                                            <label class="form-label small">Postal Code</label>
+                                            <div class="input-group input-group-sm">
+                                                <span class="input-group-text"><i class="cil-envelope-open"></i></span>
+                                                <input type="text" class="form-control" id="supplier_postal_code" name="postal_code" placeholder="Postal Code">
+                                            </div>
+                                        </div>
+                                        <div class="col-6">
+                                            <label class="form-label small">Country</label>
+                                            <div class="input-group input-group-sm">
+                                                <span class="input-group-text"><i class="cil-globe"></i></span>
+                                                <input type="text" class="form-control" id="supplier_country" name="country" placeholder="Country">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="row g-2 mb-2">
+                                        <div class="col-6">
+                                            <label class="form-label small">Payment Terms</label>
+                                            <div class="input-group input-group-sm">
+                                                <span class="input-group-text"><i class="cil-dollar"></i></span>
+                                                <select class="form-select" id="payment_terms" name="payment_terms">
+                                                    <option value="">Select Payment Terms</option>
+                                                    <?php foreach ($payment_terms as $term): ?>
+                                                    <option value="<?php echo htmlspecialchars($term); ?>"><?php echo htmlspecialchars($term); ?></option>
+                                                    <?php endforeach; ?>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div class="col-6">
+                                            <label class="form-label small">Status *</label>
+                                            <div class="input-group input-group-sm">
+                                                <span class="input-group-text"><i class="cil-check-circle"></i></span>
+                                                <select class="form-select" id="supplier_status" name="supplier_status" required>
+                                                    <option value="">Select Status</option>
+                                                    <?php foreach ($supplier_statuses as $status): ?>
+                                                    <option value="<?php echo htmlspecialchars($status); ?>"><?php echo htmlspecialchars($status); ?></option>
+                                                    <?php endforeach; ?>
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -1086,7 +1157,7 @@ $payment_terms = ['Net 15', 'Net 30', 'Net 45', 'Net 60', 'COD', 'Due on Receipt
 
     <!-- Supplier Items Modal -->
     <div class="modal fade" id="supplierItemsModal" tabindex="-1">
-        <div class="modal-dialog modal-xl">
+        <div class="modal-dialog" style="max-width: 50vw;">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="supplierItemsModalTitle">Supplier Items</h5>
@@ -1107,7 +1178,7 @@ $payment_terms = ['Net 15', 'Net 30', 'Net 45', 'Net 60', 'COD', 'Due on Receipt
 
     <!-- Bulk Operations Modal -->
     <div class="modal fade" id="bulkOperationsModal" tabindex="-1" style="--cui-modal-border-radius: 16px; --cui-modal-box-shadow: 0 10px 40px rgba(0,0,0,0.3); --cui-modal-bg: #2d3748; --cui-modal-border-color: #4a5568;">
-        <div class="modal-dialog modal-lg">
+        <div class="modal-dialog" style="max-width: 50vw;">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title">Bulk Operations</h5>
@@ -1117,10 +1188,10 @@ $payment_terms = ['Net 15', 'Net 30', 'Net 45', 'Net 60', 'COD', 'Due on Receipt
                     <form id="bulkOperationsForm">
                         <input type="hidden" name="action" value="bulk_update">
 
-                        <div class="row g-2">
-                            <div class="col-12">
-                                <div class="input-group input-group-sm">
-                                    <span class="input-group-text"><i class="cil-list"></i></span>
+                        <div class="row g-3 align-items-start">
+                            <div class="col-lg-7">
+                                <div class="rounded-3 border p-3">
+                                    <label class="form-label small">Select Items</label>
                                     <div class="form-control" style="max-height: 200px; overflow-y: auto;">
                                         <?php foreach ($items as $item): ?>
                                         <div class="form-check">
@@ -1133,27 +1204,36 @@ $payment_terms = ['Net 15', 'Net 30', 'Net 45', 'Net 60', 'COD', 'Due on Receipt
                                     </div>
                                 </div>
                             </div>
-                            <div class="col-md-4">
-                                <div class="input-group input-group-sm">
-                                    <span class="input-group-text"><i class="cil-check-circle"></i></span>
-                                    <select class="form-select" id="bulk_status" name="bulk_status">
-                                        <option value="">No Status Change</option>
-                                        <?php foreach ($item_statuses as $status): ?>
-                                        <option value="<?php echo htmlspecialchars($status); ?>"><?php echo htmlspecialchars($status); ?></option>
-                                        <?php endforeach; ?>
-                                    </select>
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="input-group input-group-sm">
-                                    <span class="input-group-text"><i class="cil-arrow-down"></i></span>
-                                    <input type="number" class="form-control" id="bulk_min_stock" name="bulk_min_stock" min="0" placeholder="Min Stock">
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="input-group input-group-sm">
-                                    <span class="input-group-text"><i class="cil-arrow-up"></i></span>
-                                    <input type="number" class="form-control" id="bulk_max_stock" name="bulk_max_stock" min="0" placeholder="Max Stock">
+                            <div class="col-lg-5">
+                                <div class="rounded-3 border p-3">
+                                    <div class="mb-2">
+                                        <label class="form-label small">Status</label>
+                                        <div class="input-group input-group-sm">
+                                            <span class="input-group-text"><i class="cil-check-circle"></i></span>
+                                            <select class="form-select" id="bulk_status" name="bulk_status">
+                                                <option value="">No Status Change</option>
+                                                <?php foreach ($item_statuses as $status): ?>
+                                                <option value="<?php echo htmlspecialchars($status); ?>"><?php echo htmlspecialchars($status); ?></option>
+                                                <?php endforeach; ?>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="row g-2">
+                                        <div class="col-6">
+                                            <label class="form-label small">Min Stock</label>
+                                            <div class="input-group input-group-sm">
+                                                <span class="input-group-text"><i class="cil-arrow-down"></i></span>
+                                                <input type="number" class="form-control" id="bulk_min_stock" name="bulk_min_stock" min="0" placeholder="Min Stock">
+                                            </div>
+                                        </div>
+                                        <div class="col-6">
+                                            <label class="form-label small">Max Stock</label>
+                                            <div class="input-group input-group-sm">
+                                                <span class="input-group-text"><i class="cil-arrow-up"></i></span>
+                                                <input type="number" class="form-control" id="bulk_max_stock" name="bulk_max_stock" min="0" placeholder="Max Stock">
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
