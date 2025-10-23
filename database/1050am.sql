@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Oct 22, 2025 at 08:05 PM
+-- Generation Time: Oct 23, 2025 at 04:50 AM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -270,7 +270,7 @@ INSERT INTO `guests` (`id`, `first_name`, `last_name`, `email`, `phone`, `addres
 (10, 'Olivia', 'Green', 'olivia.green@example.com', '8899001122', '707 Oak St', 'Tenth town', 'China', 'Passport', 'OG123456', '1993-04-28', 'Chinese', 'Sample guest data', 'Archived', 'Regular', 0, 0.00, '2025-10-20 21:41:31', '2025-10-20 21:42:04'),
 (11, 'Jason', 'Benemerito', 'jasonbenemerito@gmail.com', '09284213364', NULL, NULL, NULL, 'Driver License', '123123', '2025-10-21', NULL, NULL, 'Active', 'Regular', 0, 0.00, '2025-10-20 21:44:56', '2025-10-20 21:44:56'),
 (40, 'sdssd', 'asdsad', 'mikumokun27@gmail.com', NULL, NULL, NULL, NULL, 'National ID', '34234', '2025-10-22', NULL, NULL, 'Active', 'Regular', 0, 0.00, '2025-10-22 11:03:00', '2025-10-22 11:03:00'),
-(41, 'Jasonsdd', 'Benemeritosdss', 'jasonbenemerito@gmail.com', NULL, NULL, NULL, NULL, 'National ID', 'dsdasds', '2025-11-08', NULL, NULL, 'Active', 'Regular', 0, 0.00, '2025-10-22 17:30:28', '2025-10-22 17:30:28');
+(41, 'Jasons', 'Benemeritosdss', 'jasonbenemerito@gmail.com', NULL, NULL, NULL, NULL, 'National ID', 'dsdasds', '2025-11-08', NULL, NULL, 'Active', 'Regular', 0, 0.00, '2025-10-22 17:30:28', '2025-10-23 01:55:46');
 
 -- --------------------------------------------------------
 
@@ -430,7 +430,8 @@ CREATE TABLE `inventory_movements` (
 --
 
 INSERT INTO `inventory_movements` (`id`, `item_id`, `movement_type`, `quantity`, `reason`, `movement_date`, `user_id`, `reference_id`, `created_at`) VALUES
-(1, 1, 'OUT', 1, 'Stock adjustment', '2025-10-21 19:50:41', 1, 'ADJUSTMENT', '2025-10-21 19:50:41');
+(1, 1, 'OUT', 1, 'Stock adjustment', '2025-10-21 19:50:41', 1, 'ADJUSTMENT', '2025-10-21 19:50:41'),
+(2, 2, 'IN', 1, 'Stock adjustment', '2025-10-23 01:08:48', 1, 'ADJUSTMENT', '2025-10-23 01:08:48');
 
 -- --------------------------------------------------------
 
@@ -460,7 +461,8 @@ CREATE TABLE `items` (
 --
 
 INSERT INTO `items` (`id`, `item_name`, `item_description`, `item_category`, `unit_of_measure`, `current_stock`, `minimum_stock`, `maximum_stock`, `unit_cost`, `unit_price`, `supplier_id`, `item_status`, `created_at`, `updated_at`) VALUES
-(1, 'cat food', 'test!', 'Food & Beverage', 'kg', 4, 2, 10, 20.00, 25.00, 1, 'Active', '2025-10-21 19:50:20', '2025-10-21 19:50:41');
+(1, 'cat food', 'test!', 'Food & Beverage', 'kg', 4, 2, 10, 20.00, 25.00, 1, 'Active', '2025-10-21 19:50:20', '2025-10-21 19:50:41'),
+(2, 'dog foods', NULL, 'Food & Beverage', 'kg', 4, 2, 10, 100.00, 100.00, 1, 'Active', '2025-10-23 01:01:08', '2025-10-23 01:12:38');
 
 -- --------------------------------------------------------
 
@@ -527,7 +529,7 @@ CREATE TABLE `promotional_offers` (
 
 INSERT INTO `promotional_offers` (`id`, `code`, `name`, `description`, `offer_type`, `discount_value`, `discount_percentage`, `min_stay_nights`, `max_discount_amount`, `applicable_room_types`, `applicable_rate_plans`, `usage_limit`, `usage_count`, `valid_from`, `valid_until`, `is_active`, `created_at`, `updated_at`) VALUES
 (1, '343423', 'discount coupon 1', 'test', 'percentage_discount', NULL, 10.00, 1, NULL, 'Suite', NULL, 20, 0, '2025-10-23', '2025-10-29', 1, '2025-10-22 14:22:22', '2025-10-22 14:22:22'),
-(8, '343242', 'dasds', NULL, 'fixed_amount_discount', 600.00, NULL, 1, NULL, 'Double', NULL, NULL, 0, '2025-10-23', '2025-11-05', 1, '2025-10-22 14:25:18', '2025-10-22 14:25:18');
+(8, '3432423', 'dasds', NULL, 'fixed_amount_discount', 600.00, NULL, 1, NULL, 'Double', NULL, 10, 0, '2025-10-23', '2025-11-05', 0, '2025-10-22 14:25:18', '2025-10-23 00:57:11');
 
 -- --------------------------------------------------------
 
@@ -564,7 +566,9 @@ INSERT INTO `reservations` (`id`, `guest_id`, `room_id`, `reservation_type`, `re
 (17, 4, 9, 'Room', '2025-10-22 12:58:42', 16, '2025-10-23 18:58:00', '2025-10-24 10:58:00', 'Pending', '2025-10-22 10:58:42', '2025-10-22 10:58:42'),
 (18, 40, 10, 'Room', '2025-10-22 13:03:00', 8, '2025-10-22 13:03:00', '2025-10-22 21:03:00', 'Checked In', '2025-10-22 11:03:00', '2025-10-22 11:03:00'),
 (19, 4, 10, 'Room', '2025-10-22 19:14:55', 16, '2025-11-05 01:14:00', '2025-11-05 17:14:00', 'Pending', '2025-10-22 17:14:55', '2025-10-22 17:14:55'),
-(20, 41, 3, 'Room', '2025-10-22 19:30:28', 8, '2025-10-22 19:30:28', '2025-10-23 03:30:28', 'Checked In', '2025-10-22 17:30:28', '2025-10-22 17:30:28');
+(20, 41, 3, 'Room', '2025-10-22 19:30:28', 8, '2025-10-22 19:30:28', '2025-10-23 03:30:28', 'Checked In', '2025-10-22 17:30:28', '2025-10-22 17:30:28'),
+(21, 4, 2, 'Room', '2025-10-22 20:15:28', 16, '2025-10-24 02:15:00', '2025-10-24 18:15:00', 'Pending', '2025-10-22 18:15:28', '2025-10-22 18:15:28'),
+(22, 9, 2, 'Room', '2025-10-22 21:27:22', 16, '2025-10-23 03:27:00', '2025-10-23 19:27:00', 'Checked In', '2025-10-22 19:27:22', '2025-10-22 19:27:41');
 
 -- --------------------------------------------------------
 
@@ -593,7 +597,7 @@ CREATE TABLE `rooms` (
 
 INSERT INTO `rooms` (`id`, `room_number`, `room_type`, `room_floor`, `room_status`, `room_last_cleaned`, `room_maintenance_notes`, `room_created_at`, `room_updated_at`) VALUES
 (1, '101', 'Single', '1', 'Vacant', NULL, NULL, '2025-10-22 13:33:53', '2025-10-22 13:33:53'),
-(2, '102', 'Double', '1', 'Occupied', NULL, NULL, '2025-10-22 13:33:53', '2025-10-22 13:33:53'),
+(2, '102', 'Double', '2', 'Occupied', NULL, NULL, '2025-10-22 13:33:53', '2025-10-22 19:27:41'),
 (3, '103', 'Deluxe', '2', 'Occupied', '2025-10-22 13:41:54', NULL, '2025-10-22 13:33:53', '2025-10-22 17:30:28'),
 (4, '104', 'Suite', '2', 'Vacant', '2025-10-22 13:42:13', NULL, '2025-10-22 13:33:53', '2025-10-22 13:42:13'),
 (5, '105', 'Single', '3', 'Vacant', NULL, NULL, '2025-10-22 13:33:53', '2025-10-22 13:33:53'),
@@ -601,7 +605,7 @@ INSERT INTO `rooms` (`id`, `room_number`, `room_type`, `room_floor`, `room_statu
 (7, '202', 'Double', '2', 'Occupied', NULL, NULL, '2025-10-22 13:33:53', '2025-10-22 13:33:53'),
 (8, '203', 'Deluxe', '2', 'Cleaning', NULL, NULL, '2025-10-22 13:33:53', '2025-10-22 13:42:19'),
 (9, '204', 'Suite', '2', 'Maintenance', NULL, NULL, '2025-10-22 13:33:53', '2025-10-22 13:33:53'),
-(10, '205', 'Single', '2', '', NULL, NULL, '2025-10-22 13:33:53', '2025-10-22 17:14:55'),
+(10, '205', 'Single', '2', 'Vacant', NULL, NULL, '2025-10-22 13:33:53', '2025-10-22 19:12:28'),
 (11, '301', 'Single', '3', 'Vacant', NULL, NULL, '2025-10-22 13:33:53', '2025-10-22 13:33:53'),
 (12, '302', 'Double', '3', 'Occupied', NULL, NULL, '2025-10-22 13:33:53', '2025-10-22 13:33:53'),
 (13, '303', 'Deluxe', '3', 'Maintenance', NULL, NULL, '2025-10-22 13:33:53', '2025-10-22 13:33:53'),
@@ -616,7 +620,12 @@ INSERT INTO `rooms` (`id`, `room_number`, `room_type`, `room_floor`, `room_statu
 (22, '502', 'Double', '5', 'Occupied', NULL, NULL, '2025-10-22 13:33:53', '2025-10-22 13:33:53'),
 (23, '503', 'Deluxe', '5', 'Maintenance', NULL, NULL, '2025-10-22 13:33:53', '2025-10-22 13:33:53'),
 (24, '504', 'Suite', '5', 'Maintenance', NULL, NULL, '2025-10-22 13:33:53', '2025-10-22 13:33:53'),
-(25, '505', 'Single', '5', 'Vacant', NULL, NULL, '2025-10-22 13:33:53', '2025-10-22 13:33:53');
+(25, '505', 'Single', '5', 'Vacant', NULL, NULL, '2025-10-22 13:33:53', '2025-10-22 13:33:53'),
+(52, '78', 'Deluxe', '2', 'Vacant', NULL, NULL, '2025-10-22 18:55:06', '2025-10-22 18:55:06'),
+(53, '79', 'Single', '1', 'Vacant', NULL, NULL, '2025-10-22 18:56:13', '2025-10-22 19:10:33'),
+(54, '77', 'Single', '1', 'Vacant', NULL, NULL, '2025-10-22 18:56:14', '2025-10-22 18:58:01'),
+(55, '76', 'Double', '3', 'Vacant', NULL, NULL, '2025-10-22 18:58:13', '2025-10-22 18:58:13'),
+(56, '3', 'Single', '1', 'Vacant', NULL, 'test', '2025-10-22 19:12:45', '2025-10-23 00:26:10');
 
 -- --------------------------------------------------------
 
@@ -647,7 +656,12 @@ INSERT INTO `room_billing` (`id`, `transaction_type`, `reservation_id`, `room_id
 (1, 'Room Charge', 19, 10, 4000.00, 3000.00, 'Cash', 'Paid', '2025-10-22 17:38:24', 'test invoice', '2025-10-22 17:38:24', '2025-10-22 17:38:24'),
 (2, 'Room Charge', 20, 3, 4000.00, 3500.00, 'Cash', 'Paid', '2025-10-22 17:40:46', NULL, '2025-10-22 17:40:46', '2025-10-22 17:40:46'),
 (3, 'Room Charge', 7, 1, 2000.00, 1500.00, 'Cash', 'Paid', '2025-10-22 17:45:48', NULL, '2025-10-22 17:45:48', '2025-10-22 17:45:48'),
-(4, 'Room Charge', 12, 12, 6000.00, 5000.00, 'Cash', 'Paid', '2025-10-22 17:46:18', NULL, '2025-10-22 17:46:18', '2025-10-22 17:46:18');
+(4, 'Room Charge', 12, 12, 6000.00, 5000.00, 'Cash', 'Paid', '2025-10-22 17:46:18', NULL, '2025-10-22 17:46:18', '2025-10-22 17:46:18'),
+(5, 'Room Charge', 22, 2, 5500.00, 5000.00, 'Card', 'Paid', '2025-10-22 19:32:39', 'test', '2025-10-22 19:32:39', '2025-10-22 19:32:39'),
+(6, 'Room Charge', 22, 2, 5500.00, 5000.00, 'Card', 'Paid', '2025-10-22 19:32:41', 'test', '2025-10-22 19:32:41', '2025-10-22 19:32:41'),
+(7, 'Room Charge', 15, 1, 2000.00, 1500.00, 'Cash', 'Paid', '2025-10-22 19:33:33', NULL, '2025-10-22 19:33:33', '2025-10-22 19:33:33'),
+(11, 'Room Charge', 21, 2, 6000.00, 5000.00, 'Cash', 'Paid', '2025-10-23 00:31:27', NULL, '2025-10-23 00:31:27', '2025-10-23 00:31:27'),
+(12, 'Room Charge', 18, 10, 1500.00, 1500.00, 'Cash', 'Paid', '2025-10-23 00:43:06', NULL, '2025-10-23 00:43:06', '2025-10-23 00:43:06');
 
 -- --------------------------------------------------------
 
@@ -961,13 +975,13 @@ ALTER TABLE `housekeeping_supplies`
 -- AUTO_INCREMENT for table `inventory_movements`
 --
 ALTER TABLE `inventory_movements`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT for table `items`
 --
 ALTER TABLE `items`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT for table `marketing_campaigns`
@@ -985,19 +999,19 @@ ALTER TABLE `promotional_offers`
 -- AUTO_INCREMENT for table `reservations`
 --
 ALTER TABLE `reservations`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=21;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=23;
 
 --
 -- AUTO_INCREMENT for table `rooms`
 --
 ALTER TABLE `rooms`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=26;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=57;
 
 --
 -- AUTO_INCREMENT for table `room_billing`
 --
 ALTER TABLE `room_billing`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=13;
 
 --
 -- AUTO_INCREMENT for table `suppliers`

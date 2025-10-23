@@ -71,3 +71,27 @@ CREATE TABLE IF NOT EXISTS campaign_performance (
     INDEX idx_performance_date (performance_date),
     UNIQUE KEY unique_campaign_date (campaign_id, performance_date)
 );
+
+-- Sample Data for Marketing Campaigns
+INSERT INTO marketing_campaigns (name, description, campaign_type, target_audience, start_date, end_date, budget, status, leads_generated, conversions, revenue_generated, roi_percentage, created_by) VALUES
+('Summer Staycation Promo', 'Promote hotel stays for local families during summer break', 'promotion', 'Local families, young professionals', '2024-04-01', '2024-05-31', 50000.00, 'completed', 150, 45, 225000.00, 350.00, 1),
+('Loyalty Program Launch', 'Introduce new loyalty program for repeat guests', 'loyalty', 'Existing guests, frequent travelers', '2024-02-01', '2024-12-31', 25000.00, 'active', 200, 80, 160000.00, 540.00, 1),
+('Holiday Season Special', 'Special rates and packages for holiday season', 'seasonal', 'Families, couples, business travelers', '2024-11-01', '2024-12-31', 75000.00, 'active', 300, 120, 480000.00, 540.00, 1);
+
+-- Sample Data for Promotional Offers
+INSERT INTO promotional_offers (code, name, description, offer_type, discount_value, discount_percentage, min_stay_nights, max_discount_amount, applicable_room_types, usage_limit, usage_count, valid_from, valid_until, is_active) VALUES
+('SUMMER20', 'Summer Discount 20%', '20% off on all room bookings during summer', 'percentage_discount', NULL, 20.00, 2, 5000.00, 'Single,Double,Deluxe,Suite', 100, 67, '2024-04-01', '2024-05-31', 0),
+('LOYALTY15', 'Loyalty Member Discount', '15% off for loyalty program members', 'percentage_discount', NULL, 15.00, 1, 3000.00, 'Single,Double,Deluxe,Suite', NULL, 45, '2024-02-01', '2024-12-31', 1),
+('HOLIDAY25', 'Holiday Special 25%', '25% off on deluxe and suite rooms during holidays', 'percentage_discount', NULL, 25.00, 3, 10000.00, 'Deluxe,Suite', 50, 23, '2024-11-01', '2024-12-31', 1);
+
+-- Sample Data for Campaign Performance
+INSERT INTO campaign_performance (campaign_id, performance_date, impressions, clicks, leads, conversions, revenue, spend) VALUES
+(1, '2024-04-15', 5000, 250, 50, 15, 75000.00, 5000.00),
+(1, '2024-04-30', 7500, 375, 75, 22, 110000.00, 7500.00),
+(1, '2024-05-15', 6000, 300, 60, 18, 90000.00, 6000.00),
+(2, '2024-03-15', 3000, 150, 30, 12, 48000.00, 2500.00),
+(2, '2024-06-15', 4000, 200, 40, 16, 64000.00, 3000.00),
+(2, '2024-09-15', 4500, 225, 45, 18, 72000.00, 3500.00),
+(3, '2024-11-15', 8000, 400, 80, 32, 128000.00, 8000.00),
+(3, '2024-12-01', 10000, 500, 100, 40, 160000.00, 10000.00),
+(3, '2024-12-15', 12000, 600, 120, 48, 192000.00, 12000.00);

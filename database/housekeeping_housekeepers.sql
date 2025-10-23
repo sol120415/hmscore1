@@ -131,6 +131,14 @@ INSERT INTO housekeeping_supplies (supply_name, category, current_stock, unit_of
 ('Laundry Detergent', 'Cleaning', 2.5, 'kg', 10, 'CleanCo Supplies', 18.50, 'Professional laundry detergent'),
 ('Out of Stock Item', 'Equipment', 0, 'pieces', 5, 'Test Supplier', 50.00, 'This item is out of stock for testing');
 
+-- Insert sample housekeepers
+INSERT INTO housekeepers (first_name, last_name, employee_id, phone, email, hire_date, status, specialty, shift_preference, max_rooms_per_day, notes) VALUES
+('Maria', 'Rodriguez', 'HK001', '+639123456789', 'maria.rodriguez@hotel.com', '2023-01-15', 'Active', 'General Cleaning', 'Morning', 12, 'Experienced housekeeper with 5 years of service'),
+('Carlos', 'Santos', 'HK002', '+639234567890', 'carlos.santos@hotel.com', '2023-03-20', 'Active', 'Deep Cleaning', 'Afternoon', 10, 'Specializes in deep cleaning and maintenance'),
+('Elena', 'Garcia', 'HK003', '+639345678901', 'elena.garcia@hotel.com', '2023-05-10', 'Active', 'Maintenance', 'Flexible', 8, 'Handles maintenance tasks and repairs'),
+('Antonio', 'Lopez', 'HK004', '+639456789012', 'antonio.lopez@hotel.com', '2023-07-05', 'Active', 'General Cleaning', 'Evening', 12, 'Reliable evening shift housekeeper'),
+('Rosa', 'Martinez', 'HK005', '+639567890123', 'rosa.martinez@hotel.com', '2023-09-12', 'Active', 'Inspection', 'Morning', 15, 'Focuses on room inspections and quality control');
+
 -- Insert sample housekeeping tasks (UPDATED to use actual room IDs)
 INSERT INTO housekeeping (room_id, housekeeper_id, task_type, priority, scheduled_date, scheduled_time, estimated_duration_minutes, created_by) VALUES
 (3, 1, 'Regular Cleaning', 'Normal', CURDATE(), '09:00:00', 45, 1),  -- Room 103 (Cleaning status)
