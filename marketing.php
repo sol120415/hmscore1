@@ -720,283 +720,279 @@ foreach ($campaignAgg as $r) {
 
     <!-- Campaign Modal -->
     <div class="modal fade" id="campaignModal" tabindex="-1">
-        <div class="modal-dialog modal-lg">
+        <div class="modal-dialog" style="max-width: 50vw;">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="campaignModalTitle">Add Campaign</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
-                <div class="modal-body">
-                    <form id="campaignForm">
-                        <input type="hidden" name="action" id="campaignFormAction" value="create_campaign">
-                        <input type="hidden" name="id" id="campaignId">
-
-                        <div class="row">
-                            <div class="col-md-8 mb-3">
-                                <label for="campaign_name" class="form-label">Campaign Name *</label>
-                                <input type="text" class="form-control" id="campaign_name" name="name" required>
+                <form id="campaignForm">
+                    <input type="hidden" name="action" id="campaignFormAction" value="create_campaign">
+                    <input type="hidden" name="id" id="campaignId">
+                    <div class="modal-body">
+                        <div class="row g-3 align-items-start">
+                            <div class="col-lg-7">
+                                <div class="rounded-3 border p-3">
+                                    <div class="mb-2">
+                                        <label for="campaign_name" class="form-label small">Campaign Name *</label>
+                                        <input type="text" class="form-control form-control-sm" id="campaign_name" name="name" required>
+                                    </div>
+                                    <div class="mb-2">
+                                        <label for="description" class="form-label small">Description</label>
+                                        <textarea class="form-control form-control-sm" id="description" name="description" rows="3"></textarea>
+                                    </div>
+                                    <div class="mb-2">
+                                        <label for="target_audience" class="form-label small">Target Audience</label>
+                                        <textarea class="form-control form-control-sm" id="target_audience" name="target_audience" rows="2"></textarea>
+                                    </div>
+                                </div>
                             </div>
-                            <div class="col-md-4 mb-3">
-                                <label for="campaign_type" class="form-label">Type *</label>
-                                <select class="form-select" id="campaign_type" name="campaign_type" required>
-                                    <option value="email">Email</option>
-                                    <option value="social_media">Social Media</option>
-                                    <option value="advertising">Advertising</option>
-                                    <option value="promotion">Promotion</option>
-                                    <option value="loyalty">Loyalty</option>
-                                    <option value="seasonal">Seasonal</option>
-                                </select>
+                            <div class="col-lg-5">
+                                <div class="rounded-3 border p-3">
+                                    <div class="mb-2">
+                                        <label for="campaign_type" class="form-label small">Type *</label>
+                                        <select class="form-select form-select-sm" id="campaign_type" name="campaign_type" required>
+                                            <option value="email">Email</option>
+                                            <option value="social_media">Social Media</option>
+                                            <option value="advertising">Advertising</option>
+                                            <option value="promotion">Promotion</option>
+                                            <option value="loyalty">Loyalty</option>
+                                            <option value="seasonal">Seasonal</option>
+                                        </select>
+                                    </div>
+                                    <div class="row g-2 mb-2">
+                                        <div class="col-6">
+                                            <label for="start_date" class="form-label small">Start Date *</label>
+                                            <input type="date" class="form-control form-control-sm" id="start_date" name="start_date" required>
+                                        </div>
+                                        <div class="col-6">
+                                            <label for="end_date" class="form-label small">End Date</label>
+                                            <input type="date" class="form-control form-control-sm" id="end_date" name="end_date">
+                                        </div>
+                                    </div>
+                                    <div class="row g-2 mb-2">
+                                        <div class="col-6">
+                                            <label for="budget" class="form-label small">Budget</label>
+                                            <input type="number" class="form-control form-control-sm" id="budget" name="budget" min="0" step="0.01">
+                                        </div>
+                                        <div class="col-6">
+                                            <label for="campaign_status" class="form-label small">Status *</label>
+                                            <select class="form-select form-select-sm" id="campaign_status" name="status" required>
+                                                <option value="draft">Draft</option>
+                                                <option value="active">Active</option>
+                                                <option value="paused">Paused</option>
+                                                <option value="completed">Completed</option>
+                                                <option value="cancelled">Cancelled</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="row g-2">
+                                        <div class="col-6">
+                                            <label for="leads_generated" class="form-label small">Leads</label>
+                                            <input type="number" class="form-control form-control-sm" id="leads_generated" name="leads_generated" min="0" value="0">
+                                        </div>
+                                        <div class="col-6">
+                                            <label for="conversions" class="form-label small">Conversions</label>
+                                            <input type="number" class="form-control form-control-sm" id="conversions" name="conversions" min="0" value="0">
+                                        </div>
+                                        <div class="col-6">
+                                            <label for="revenue_generated" class="form-label small">Revenue (₱)</label>
+                                            <input type="number" class="form-control form-control-sm" id="revenue_generated" name="revenue_generated" min="0" step="0.01" value="0">
+                                        </div>
+                                        <div class="col-6">
+                                            <label for="roi_percentage" class="form-label small">ROI (%)</label>
+                                            <input type="number" class="form-control form-control-sm" id="roi_percentage" name="roi_percentage" min="0" step="0.01">
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
-
-                        <div class="mb-3">
-                            <label for="description" class="form-label">Description</label>
-                            <textarea class="form-control" id="description" name="description" rows="3"></textarea>
-                        </div>
-
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label for="start_date" class="form-label">Start Date *</label>
-                                <input type="date" class="form-control" id="start_date" name="start_date" required>
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label for="end_date" class="form-label">End Date</label>
-                                <input type="date" class="form-control" id="end_date" name="end_date">
-                            </div>
-                        </div>
-
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label for="budget" class="form-label">Budget</label>
-                                <input type="number" class="form-control" id="budget" name="budget" min="0" step="0.01">
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label for="status" class="form-label">Status *</label>
-                                <select class="form-select" id="campaign_status" name="status" required>
-                                    <option value="draft">Draft</option>
-                                    <option value="active">Active</option>
-                                    <option value="paused">Paused</option>
-                                    <option value="completed">Completed</option>
-                                    <option value="cancelled">Cancelled</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        <div class="row">
-                            <div class="col-md-3 mb-3">
-                                <label for="leads_generated" class="form-label">Leads Generated</label>
-                                <input type="number" class="form-control" id="leads_generated" name="leads_generated" min="0" value="0">
-                            </div>
-                            <div class="col-md-3 mb-3">
-                                <label for="conversions" class="form-label">Conversions</label>
-                                <input type="number" class="form-control" id="conversions" name="conversions" min="0" value="0">
-                            </div>
-                            <div class="col-md-3 mb-3">
-                                <label for="revenue_generated" class="form-label">Revenue Generated (₱)</label>
-                                <input type="number" class="form-control" id="revenue_generated" name="revenue_generated" min="0" step="0.01" value="0">
-                            </div>
-                            <div class="col-md-3 mb-3">
-                                <label for="roi_percentage" class="form-label">ROI (%)</label>
-                                <input type="number" class="form-control" id="roi_percentage" name="roi_percentage" min="0" step="0.01">
-                            </div>
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="target_audience" class="form-label">Target Audience</label>
-                            <textarea class="form-control" id="target_audience" name="target_audience" rows="2"></textarea>
-                        </div>
-                    </form>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-primary" onclick="submitCampaignForm()">Save</button>
-                </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-primary" onclick="submitCampaignForm()">Save</button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
 
     <!-- Offer Modal -->
     <div class="modal fade" id="offerModal" tabindex="-1">
-        <div class="modal-dialog modal-xl">
+        <div class="modal-dialog" style="max-width: 50vw;">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="offerModalTitle">Add Promotional Offer</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
-                <div class="modal-body">
-                    <form id="offerForm">
-                        <input type="hidden" name="action" id="offerFormAction" value="create_offer">
-                        <input type="hidden" name="id" id="offerId">
-
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label for="offer_code" class="form-label">Offer Code *</label>
-                                <input type="text" class="form-control" id="offer_code" name="code" required placeholder="e.g., SAVE20, WELCOME10">
-                                <small class="form-text text-muted">Unique code customers will enter to apply this offer</small>
+                <form id="offerForm">
+                    <input type="hidden" name="action" id="offerFormAction" value="create_offer">
+                    <input type="hidden" name="id" id="offerId">
+                    <div class="modal-body">
+                        <div class="row g-3 align-items-start">
+                            <div class="col-lg-7">
+                                <div class="rounded-3 border p-3">
+                                    <div class="row g-2 mb-2">
+                                        <div class="col-6">
+                                            <label for="offer_code" class="form-label small">Offer Code *</label>
+                                            <input type="text" class="form-control form-control-sm" id="offer_code" name="code" required placeholder="e.g., SAVE20, WELCOME10">
+                                        </div>
+                                        <div class="col-6">
+                                            <label for="offer_name" class="form-label small">Offer Name *</label>
+                                            <input type="text" class="form-control form-control-sm" id="offer_name" name="name" required placeholder="e.g., 20% Off Weekend Stay">
+                                        </div>
+                                    </div>
+                                    <div class="mb-2">
+                                        <label for="offer_description" class="form-label small">Offer Description</label>
+                                        <textarea class="form-control form-control-sm" id="offer_description" name="description" rows="4" placeholder="Describe terms and conditions"></textarea>
+                                    </div>
+                                    <div class="mb-2">
+                                        <label for="applicable_room_types" class="form-label small">Applicable Room Types</label>
+                                        <select class="form-select form-select-sm" id="applicable_room_types" name="applicable_room_types" multiple>
+                                            <option value="Single">Single</option>
+                                            <option value="Double">Double</option>
+                                            <option value="Deluxe">Deluxe</option>
+                                            <option value="Suite">Suite</option>
+                                        </select>
+                                    </div>
+                                </div>
                             </div>
-                            <div class="col-md-6 mb-3">
-                                <label for="offer_name" class="form-label">Offer Name *</label>
-                                <input type="text" class="form-control" id="offer_name" name="name" required placeholder="e.g., 20% Off Weekend Stay">
-                                <small class="form-text text-muted">Descriptive name for this promotional offer</small>
-                            </div>
-                        </div>
-
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label for="offer_type" class="form-label">Offer Type *</label>
-                                <select class="form-select" id="offer_type" name="offer_type" required onchange="toggleDiscountFields()">
-                                    <option value="">Select Offer Type</option>
-                                    <option value="percentage_discount">Percentage Discount</option>
-                                    <option value="fixed_amount_discount">Fixed Amount Discount</option>
-                                    <option value="free_nights">Free Nights</option>
-                                    <option value="upgrade">Room Upgrade</option>
-                                    <option value="package_deal">Package Deal</option>
-                                </select>
-                                <small class="form-text text-muted">Type of discount or benefit this offer provides</small>
-                            </div>
-                            <div class="col-md-3 mb-3">
-                                <label for="usage_limit" class="form-label">Usage Limit</label>
-                                <input type="number" class="form-control" id="usage_limit" name="usage_limit" min="1" placeholder="100">
-                                <small class="form-text text-muted">Maximum times this offer can be used (leave empty for unlimited)</small>
-                            </div>
-                            <div class="col-md-3 mb-3">
-                                <label for="usage_count" class="form-label">Current Usage</label>
-                                <input type="number" class="form-control" id="usage_count" name="usage_count" min="0" value="0" readonly>
-                                <small class="form-text text-muted">How many times this offer has been redeemed</small>
-                            </div>
-                        </div>
-
-                        <div class="row" id="discountFields" style="display: none;">
-                            <div class="col-md-6 mb-3" id="percentageField" style="display: none;">
-                                <label for="discount_percentage" class="form-label">Discount Percentage (%)</label>
-                                <input type="number" class="form-control" id="discount_percentage" name="discount_percentage" min="0" max="100" step="0.01" placeholder="20">
-                                <small class="form-text text-muted">Percentage discount (e.g., 20 for 20% off)</small>
-                            </div>
-                            <div class="col-md-6 mb-3" id="fixedAmountField" style="display: none;">
-                                <label for="discount_value" class="form-label">Discount Amount (₱)</label>
-                                <input type="number" class="form-control" id="discount_value" name="discount_value" min="0" step="0.01" placeholder="50.00">
-                                <small class="form-text text-muted">Fixed dollar amount discount (e.g., $50 off)</small>
-                            </div>
-                        </div>
-
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label for="valid_from" class="form-label">Valid From *</label>
-                                <input type="date" class="form-control" id="valid_from" name="valid_from" required>
-                                <small class="form-text text-muted">Date when this offer becomes active</small>
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label for="valid_until" class="form-label">Valid Until *</label>
-                                <input type="date" class="form-control" id="valid_until" name="valid_until" required>
-                                <small class="form-text text-muted">Date when this offer expires</small>
-                            </div>
-                        </div>
-
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label for="min_stay_nights" class="form-label">Minimum Stay Nights</label>
-                                <input type="number" class="form-control" id="min_stay_nights" name="min_stay_nights" min="1" value="1" placeholder="1">
-                                <small class="form-text text-muted">Minimum number of nights required to use this offer</small>
-                            </div>
-                            <div class="col-md-6 mb-3" id="maxDiscountField" style="display: none;">
-                                <label for="max_discount_amount" class="form-label">Maximum Discount Amount (₱)</label>
-                                <input type="number" class="form-control" id="max_discount_amount" name="max_discount_amount" min="0" step="0.01" placeholder="100.00">
-                                <small class="form-text text-muted">Maximum discount amount (for percentage discounts)</small>
-                            </div>
-                        </div>
-
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label for="applicable_room_types" class="form-label">Applicable Room Types</label>
-                                <select class="form-select" id="applicable_room_types" name="applicable_room_types" multiple>
-                                    <option value="Single">Single</option>
-                                    <option value="Double">Double</option>
-                                    <option value="Deluxe">Deluxe</option>
-                                    <option value="Suite">Suite</option>
-                                </select>
-                                <small class="form-text text-muted">Select room types this offer applies to (leave empty for all)</small>
+                            <div class="col-lg-5">
+                                <div class="rounded-3 border p-3">
+                                    <div class="mb-2">
+                                        <label for="offer_type" class="form-label small">Offer Type *</label>
+                                        <select class="form-select form-select-sm" id="offer_type" name="offer_type" required onchange="toggleDiscountFields()">
+                                            <option value="">Select Offer Type</option>
+                                            <option value="percentage_discount">Percentage Discount</option>
+                                            <option value="fixed_amount_discount">Fixed Amount Discount</option>
+                                            <option value="free_nights">Free Nights</option>
+                                            <option value="upgrade">Room Upgrade</option>
+                                            <option value="package_deal">Package Deal</option>
+                                        </select>
+                                    </div>
+                                    <div class="row g-2 mb-2" id="discountFields" style="display: none;">
+                                        <div class="col-12" id="percentageField" style="display: none;">
+                                            <label for="discount_percentage" class="form-label small">Discount Percentage (%)</label>
+                                            <input type="number" class="form-control form-control-sm" id="discount_percentage" name="discount_percentage" min="0" max="100" step="0.01" placeholder="20">
+                                        </div>
+                                        <div class="col-12" id="fixedAmountField" style="display: none;">
+                                            <label for="discount_value" class="form-label small">Discount Amount (₱)</label>
+                                            <input type="number" class="form-control form-control-sm" id="discount_value" name="discount_value" min="0" step="0.01" placeholder="50.00">
+                                        </div>
+                                    </div>
+                                    <div class="row g-2 mb-2">
+                                        <div class="col-6">
+                                            <label for="valid_from" class="form-label small">Valid From *</label>
+                                            <input type="date" class="form-control form-control-sm" id="valid_from" name="valid_from" required>
+                                        </div>
+                                        <div class="col-6">
+                                            <label for="valid_until" class="form-label small">Valid Until *</label>
+                                            <input type="date" class="form-control form-control-sm" id="valid_until" name="valid_until" required>
+                                        </div>
+                                    </div>
+                                    <div class="row g-2 mb-2">
+                                        <div class="col-6">
+                                            <label for="usage_limit" class="form-label small">Usage Limit</label>
+                                            <input type="number" class="form-control form-control-sm" id="usage_limit" name="usage_limit" min="1" placeholder="100">
+                                        </div>
+                                        <div class="col-6">
+                                            <label for="usage_count" class="form-label small">Current Usage</label>
+                                            <input type="number" class="form-control form-control-sm" id="usage_count" name="usage_count" min="0" value="0" readonly>
+                                        </div>
+                                    </div>
+                                    <div class="row g-2">
+                                        <div class="col-6">
+                                            <label for="min_stay_nights" class="form-label small">Minimum Stay Nights</label>
+                                            <input type="number" class="form-control form-control-sm" id="min_stay_nights" name="min_stay_nights" min="1" value="1" placeholder="1">
+                                        </div>
+                                        <div class="col-6" id="maxDiscountField" style="display: none;">
+                                            <label for="max_discount_amount" class="form-label small">Maximum Discount (₱)</label>
+                                            <input type="number" class="form-control form-control-sm" id="max_discount_amount" name="max_discount_amount" min="0" step="0.01" placeholder="100.00">
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
-
-                        <div class="mb-3">
-                            <label for="offer_description" class="form-label">Offer Description</label>
-                            <textarea class="form-control" id="offer_description" name="description" rows="3" placeholder="Describe the terms and conditions of this promotional offer"></textarea>
-                            <small class="form-text text-muted">Detailed description of the offer terms, conditions, and any restrictions</small>
-                        </div>
-                    </form>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" onclick="resetOfferModal()">Cancel</button>
-                    <button type="button" class="btn btn-primary" onclick="submitOfferForm()">Save Offer</button>
-                </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" onclick="resetOfferModal()">Cancel</button>
+                        <button type="button" class="btn btn-primary" onclick="submitOfferForm()">Save Offer</button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
 
     <!-- Performance Modal -->
     <div class="modal fade" id="performanceModal" tabindex="-1">
-        <div class="modal-dialog modal-lg">
+        <div class="modal-dialog" style="max-width: 50vw;">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title">Add Performance Data</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
-                <div class="modal-body">
-                    <form id="performanceForm">
-                        <input type="hidden" name="action" value="add_performance">
-
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label for="campaign_id" class="form-label">Campaign *</label>
-                                <select class="form-select" id="campaign_id" name="campaign_id" required>
-                                    <option value="">Select Campaign</option>
-                                    <?php foreach ($campaigns as $campaign): ?>
-                                    <option value="<?php echo $campaign['id']; ?>"><?php echo htmlspecialchars($campaign['name']); ?></option>
-                                    <?php endforeach; ?>
-                                </select>
+                <form id="performanceForm">
+                    <input type="hidden" name="action" value="add_performance">
+                    <div class="modal-body">
+                        <div class="row g-3 align-items-start">
+                            <div class="col-lg-7">
+                                <div class="rounded-3 border p-3">
+                                    <div class="mb-2">
+                                        <label for="campaign_id" class="form-label small">Campaign *</label>
+                                        <select class="form-select form-select-sm" id="campaign_id" name="campaign_id" required>
+                                            <option value="">Select Campaign</option>
+                                            <?php foreach ($campaigns as $campaign): ?>
+                                            <option value="<?php echo $campaign['id']; ?>"><?php echo htmlspecialchars($campaign['name']); ?></option>
+                                            <?php endforeach; ?>
+                                        </select>
+                                    </div>
+                                    <div class="mb-2">
+                                        <label for="performance_date" class="form-label small">Date *</label>
+                                        <input type="date" class="form-control form-control-sm" id="performance_date" name="performance_date" required>
+                                    </div>
+                                </div>
                             </div>
-                            <div class="col-md-6 mb-3">
-                                <label for="performance_date" class="form-label">Date *</label>
-                                <input type="date" class="form-control" id="performance_date" name="performance_date" required>
+                            <div class="col-lg-5">
+                                <div class="rounded-3 border p-3">
+                                    <div class="row g-2 mb-2">
+                                        <div class="col-6">
+                                            <label for="impressions" class="form-label small">Impressions</label>
+                                            <input type="number" class="form-control form-control-sm" id="impressions" name="impressions" min="0">
+                                        </div>
+                                        <div class="col-6">
+                                            <label for="clicks" class="form-label small">Clicks</label>
+                                            <input type="number" class="form-control form-control-sm" id="clicks" name="clicks" min="0">
+                                        </div>
+                                    </div>
+                                    <div class="row g-2 mb-2">
+                                        <div class="col-6">
+                                            <label for="leads" class="form-label small">Leads</label>
+                                            <input type="number" class="form-control form-control-sm" id="leads" name="leads" min="0">
+                                        </div>
+                                        <div class="col-6">
+                                            <label for="conversions" class="form-label small">Conversions</label>
+                                            <input type="number" class="form-control form-control-sm" id="conversions" name="conversions" min="0">
+                                        </div>
+                                    </div>
+                                    <div class="row g-2">
+                                        <div class="col-6">
+                                            <label for="revenue" class="form-label small">Revenue (₱)</label>
+                                            <input type="number" class="form-control form-control-sm" id="revenue" name="revenue" min="0" step="0.01">
+                                        </div>
+                                        <div class="col-6">
+                                            <label for="spend" class="form-label small">Spend (₱)</label>
+                                            <input type="number" class="form-control form-control-sm" id="spend" name="spend" min="0" step="0.01">
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
-
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label for="impressions" class="form-label">Impressions</label>
-                                <input type="number" class="form-control" id="impressions" name="impressions" min="0">
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label for="clicks" class="form-label">Clicks</label>
-                                <input type="number" class="form-control" id="clicks" name="clicks" min="0">
-                            </div>
-                        </div>
-
-                        <div class="row">
-                            <div class="col-md-4 mb-3">
-                                <label for="leads" class="form-label">Leads</label>
-                                <input type="number" class="form-control" id="leads" name="leads" min="0">
-                            </div>
-                            <div class="col-md-4 mb-3">
-                                <label for="conversions" class="form-label">Conversions</label>
-                                <input type="number" class="form-control" id="conversions" name="conversions" min="0">
-                            </div>
-                            <div class="col-md-4 mb-3">
-                                <label for="revenue" class="form-label">Revenue (₱)</label>
-                                <input type="number" class="form-control" id="revenue" name="revenue" min="0" step="0.01">
-                            </div>
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="spend" class="form-label">Spend (₱)</label>
-                            <input type="number" class="form-control" id="spend" name="spend" min="0" step="0.01">
-                        </div>
-                    </form>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-primary" onclick="submitPerformanceForm()">Add Data</button>
-                </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-primary" onclick="submitPerformanceForm()">Add Data</button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>

@@ -286,81 +286,79 @@ $recentBookings = $conn->query("
 
     <!-- Channel Modal -->
     <div class="modal fade" id="channelModal" tabindex="-1">
-        <div class="modal-dialog modal-lg">
+        <div class="modal-dialog" style="max-width: 50vw;">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="modalTitle">Add Channel</h5>
                     <button type="button" class="btn-close" data-coreui-dismiss="modal"></button>
                 </div>
-                <div class="modal-body">
-                    <form id="channelForm">
-                        <input type="hidden" name="action" id="formAction" value="create">
-                        <input type="hidden" name="id" id="channelId">
-
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label for="channel_name" class="form-label">Channel Name *</label>
-                                <input type="text" class="form-control" id="channel_name" name="channel_name" required>
+                <form id="channelForm">
+                    <input type="hidden" name="action" id="formAction" value="create">
+                    <input type="hidden" name="id" id="channelId">
+                    <div class="modal-body">
+                        <div class="row g-3 align-items-start">
+                            <div class="col-lg-7">
+                                <div class="rounded-3 border p-3">
+                                    <div class="mb-2">
+                                        <label for="channel_name" class="form-label small">Channel Name *</label>
+                                        <input type="text" class="form-control form-control-sm" id="channel_name" name="channel_name" required>
+                                    </div>
+                                    <div class="mb-2">
+                                        <label for="contact_email" class="form-label small">Contact Email</label>
+                                        <input type="email" class="form-control form-control-sm" id="contact_email" name="contact_email">
+                                    </div>
+                                    <div class="mb-2">
+                                        <label for="base_url" class="form-label small">Base URL</label>
+                                        <input type="url" class="form-control form-control-sm" id="base_url" name="base_url">
+                                    </div>
+                                    <div class="mb-2">
+                                        <label for="api_key" class="form-label small">API Key</label>
+                                        <input type="text" class="form-control form-control-sm" id="api_key" name="api_key">
+                                    </div>
+                                </div>
                             </div>
-                            <div class="col-md-6 mb-3">
-                                <label for="channel_type" class="form-label">Channel Type *</label>
-                                <select class="form-select" id="channel_type" name="channel_type" required>
-                                    <option value="OTA">OTA</option>
-                                    <option value="Direct">Direct</option>
-                                    <option value="GDS">GDS</option>
-                                    <option value="Wholesale">Wholesale</option>
-                                    <option value="Corporate">Corporate</option>
-                                </select>
+                            <div class="col-lg-5">
+                                <div class="rounded-3 border p-3">
+                                    <div class="mb-2">
+                                        <label for="channel_type" class="form-label small">Channel Type *</label>
+                                        <select class="form-select form-select-sm" id="channel_type" name="channel_type" required>
+                                            <option value="OTA">OTA</option>
+                                            <option value="Direct">Direct</option>
+                                            <option value="GDS">GDS</option>
+                                            <option value="Wholesale">Wholesale</option>
+                                            <option value="Corporate">Corporate</option>
+                                        </select>
+                                    </div>
+                                    <div class="mb-2">
+                                        <label for="contact_phone" class="form-label small">Contact Phone</label>
+                                        <input type="tel" class="form-control form-control-sm" id="contact_phone" name="contact_phone" inputmode="numeric" maxlength="11" oninput="this.value=this.value.replace(/\\D/g,'').slice(0,11)" onkeypress="return /[0-9]/.test(event.key)">
+                                    </div>
+                                    <div class="mb-2">
+                                        <label for="status" class="form-label small">Status *</label>
+                                        <select class="form-select form-select-sm" id="status" name="status" required>
+                                            <option value="Pending">Pending</option>
+                                            <option value="Active">Active</option>
+                                            <option value="Inactive">Inactive</option>
+                                            <option value="Disabled">Disabled</option>
+                                        </select>
+                                    </div>
+                                    <div class="mb-2">
+                                        <label for="commission_rate" class="form-label small">Commission Rate (%)</label>
+                                        <input type="number" class="form-control form-control-sm" id="commission_rate" name="commission_rate" step="0.01" min="0" max="100">
+                                    </div>
+                                    <div class="mb-2">
+                                        <label for="notes" class="form-label small">Notes</label>
+                                        <textarea class="form-control form-control-sm" id="notes" name="notes" rows="4"></textarea>
+                                    </div>
+                                </div>
                             </div>
                         </div>
-
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label for="contact_email" class="form-label">Contact Email</label>
-                                <input type="email" class="form-control" id="contact_email" name="contact_email">
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label for="contact_phone" class="form-label">Contact Phone</label>
-                                <input type="tel" class="form-control" id="contact_phone" name="contact_phone" inputmode="numeric" maxlength="11" oninput="this.value=this.value.replace(/\\D/g,'').slice(0,11)" onkeypress="return /[0-9]/.test(event.key)">
-                            </div>
-                        </div>
-
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label for="commission_rate" class="form-label">Commission Rate (%)</label>
-                                <input type="number" class="form-control" id="commission_rate" name="commission_rate" step="0.01" min="0" max="100">
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label for="status" class="form-label">Status *</label>
-                                <select class="form-select" id="status" name="status" required>
-                                    <option value="Pending">Pending</option>
-                                    <option value="Active">Active</option>
-                                    <option value="Inactive">Inactive</option>
-                                    <option value="Disabled">Disabled</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="base_url" class="form-label">Base URL</label>
-                            <input type="url" class="form-control" id="base_url" name="base_url">
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="api_key" class="form-label">API Key</label>
-                            <input type="text" class="form-control" id="api_key" name="api_key">
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="notes" class="form-label">Notes</label>
-                            <textarea class="form-control" id="notes" name="notes" rows="3"></textarea>
-                        </div>
-                    </form>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-coreui-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-primary" onclick="submitChannelForm()">Save</button>
-                </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-coreui-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-primary" onclick="submitChannelForm()">Save</button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
