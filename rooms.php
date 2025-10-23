@@ -145,7 +145,14 @@ if (isset($_SERVER['HTTP_HX_REQUEST']) && $_SERVER['REQUEST_METHOD'] === 'GET') 
                     <?php endif; ?>
                     <h5 class="card-title mb-1"><?php echo htmlspecialchars($room['room_number']); ?></h5>
                     <p class="card-text mb-2"><?php echo htmlspecialchars($room['room_type']); ?></p>
-                    <span class="badge bg-light text-dark"><?php echo htmlspecialchars($room['room_status']); ?></span>
+                    <?php 
+                    $status = $room['room_status'];
+                    $badgeClass = ($status === 'Vacant') ? 'success'
+                        : (($status === 'Occupied') ? 'danger'
+                        : (($status === 'Cleaning') ? 'info'
+                        : (($status === 'Maintenance') ? 'secondary' : 'warning')));
+                    ?>
+                    <span class="badge bg-<?php echo $badgeClass; ?>"><?php echo htmlspecialchars($room['room_status']); ?></span>
                     <br><small class=""><?php echo htmlspecialchars($room['room_max_guests']); ?> guests max</small>
                     <br><small class="">₱<?php echo number_format($room['room_rate'], 2); ?>/night</small>
                 </div>
@@ -427,7 +434,14 @@ $occupancyRate = $stats['total_rooms'] > 0 ? round(($stats['occupied_rooms'] / $
                                 <?php endif; ?>
                                 <h5 class="card-title mb-1"><?php echo htmlspecialchars($room['room_number']); ?></h5>
                                 <p class="card-text mb-2"><?php echo htmlspecialchars($room['room_type']); ?></p>
-                                <span class="badge bg-light text-dark"><?php echo htmlspecialchars($room['room_status']); ?></span>
+                                <?php 
+                                $status = $room['room_status'];
+                                $badgeClass = ($status === 'Vacant') ? 'success'
+                                    : (($status === 'Occupied') ? 'danger'
+                                    : (($status === 'Cleaning') ? 'info'
+                                    : (($status === 'Maintenance') ? 'secondary' : 'warning')));
+                                ?>
+                                <span class="badge bg-<?php echo $badgeClass; ?>"><?php echo htmlspecialchars($room['room_status']); ?></span>
                                 <br><small class=""><?php echo htmlspecialchars($room['room_max_guests']); ?> guests max</small>
                                 <br><small class="">₱<?php echo number_format($room['room_rate'], 2); ?>/night</small>
                             </div>
