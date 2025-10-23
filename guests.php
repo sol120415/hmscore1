@@ -37,7 +37,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_HX_REQUEST']))
 
                 case 'update':
                     // Update guest
-                    $stmt = $conn->prepare("UPDATE guests SET first_name=?, last_name=?, email=?, phone=?, address=?, city=?, country=?, id_type=?, id_number=?, date_of_birth=?, nationality=?, notes=?, stay_count=?, total_spend=? WHERE id=?");
+                    $stmt = $conn->prepare("UPDATE guests SET first_name=?, last_name=?, email=?, phone=?, address=?, city=?, country=?, id_type=?, id_number=?, date_of_birth=?, nationality=?, notes=? WHERE id=?");
                     $stmt->execute([
                         $_POST['first_name'],
                         $_POST['last_name'],
@@ -51,8 +51,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_HX_REQUEST']))
                         $_POST['date_of_birth'],
                         $_POST['nationality'] ?: null,
                         $_POST['notes'] ?: null,
-                        $_POST['stay_count'] ?: 0,
-                        $_POST['total_spend'] ?: 0.00,
                         $_POST['id']
                     ]);
                     echo json_encode(['success' => true, 'message' => 'Guest updated successfully']);
@@ -119,8 +117,8 @@ $archivedGuests = $stmt->fetchAll(PDO::FETCH_ASSOC);
 $stats = $conn->query("
     SELECT
         COUNT(*) as total_guests,
-        COUNT(CASE WHEN nationality = 'American' THEN 1 END) as american_guests,
-        COUNT(CASE WHEN nationality = 'Canadian' THEN 1 END) as canadian_guests,
+        COUNT(CASE WHEN nationality = 'Filipino' THEN 1 END) as filipino_guests,
+        COUNT(CASE WHEN nationality != 'Filipino' THEN 1 END) as non_filipino_guests,
         COUNT(CASE WHEN id_type = 'Passport' THEN 1 END) as passport_guests,
         COUNT(CASE WHEN loyalty_status = 'VIP' THEN 1 END) as vip_guests,
         AVG(TIMESTAMPDIFF(YEAR, date_of_birth, CURDATE())) as avg_age
@@ -225,16 +223,16 @@ $recentGuests = array_slice($guests, 0, 10);
                     <span class="fw-bold text-warning"><?php echo $stats['vip_guests']; ?></span>
                 </div>
                 <div>
-                    <small class="text-muted d-block">American</small>
-                    <span class="fw-bold text-success"><?php echo $stats['american_guests']; ?></span>
+                    <small class="text-muted d-block">Filipino</small>
+                    <span class="fw-bold text-success"><?php echo $stats['filipino_guests']; ?></span>
                 </div>
                 <div>
                     <small class="text-muted d-block">Passports</small>
                     <span class="fw-bold text-info"><?php echo $stats['passport_guests']; ?></span>
                 </div>
                 <div>
-                    <small class="text-muted d-block">Canadian</small>
-                    <span class="fw-bold text-danger"><?php echo $stats['canadian_guests']; ?></span>
+                    <small class="text-muted d-block">Non-Filipino</small>
+                    <span class="fw-bold text-danger"><?php echo $stats['non_filipino_guests']; ?></span>
                 </div>
                 <div>
                     <small class="text-muted d-block">Avg Age</small>
@@ -570,8 +568,6 @@ $recentGuests = array_slice($guests, 0, 10);
                 document.getElementById('id_number').value = data.id_number;
                 document.getElementById('date_of_birth').value = data.date_of_birth;
                 document.getElementById('nationality').value = data.nationality || '';
-                document.getElementById('stay_count').value = data.stay_count || 0;
-                document.getElementById('total_spend').value = data.total_spend || 0.00;
                 document.getElementById('notes').value = data.notes || '';
 
                 new bootstrap.Modal(document.getElementById('guestModal')).show();
@@ -713,13 +709,13 @@ $recentGuests = array_slice($guests, 0, 10);
                     <div class="modal-dialog modal-lg">
                         <div class="modal-content">
                             <div class="modal-header">
-                                <h5 class="modal-title">Loyalty Rewards - ${guestName}</h5>
+                                <h5 class="modal-title">
+                                    <i class="cil-gift text-warning me-2"></i>Loyalty Rewards - ${guestName}
+                                </h5>
                                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                             </div>
                             <div class="modal-body">
-                                <div class="alert alert-info">
-                                    <strong>Current Tier: ${currentTier}</strong> (${stayCount} stays)
-                                </div>
+                                
                                 <div class="mb-3">
                                     <small class="text-muted">Next tier progress:</small>
                                     <div class="progress" style="height: 8px;">
@@ -764,40 +760,40 @@ $recentGuests = array_slice($guests, 0, 10);
             }
 
             modalHtml += `
-                                <div class="table-responsive">
-                                <div class="table-responsive">
-                                    <table class="table table-striped">
-                                        <thead>
-                                            <tr>
-                                                <th>Tier</th>
-                                                <th>Nights to Unlock</th>
-                                                <th>Discounts & Rewards</th>
-                                                <th>Status</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
+                                <div class="row g-3">
             `;
 
             rewardsData.forEach(reward => {
                 const isCurrentTier = reward.tier === currentTier;
-                const statusIcon = isCurrentTier ? '<i class="cil-check-circle text-success"></i>' : '<i class="cil-circle text-muted"></i>';
-                const tierColor = reward.tier === 'Diamond' ? 'text-primary' :
-                                 (reward.tier === 'Gold' ? 'text-warning' :
-                                 (reward.tier === 'Iron' ? 'text-info' : 'text-secondary'));
+                const bgColor = reward.tier === 'Diamond' ? 'bg-info' :
+                               (reward.tier === 'Gold' ? 'bg-warning' :
+                               (reward.tier === 'Iron' ? 'bg-secondary' : 'bg-light'));
+                const textColor = reward.tier === 'Diamond' ? 'text-white' :
+                                 (reward.tier === 'Gold' ? 'text-dark' :
+                                 (reward.tier === 'Iron' ? 'text-white' : 'text-dark'));
+                const borderClass = isCurrentTier ? 'border' : 'border';
+                const borderStyle = isCurrentTier ? 'style="border-width: 3px !important; border-color: #ffd700 !important;"' : '';
+                const badge = reward.tier === 'Diamond' ? '<span class="badge bg-primary text-white">Premium</span>' : '';
 
                 modalHtml += `
-                    <tr class="${isCurrentTier ? 'table-primary' : ''}">
-                        <td><strong class="${tierColor}">${reward.tier}</strong></td>
-                        <td>${reward.nights}</td>
-                        <td>${reward.rewards}</td>
-                        <td class="text-center">${statusIcon}</td>
-                    </tr>
+                    <div class="col-md-6 col-lg-3">
+                        <div class="card h-100 ${borderClass}" ${borderStyle}>
+                            <div class="card-header text-center ${bgColor} ${textColor}">
+                                <h6 class="mb-0">${reward.tier}</h6>
+                                ${badge}
+                            </div>
+                            <div class="card-body text-center">
+                                <div class="small text-muted mb-2">${reward.nights} nights to unlock</div>
+                                <div class="small">
+                                    ${reward.rewards.split('; ').map(item => `<div>${item}</div>`).join('')}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 `;
             });
 
             modalHtml += `
-                                        </tbody>
-                                    </table>
                                 </div>
                             </div>
                             <div class="modal-footer">
