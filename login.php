@@ -134,7 +134,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     <script src="js/htmx.min.js"></script>
     <script src="/js/htmx.min.js"></script>
-    <script src="js/page-loader.js"></script>
+    <script src="js/page-loader.js?v=<?php echo @filemtime('js/page-loader.js'); ?>"></script>
 
     <style>
         .login-container {
@@ -187,7 +187,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <div class="text-center mb-4">
                                 <div class="logo-container mb-3">
                                     <h1 class="hotel-logo" style="font-family: 'Poppins', sans-serif; font-weight: 700; color: #ffffff; font-size: 2.5rem; margin: 0; text-shadow: 2px 2px 4px rgba(0,0,0,0.3); letter-spacing: 3px;">
-                                        CORE<span class="ms-3" style="color: #0dcaf0;">1</span>
+                                        CORE&nbsp;<span style="color: #0dcaf0 !important;">1</span>
                                     </h1>
                                     <p class="text-muted" style="font-size: 0.9rem; margin: 5px 0 0 0; letter-spacing: 1px;">HOTEL  MANAGEMENT SYSTEM</p>
                                 </div>

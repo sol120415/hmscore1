@@ -234,7 +234,7 @@ $occupancyRate = $stats['total_rooms'] > 0 ? round(($stats['occupied_rooms'] / $
     <!-- CoreUI JS -->
     <script src="js/coreui.bundle.js"></script>
     <script src="js/bootstrap.bundle.js"></script>
-    <script src="js/app-modal.js"></script>
+    <script src="js/app-modal.js?v=<?php echo @filemtime('js/app-modal.js'); ?>"></script>
 
     <style>
         .stats-card {
@@ -271,6 +271,28 @@ $occupancyRate = $stats['total_rooms'] > 0 ? round(($stats['occupied_rooms'] / $
             background: linear-gradient(135deg, #383d41, #212529);
             color: #e2e3e5;
         }
+        /* Light theme variants: keep hues but lighten surfaces for better readability */
+        [data-theme="light"] .room-vacant {
+            background: linear-gradient(135deg, #b9f3e8, #41dcbe);
+            color: #103c34;
+        }
+        [data-theme="light"] .room-occupied {
+            background: linear-gradient(135deg, #e9c5cc, #d7a1ad);
+            color: #5a1a21;
+        }
+        [data-theme="light"] .room-cleaning {
+            background: linear-gradient(135deg, #c9f3ff, #00c8ff);
+            color: #0a3552;
+        }
+        [data-theme="light"] .room-maintenance {
+            background: linear-gradient(135deg, #bedee1, #afcfd3);
+            color: #0a3940;
+        }
+        [data-theme="light"] .room-reserved {
+            background: linear-gradient(135deg, #dee2e7, #d2d7df);
+            color: #262a30;
+        }
+        [data-theme="light"] .room-card { border-color: #d3d8e1; }
         .input-group-text {
             background: #4a5568;
             border-color: #4a5568;

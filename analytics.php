@@ -165,8 +165,8 @@ $revPAR = $roomStats['total_rooms'] > 0 ?
 
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-    <script src="js/page-loader.js"></script>
-    <script src="js/app-modal.js"></script>
+    <script src="js/page-loader.js?v=<?php echo @filemtime('js/page-loader.js'); ?>"></script>
+    <script src="js/app-modal.js?v=<?php echo @filemtime('js/app-modal.js'); ?>"></script>
 
     <style>
         .analytics-card {
