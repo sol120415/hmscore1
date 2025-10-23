@@ -532,14 +532,43 @@ $revPAR = $roomStats['total_rooms'] > 0 ?
                 }
                 chart.update('none');
             }
+            function applyTableTheme(){
+                var t = document.documentElement.getAttribute('data-theme') || 'light';
+                var isLight = t === 'light';
+                var container = document.querySelector('.container-fluid');
+                if (!container) return;
+                var tables = container.querySelectorAll('table, .table');
+                tables.forEach(function(tbl){
+                    // Normalize table-dark in light mode
+                    if (isLight && tbl.classList.contains('table-dark')) {
+                        tbl.classList.remove('table-dark');
+                    }
+                    // Apply inline colors to ensure immediate visibility
+                    var theadCells = tbl.querySelectorAll('thead th, thead td');
+                    theadCells.forEach(function(c){
+                        c.style.backgroundColor = isLight ? '#f8f9fa' : '#2d2d2d';
+                        c.style.color = isLight ? '#212529' : '#ffffff';
+                        c.style.borderColor = isLight ? '#dee2e6' : '#495057';
+                    });
+                    var bodyCells = tbl.querySelectorAll('tbody th, tbody td');
+                    bodyCells.forEach(function(c){
+                        c.style.backgroundColor = isLight ? '#ffffff' : '#1a1a1a';
+                        c.style.color = isLight ? '#212529' : '#ffffff';
+                        c.style.borderColor = isLight ? '#dee2e6' : '#495057';
+                    });
+                });
+            }
             function applyThemeToAll(){
                 charts.forEach(applyChartTheme);
+                applyTableTheme();
             }
             // Expose helpers so we can push charts as we create them
             window.__ANALYTICS_CHARTS__ = charts;
             window.__APPLY_ANALYTICS_THEME__ = applyThemeToAll;
             // Apply on theme change
             window.addEventListener('themechange', applyThemeToAll);
+            // Initial application
+            document.addEventListener('DOMContentLoaded', applyThemeToAll);
         })();
 
         // Helpers to force numeric data and avoid one chart error breaking others
