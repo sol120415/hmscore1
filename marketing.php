@@ -283,11 +283,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_HX_REQUEST']))
 $campaigns = $conn->query("SELECT * FROM marketing_campaigns ORDER BY created_at DESC")->fetchAll(PDO::FETCH_ASSOC);
 $offers = $conn->query("SELECT * FROM promotional_offers ORDER BY created_at DESC")->fetchAll(PDO::FETCH_ASSOC);
 $performance = $conn->query("
-    SELECT cp.*, mc.name as campaign_name
-    FROM campaign_performance cp
-    JOIN marketing_campaigns mc ON cp.campaign_id = mc.id
-    ORDER BY cp.performance_date DESC
-    LIMIT 20
+    SELECT mc.id, mc.name as campaign_name, mc.status,
+           COALESCE(SUM(cp.impressions), 0) as total_impressions,
+           COALESCE(SUM(cp.clicks), 0) as total_clicks,
+           COALESCE(SUM(cp.leads), 0) as total_leads,
+           COALESCE(SUM(cp.conversions), 0) as total_conversions,
+           COALESCE(SUM(cp.revenue), 0) as total_revenue,
+           COALESCE(SUM(cp.spend), 0) as total_spend,
+           COUNT(cp.id) as performance_records
+    FROM marketing_campaigns mc
+    LEFT JOIN campaign_performance cp ON mc.id = cp.campaign_id
+    GROUP BY mc.id, mc.name, mc.status
+    ORDER BY mc.created_at DESC
 ")->fetchAll(PDO::FETCH_ASSOC);
 
 // Get statistics
@@ -459,9 +466,6 @@ foreach ($campaignAgg as $r) {
             <li class="nav-item" role="presentation">
                 <button class="nav-link" id="performance-tab" data-bs-toggle="tab" data-bs-target="#performance" type="button" role="tab">Performance</button>
             </li>
-            <li class="nav-item" role="presentation">
-                <button class="nav-link" id="analytics-tab" data-bs-toggle="tab" data-bs-target="#analytics" type="button" role="tab">Analytics</button>
-            </li>
         </ul>
 
         <!-- Tab Content -->
@@ -593,128 +597,78 @@ foreach ($campaignAgg as $r) {
             <!-- Performance Tab -->
             <div class="tab-pane fade" id="performance" role="tabpanel">
                 <div class="card">
-                    <div class="card-header d-flex justify-content-between align-items-center">
+                    <div class="card-header">
                         <h5 class="mb-0">Campaign Performance</h5>
-                        <div class="d-flex gap-2">
-                            <button class="btn btn-success btn-sm" onclick="generateReport()">
-                                <i class="cil-file-pdf me-1"></i>Report
-                            </button>
-                        </div>
                     </div>
                     <div class="card-body">
-                        <div class="table-responsive">
-                            <table class="table table-striped performance-table">
-                                <thead>
-                                    <tr>
-                                        <th>Campaign</th>
-                                        <th>Date</th>
-                                        <th>Impressions</th>
-                                        <th>Clicks</th>
-                                        <th>Leads</th>
-                                        <th>Conversions</th>
-                                        <th>Revenue</th>
-                                        <th>Spend</th>
-                                        <th>Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <?php foreach ($performance as $perf): ?>
-                                    <tr>
-                                        <td><?php echo htmlspecialchars($perf['campaign_name']); ?></td>
-                                        <td><?php echo date('M j, Y', strtotime($perf['performance_date'])); ?></td>
-                                        <td><?php echo number_format($perf['impressions']); ?></td>
-                                        <td><?php echo number_format($perf['clicks']); ?></td>
-                                        <td><?php echo number_format($perf['leads']); ?></td>
-                                        <td><?php echo number_format($perf['conversions']); ?></td>
-                                        <td>₱<?php echo number_format($perf['revenue'], 2); ?></td>
-                                        <td>₱<?php echo number_format($perf['spend'], 2); ?></td>
-                                        <td>
-                                            <button class="btn btn-sm btn-outline-danger" onclick="deletePerformance(<?php echo $perf['id']; ?>)">
-                                                <i class="cil-trash"></i>
-                                            </button>
-                                        </td>
-                                    </tr>
-                                    <?php endforeach; ?>
-                                </tbody>
-                            </table>
+                        <div class="mb-4">
+                            <h6 class="mb-3">Campaign Performance</h6>
+                            <div class="table-responsive">
+                                <table class="table table-striped performance-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Campaign</th>
+                                            <th>Status</th>
+                                            <th>Impressions</th>
+                                            <th>Clicks</th>
+                                            <th>Leads</th>
+                                            <th>Conversions</th>
+                                            <th>Revenue</th>
+                                            <th>Spend</th>
+                                            <th>Records</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <?php foreach ($performance as $perf): ?>
+                                        <tr>
+                                            <td><?php echo htmlspecialchars($perf['campaign_name']); ?></td>
+                                            <td><span class="badge bg-<?php echo $perf['status'] === 'active' ? 'success' : ($perf['status'] === 'completed' ? 'primary' : 'secondary'); ?>"><?php echo htmlspecialchars($perf['status']); ?></span></td>
+                                            <td><?php echo number_format($perf['total_impressions']); ?></td>
+                                            <td><?php echo number_format($perf['total_clicks']); ?></td>
+                                            <td><?php echo number_format($perf['total_leads']); ?></td>
+                                            <td><?php echo number_format($perf['total_conversions']); ?></td>
+                                            <td>₱<?php echo number_format($perf['total_revenue'], 2); ?></td>
+                                            <td>₱<?php echo number_format($perf['total_spend'], 2); ?></td>
+                                            <td><?php echo $perf['performance_records']; ?></td>
+                                        </tr>
+                                        <?php endforeach; ?>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <div class="mb-4">
+                            <h6 class="mb-3">Offer Usage</h6>
+                            <div class="table-responsive">
+                                <table class="table table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>Offer Name</th>
+                                            <th>Code</th>
+                                            <th>Type</th>
+                                            <th>Usage</th>
+                                            <th>Limit</th>
+                                            <th>Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <?php foreach ($offers as $offer): ?>
+                                        <tr>
+                                            <td><?php echo htmlspecialchars($offer['name']); ?></td>
+                                            <td><code><?php echo htmlspecialchars($offer['code']); ?></code></td>
+                                            <td><?php echo htmlspecialchars($offer['offer_type']); ?></td>
+                                            <td><?php echo $offer['usage_count']; ?>/<?php echo $offer['usage_limit'] ?: '∞'; ?></td>
+                                            <td><?php echo $offer['usage_limit'] ?: 'Unlimited'; ?></td>
+                                            <td><span class="badge bg-<?php echo $offer['is_active'] ? 'success' : 'secondary'; ?>"><?php echo $offer['is_active'] ? 'Active' : 'Inactive'; ?></span></td>
+                                        </tr>
+                                        <?php endforeach; ?>
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Analytics Tab -->
-            <div class="tab-pane fade" id="analytics" role="tabpanel">
-                <div class="row">
-                    <div class="col-md-6 mb-4">
-                        <div class="card">
-                            <div class="card-header">
-                                <h6 class="mb-0">Campaign Performance Overview</h6>
-                            </div>
-                            <div class="card-body">
-                                <div class="chart-container">
-                                    <canvas id="performanceChart"></canvas>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-6 mb-4">
-                        <div class="card">
-                            <div class="card-header">
-                                <h6 class="mb-0">Revenue vs Spend</h6>
-                            </div>
-                            <div class="card-body">
-                                <div class="chart-container">
-                                    <canvas id="revenueSpendChart"></canvas>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-12">
-                        <div class="card">
-                            <div class="card-header">
-                                <h6 class="mb-0">Campaign ROI Analysis</h6>
-                            </div>
-                            <div class="card-body">
-                                <div class="table-responsive">
-                                    <table class="table table-striped">
-                                        <thead>
-                                            <tr>
-                                                <th>Campaign</th>
-                                                <th>Total Revenue</th>
-                                                <th>Total Spend</th>
-                                                <th>ROI</th>
-                                                <th>Status</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            <?php
-                                            $campaign_roi = $conn->query("
-                                                SELECT mc.name, mc.status,
-                                                       COALESCE(SUM(cp.revenue), 0) as total_revenue,
-                                                       COALESCE(SUM(cp.spend), 0) as total_spend,
-                                                       CASE WHEN SUM(cp.spend) > 0 THEN ((SUM(cp.revenue) - SUM(cp.spend)) / SUM(cp.spend)) * 100 ELSE 0 END as roi
-                                                FROM marketing_campaigns mc
-                                                LEFT JOIN campaign_performance cp ON mc.id = cp.campaign_id
-                                                GROUP BY mc.id, mc.name, mc.status
-                                                ORDER BY roi DESC
-                                            ")->fetchAll(PDO::FETCH_ASSOC);
-                                            foreach ($campaign_roi as $roi): ?>
-                                            <tr>
-                                                <td><?php echo htmlspecialchars($roi['name']); ?></td>
-                                                <td>₱<?php echo number_format($roi['total_revenue'], 2); ?></td>
-                                                <td>₱<?php echo number_format($roi['total_spend'], 2); ?></td>
-                                                <td><?php echo number_format($roi['roi'], 1); ?>%</td>
-                                                <td><span class="badge bg-<?php echo $roi['status'] === 'active' ? 'success' : 'secondary'; ?>"><?php echo htmlspecialchars($roi['status']); ?></span></td>
-                                            </tr>
-                                            <?php endforeach; ?>
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
         </div>
     </div>
 
@@ -1278,6 +1232,18 @@ foreach ($campaignAgg as $r) {
                     }
                 });
             });
+        }
+
+        function addPerformanceData(campaignId, campaignName) {
+            document.getElementById('campaign_id').value = campaignId;
+            document.getElementById('performanceForm').reset();
+            document.getElementById('performanceModal').querySelector('.modal-title').textContent = 'Add Performance Data - ' + campaignName;
+            new bootstrap.Modal(document.getElementById('performanceModal')).show();
+        }
+
+        function viewPerformanceDetails(campaignId) {
+            // Open detailed performance view for the campaign
+            window.open('marketing.php?action=view_performance&campaign_id=' + campaignId, '_blank');
         }
 
         function generateReport() {
