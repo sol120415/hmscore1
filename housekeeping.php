@@ -402,7 +402,7 @@ $stats = $conn->query("
                                 </div>
                                 <h5 class="card-title mb-1"><?php echo htmlspecialchars($room['room_number']); ?></h5>
                                 <p class="card-text mb-2"><?php echo htmlspecialchars($room['room_type']); ?></p>
-                                <span class="badge bg-light text-dark"><?php echo htmlspecialchars($room['room_status']); ?></span>
+                                <span class="badge bg-secondary"><?php echo htmlspecialchars($room['room_status']); ?></span>
                                 <br><small class="mt-2 d-block"><?php echo htmlspecialchars($room['room_max_guests']); ?> guests max</small>
                             </div>
                         </div>
