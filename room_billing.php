@@ -919,6 +919,59 @@ $recentTransactions = array_slice($billings, 0, 10);
                 document.getElementById('billingHistoryBody').innerHTML = html;
             });
         }
+    // Ensure Billing Transaction History table updates instantly on theme toggle
+    (function(){
+        var scheduled = false;
+        function schedule(fn){
+            if (scheduled) return; scheduled = true; requestAnimationFrame(function(){ scheduled = false; fn(); });
+        }
+        function clearCellStyles(cell){
+            cell.style.backgroundColor = '';
+            cell.style.color = '';
+            cell.style.borderColor = '';
+        }
+        function applyBillingTableTheme(){
+            var t = document.documentElement.getAttribute('data-theme') || 'light';
+            var isLight = t === 'light';
+            var tbl = document.getElementById('billingHistoryTable');
+            if (!tbl) return;
+            var headCells = tbl.querySelectorAll('thead th, thead td');
+            headCells.forEach(function(c){
+                clearCellStyles(c);
+                c.style.backgroundColor = isLight ? '#f8f9fa' : '#2d2d2d';
+                c.style.color = isLight ? '#212529' : '#ffffff';
+                c.style.borderColor = isLight ? '#dee2e6' : '#495057';
+            });
+            var bodyCells = tbl.querySelectorAll('tbody th, tbody td');
+            bodyCells.forEach(function(c){
+                clearCellStyles(c);
+                c.style.backgroundColor = isLight ? '#ffffff' : '#1a1a1a';
+                c.style.color = isLight ? '#212529' : '#ffffff';
+                c.style.borderColor = isLight ? '#dee2e6' : '#495057';
+            });
+            var rows = tbl.querySelectorAll('tbody tr');
+            rows.forEach(function(r, idx){
+                if (!isLight) {
+                    var base = idx % 2 === 0 ? '#1a1a1a' : '#1f1f1f';
+                    r.querySelectorAll('td, th').forEach(function(c){ c.style.backgroundColor = base; });
+                }
+            });
+        }
+        document.addEventListener('DOMContentLoaded', applyBillingTableTheme);
+        window.addEventListener('themechange', function(){ schedule(applyBillingTableTheme); });
+        // Fallback: observe data-theme attribute flips to handle rapid toggles
+        try {
+            var observer = new MutationObserver(function(m){
+                for (var i=0;i<m.length;i++){
+                    if (m[i].type === 'attributes' && m[i].attributeName === 'data-theme') {
+                        schedule(applyBillingTableTheme);
+                        break;
+                    }
+                }
+            });
+            observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+        } catch(e) {}
+    })();
     </script>
 </body>
 </html>
