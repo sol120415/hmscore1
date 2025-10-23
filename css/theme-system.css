@@ -955,6 +955,10 @@ a:hover {
   background-color: #6c757d !important;
   color: #ffffff !important;
 }
+/* Venue status badges */
+[data-theme="dark"] .venue-card .badge.bg-success { background-color: #198754 !important; color: #ffffff !important; }
+[data-theme="dark"] .venue-card .badge.bg-danger { background-color: #dc3545 !important; color: #ffffff !important; }
+[data-theme="dark"] .venue-card .badge.bg-secondary { background-color: #6c757d !important; color: #ffffff !important; }
 /* Ensure info badges remain readable in dark mode (used for Cleaning elsewhere) */
 [data-theme="dark"] .room-card .badge.bg-info,
 [data-theme="dark"] .badge.bg-info {

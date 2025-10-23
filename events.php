@@ -827,7 +827,13 @@ $stats = $conn->query("
                                     <?php endif; ?>
                                     <h5 class="card-title mb-1"><?php echo htmlspecialchars($venue['venue_name']); ?></h5>
                                     <p class="card-text mb-2"><?php echo htmlspecialchars($venue['venue_address']); ?></p>
-                                    <span class="badge bg-light text-dark"><?php echo htmlspecialchars($venue['venue_status']); ?></span>
+                                    <?php 
+                                    $vstatus = $venue['venue_status'];
+                                    $vBadge = ($vstatus === 'Available') ? 'success'
+                                        : (($vstatus === 'Booked') ? 'danger'
+                                        : (($vstatus === 'Maintenance') ? 'secondary' : 'warning'));
+                                    ?>
+                                    <span class="badge bg-<?php echo $vBadge; ?>"><?php echo htmlspecialchars($venue['venue_status']); ?></span>
                                     <br><small class="mt-2 d-block"><?php echo htmlspecialchars($venue['venue_capacity']); ?> capacity</small>
                                 </div>
                             </div>
