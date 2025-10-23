@@ -397,7 +397,10 @@ $stats = $conn->query("
         COUNT(CASE WHEN billing_status = 'Paid' THEN 1 END) as paid_transactions,
         COUNT(CASE WHEN billing_status = 'Pending' THEN 1 END) as pending_transactions,
         COUNT(CASE WHEN transaction_type = 'Room Charge' THEN 1 END) as room_charges,
-        COUNT(CASE WHEN transaction_type = 'Event Charge' THEN 1 END) as event_charges
+        COUNT(CASE WHEN transaction_type = 'Event Charge' THEN 1 END) as event_charges,
+        (SELECT COUNT(*) FROM reservations r WHERE NOT EXISTS (
+            SELECT 1 FROM room_billing rb WHERE rb.reservation_id = r.id AND rb.billing_status = 'Paid'
+        )) as pending_reservations
     FROM room_billing
 ")->fetch(PDO::FETCH_ASSOC);
 
@@ -477,7 +480,7 @@ $recentTransactions = array_slice($billings, 0, 10);
                 </div>
                 <div>
                     <small class="text-muted d-block">Pending</small>
-                    <span class="fw-bold text-warning"><?php echo $stats['pending_transactions']; ?></span>
+                    <span class="fw-bold text-warning"><?php echo $stats['pending_reservations']; ?></span>
                 </div>
             </div>
         </div>
