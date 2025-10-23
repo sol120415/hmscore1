@@ -715,7 +715,6 @@ $recentGuests = array_slice($guests, 0, 10);
                                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                             </div>
                             <div class="modal-body">
-                                
                                 <div class="mb-3">
                                     <small class="text-muted">Next tier progress:</small>
                                     <div class="progress" style="height: 8px;">
@@ -745,16 +744,16 @@ $recentGuests = array_slice($guests, 0, 10);
 
             if (nextTier !== 'Max') {
                 modalHtml += `
-                                        <div class="progress-bar bg-primary" role="progressbar" style="width: ${progressPercent}%" aria-valuenow="${progressPercent}" aria-valuemin="0" aria-valuemax="100"></div>
+                                        <div class="progress-bar" role="progressbar" style="width: ${progressPercent}%; background-color: #198754 !important;" aria-valuenow="${progressPercent}" aria-valuemin="0" aria-valuemax="100"></div>
                                     </div>
                                     <small class="text-muted">${nightsToNext} more stays to reach ${nextTier} tier</small>
                                 </div>
                 `;
             } else {
                 modalHtml += `
-                                        <div class="progress-bar bg-success" role="progressbar" style="width: 100%" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100"></div>
+                                        <div class="progress-bar" role="progressbar" style="width: 100%; background-color: #198754 !important;" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100"></div>
                                     </div>
-                                    <small class="text-success">Maximum tier reached!</small>
+                                    <small style="color: #198754 !important;">Maximum tier reached!</small>
                                 </div>
                 `;
             }
@@ -765,26 +764,32 @@ $recentGuests = array_slice($guests, 0, 10);
 
             rewardsData.forEach(reward => {
                 const isCurrentTier = reward.tier === currentTier;
-                const bgColor = reward.tier === 'Diamond' ? 'bg-info' :
-                               (reward.tier === 'Gold' ? 'bg-warning' :
-                               (reward.tier === 'Iron' ? 'bg-secondary' : 'bg-light'));
-                const textColor = reward.tier === 'Diamond' ? 'text-white' :
-                                 (reward.tier === 'Gold' ? 'text-dark' :
-                                 (reward.tier === 'Iron' ? 'text-white' : 'text-dark'));
-                const borderClass = isCurrentTier ? 'border' : 'border';
-                const borderStyle = isCurrentTier ? 'style="border-width: 3px !important; border-color: #ffd700 !important;"' : '';
-                const badge = reward.tier === 'Diamond' ? '<span class="badge bg-primary text-white">Premium</span>' : '';
+                // Force colors inline to avoid conflicts (Regular = colorless, black text)
+                let headerBg = '#ffffff';
+                let headerText = '#000000';
+                let borderClr = '#e5e7eb';
+                if (reward.tier === 'Iron') { headerBg = '#6c757d'; headerText = '#ffffff'; borderClr = '#6c757d'; }
+                if (reward.tier === 'Gold') { headerBg = '#ffc107'; headerText = '#212529'; borderClr = '#ffc107'; }
+                if (reward.tier === 'Diamond') { headerBg = '#0d6efd'; headerText = '#ffffff'; borderClr = '#0d6efd'; }
+                // Highlight current tier in green
+                const currentBorder = isCurrentTier ? '#198754' : borderClr;
+                const borderWidth = isCurrentTier ? '3px' : '2px';
+                const currentBadge = isCurrentTier ? '<span class="badge" style="background-color:#198754 !important; color:#ffffff !important;">Current</span>' : '';
+                const nightsText = reward.nights > 0 ? `${reward.nights} nights to unlock` : '&nbsp;';
+                const bodyTextColor = reward.tier === 'Regular' ? '#000000' : '#212529';
+                const nightsTextColor = reward.tier === 'Regular' ? '#000000' : '#6c757d';
+                const headerTitleColor = reward.tier === 'Regular' ? '#000000' : headerText;
 
                 modalHtml += `
                     <div class="col-md-6 col-lg-3">
-                        <div class="card h-100 ${borderClass}" ${borderStyle}>
-                            <div class="card-header text-center ${bgColor} ${textColor}">
-                                <h6 class="mb-0">${reward.tier}</h6>
-                                ${badge}
+                        <div class="card h-100" style="border: ${borderWidth} solid ${currentBorder} !important; background:#ffffff !important;">
+                            <div class="card-header text-center" style="background: ${headerBg} !important; color: ${headerText} !important;">
+                                <h6 class="mb-0" style="color:${headerTitleColor} !important;">${reward.tier}</h6>
+                                ${currentBadge}
                             </div>
-                            <div class="card-body text-center">
-                                <div class="small text-muted mb-2">${reward.nights} nights to unlock</div>
-                                <div class="small">
+                            <div class="card-body text-center" style="background:#ffffff !important;">
+                                <div class="small" style="color:${nightsTextColor} !important; margin-bottom: .5rem;">${nightsText}</div>
+                                <div class="small" style="min-height:48px; color:${bodyTextColor} !important;">
                                     ${reward.rewards.split('; ').map(item => `<div>${item}</div>`).join('')}
                                 </div>
                             </div>

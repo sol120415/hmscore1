@@ -1342,7 +1342,7 @@ $payment_terms = ['Net 15', 'Net 30', 'Net 45', 'Net 60', 'COD', 'Due on Receipt
 
         // Generate report
         function generateReport() {
-            window.open('generate_report.php?type=inventory', '_blank');
+            window.open('generate_report.php?page=inventory', '_blank');
         }
 
         // Initialize Bootstrap tabs and other functionality
