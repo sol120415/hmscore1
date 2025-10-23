@@ -218,6 +218,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             border-radius: 8px;
             border-left: 4px solid #667eea;
         }
+        /* Theme-synced compact tables for Arrivals/Departures */
+        .kpi-table{background:transparent;}
+        .kpi-table> :not(caption)>*>*{background-color:transparent !important;}
+        [data-coreui-theme="dark"] .kpi-table> :not(caption)>*>*{color:#e2e8f0;border-color:rgba(255,255,255,0.08);} 
+        [data-coreui-theme="light"] .kpi-table> :not(caption)>*>*{color:#111827;border-color:rgba(0,0,0,0.08);} 
+        .kpi-table thead th{font-weight:600;}
     </style>
 </head>
 <body>
@@ -346,7 +352,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                 <div class="card-header"><h6 class="mb-0">Arrivals Today</h6></div>
                 <div class="card-body p-0">
                     <div class="table-responsive">
-                        <table class="table table-dark table-hover mb-0 align-middle">
+                        <table class="table kpi-table mb-0 align-middle">
                             <thead>
                                 <tr><th>Guest</th><th>Room</th><th class="text-end">Time</th></tr>
                             </thead>
@@ -373,7 +379,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                 <div class="card-header"><h6 class="mb-0">Departures Today</h6></div>
                 <div class="card-body p-0">
                     <div class="table-responsive">
-                        <table class="table table-dark table-hover mb-0 align-middle">
+                        <table class="table kpi-table mb-0 align-middle">
                             <thead>
                                 <tr><th>Guest</th><th>Room</th><th class="text-end">Time</th></tr>
                             </thead>

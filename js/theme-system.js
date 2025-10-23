@@ -329,18 +329,25 @@ class ThemeManager {
             control.style.removeProperty('border-color');
         });
         
-        // Force table hover states for light theme
+        // Table styles: restrict forced styles to auth pages only,
+        // and never touch dashboard tables (so no reload is needed)
         if (theme === 'light') {
-            const tableRows = document.querySelectorAll('tr');
-            tableRows.forEach(row => {
+            const lightRows = document.querySelectorAll('.login-card tr, .register-card tr, .forgot-card tr, .verify-card tr');
+            lightRows.forEach(row => {
                 row.style.setProperty('background-color', '#ffffff', 'important');
                 row.style.setProperty('color', '#212529', 'important');
             });
-            
-            const tableCells = document.querySelectorAll('td, th');
-            tableCells.forEach(cell => {
+            const lightCells = document.querySelectorAll('.login-card td, .login-card th, .register-card td, .register-card th, .forgot-card td, .forgot-card th, .verify-card td, .verify-card th');
+            lightCells.forEach(cell => {
                 cell.style.setProperty('background-color', '#ffffff', 'important');
                 cell.style.setProperty('color', '#212529', 'important');
+            });
+        } else {
+            // Clear any previously forced inline table styles so
+            // theme CSS (e.g., .kpi-table rules) takes effect instantly
+            document.querySelectorAll('tr, td, th').forEach(el => {
+                el.style.removeProperty('background-color');
+                el.style.removeProperty('color');
             });
         }
         
